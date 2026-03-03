@@ -1,14 +1,70 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import MobileLayout from "@/components/layout/MobileLayout";
+import ShiftCard from "@/components/shifts/ShiftCard";
+import { shifts } from "@/data/mockData";
+import { CalendarDays, Clock, TrendingUp } from "lucide-react";
 
-const Index = () => {
+const Dashboard = () => {
+  const today = "2026-03-02";
+  const todayShifts = shifts.filter((s) => s.date === today);
+  const upcomingShifts = shifts.filter((s) => s.date > today);
+
+  const stats = [
+    { icon: CalendarDays, label: "Today", value: todayShifts.length, color: "text-primary" },
+    { icon: Clock, label: "Hours this week", value: "24", color: "text-info" },
+    { icon: TrendingUp, label: "Completed", value: "12", color: "text-success" },
+  ];
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
+    <MobileLayout>
+      <div className="px-5 py-5 space-y-6">
+        {/* Greeting */}
+        <div>
+          <h2 className="text-xl font-bold text-foreground">Good morning, Sarah 👋</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            You have {todayShifts.length} shift{todayShifts.length !== 1 ? "s" : ""} today
+          </p>
+        </div>
+
+        {/* Quick Stats */}
+        <div className="grid grid-cols-3 gap-3">
+          {stats.map((stat) => (
+            <div key={stat.label} className="bg-card rounded-2xl p-3.5 shadow-card text-center">
+              <stat.icon className={`w-5 h-5 mx-auto mb-1.5 ${stat.color}`} />
+              <p className="text-lg font-bold text-card-foreground">{stat.value}</p>
+              <p className="text-[10px] text-muted-foreground font-medium">{stat.label}</p>
+            </div>
+          ))}
+        </div>
+
+        {/* Today's Shifts */}
+        <section>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-sm font-semibold text-foreground">Today's Shifts</h3>
+            <span className="text-xs text-muted-foreground">March 2, 2026</span>
+          </div>
+          <div className="space-y-3">
+            {todayShifts.length > 0 ? (
+              todayShifts.map((shift) => <ShiftCard key={shift.id} shift={shift} />)
+            ) : (
+              <div className="bg-card rounded-2xl p-8 shadow-card text-center">
+                <p className="text-sm text-muted-foreground">No shifts scheduled for today</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        {/* Upcoming Shifts */}
+        <section>
+          <h3 className="text-sm font-semibold text-foreground mb-3">Upcoming</h3>
+          <div className="space-y-3">
+            {upcomingShifts.map((shift) => (
+              <ShiftCard key={shift.id} shift={shift} />
+            ))}
+          </div>
+        </section>
       </div>
-    </div>
+    </MobileLayout>
   );
 };
 
-export default Index;
+export default Dashboard;
