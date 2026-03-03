@@ -9,33 +9,24 @@ const statusConfig: Record<ShiftStatus, { label: string; className: string }> = 
   missed: { label: "Missed", className: "bg-destructive/15 text-destructive" },
 };
 
-interface ShiftCardProps {
-  shift: Shift;
-}
-
-const ShiftCard = ({ shift }: ShiftCardProps) => {
+const ShiftCard = ({ shift }: { shift: Shift }) => {
   const navigate = useNavigate();
   const status = statusConfig[shift.status];
 
   return (
     <button
       onClick={() => navigate(`/shifts/${shift.id}`)}
-      className="w-full bg-card rounded-2xl p-4 shadow-card hover:shadow-card-hover transition-all text-left animate-slide-up"
+      className="w-full bg-card rounded-2xl p-4 border border-border hover:border-primary/30 transition-all text-left"
     >
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
-          <h3 className="font-semibold text-card-foreground text-[15px]">
-            {shift.client.name}
-          </h3>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {shift.client.careType}
-          </p>
+          <h3 className="font-semibold text-card-foreground">{shift.client.name}</h3>
+          <p className="text-xs text-muted-foreground mt-0.5">{shift.client.careType}</p>
         </div>
         <span className={`text-[11px] px-2.5 py-1 rounded-full ${status.className}`}>
           {status.label}
         </span>
       </div>
-
       <div className="flex items-center gap-4 text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5" />

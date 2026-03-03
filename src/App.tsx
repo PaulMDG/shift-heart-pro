@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import ShiftsPage from "./pages/ShiftsPage";
 import ShiftDetail from "./pages/ShiftDetail";
+import ShiftSwapPage from "./pages/ShiftSwapPage";
 import MessagesPage from "./pages/MessagesPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/shifts" element={<ShiftsPage />} />
           <Route path="/shifts/:id" element={<ShiftDetail />} />
+          <Route path="/shifts/:id/swap" element={<ShiftSwapPage />} />
           <Route path="/messages" element={<MessagesPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/notifications" element={<NotificationsPage />} />
