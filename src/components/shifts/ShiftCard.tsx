@@ -1,17 +1,17 @@
 import { Clock, MapPin, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import type { Shift, ShiftStatus } from "@/data/mockData";
+import type { ShiftWithClient } from "@/hooks/useShifts";
 
-const statusConfig: Record<ShiftStatus, { label: string; className: string }> = {
+const statusConfig: Record<string, { label: string; className: string }> = {
   not_started: { label: "Not Started", className: "bg-muted text-muted-foreground" },
   in_progress: { label: "In Progress", className: "bg-primary/15 text-primary font-semibold" },
   completed: { label: "Completed", className: "bg-success/15 text-success" },
   missed: { label: "Missed", className: "bg-destructive/15 text-destructive" },
 };
 
-const ShiftCard = ({ shift }: { shift: Shift }) => {
+const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
   const navigate = useNavigate();
-  const status = statusConfig[shift.status];
+  const status = statusConfig[shift.status] ?? statusConfig.not_started;
 
   return (
     <button
@@ -21,7 +21,7 @@ const ShiftCard = ({ shift }: { shift: Shift }) => {
       <div className="flex items-start justify-between mb-3">
         <div className="flex-1">
           <h3 className="font-semibold text-card-foreground">{shift.client.name}</h3>
-          <p className="text-xs text-muted-foreground mt-0.5">{shift.client.careType}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{shift.client.care_type}</p>
         </div>
         <span className={`text-[11px] px-2.5 py-1 rounded-full ${status.className}`}>
           {status.label}
@@ -30,7 +30,7 @@ const ShiftCard = ({ shift }: { shift: Shift }) => {
       <div className="flex items-center gap-4 text-muted-foreground">
         <div className="flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5" />
-          <span className="text-xs">{shift.startTime} – {shift.endTime}</span>
+          <span className="text-xs">{shift.start_time} – {shift.end_time}</span>
         </div>
         <div className="flex items-center gap-1.5 flex-1 min-w-0">
           <MapPin className="w-3.5 h-3.5 shrink-0" />
