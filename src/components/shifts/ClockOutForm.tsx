@@ -4,7 +4,7 @@ import { X, CheckCircle2 } from "lucide-react";
 interface ClockOutFormProps {
   clientName: string;
   onClose: () => void;
-  onSubmit: () => void;
+  onSubmit: (notes?: string) => void;
 }
 
 const tasks = [
@@ -132,7 +132,7 @@ const ClockOutForm = ({ clientName, onClose, onSubmit }: ClockOutFormProps) => {
         {/* Submit */}
         <div className="p-5 border-t border-border">
           <button
-            onClick={onSubmit}
+            onClick={() => onSubmit(notes)}
             disabled={!isValid}
             className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-base font-bold disabled:opacity-50 disabled:cursor-not-allowed transition-opacity"
           >

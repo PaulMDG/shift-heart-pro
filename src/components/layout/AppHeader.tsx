@@ -1,9 +1,10 @@
 import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { notifications } from "@/data/mockData";
+import { useNotifications } from "@/hooks/useNotifications";
 
 const AppHeader = () => {
   const navigate = useNavigate();
+  const { data: notifications = [] } = useNotifications();
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (

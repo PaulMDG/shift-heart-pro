@@ -1,14 +1,16 @@
 import MobileLayout from "@/components/layout/MobileLayout";
 import ShiftCard from "@/components/shifts/ShiftCard";
-import { shifts } from "@/data/mockData";
+import { useShifts } from "@/hooks/useShifts";
 import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const tabs = ["All", "Today", "Upcoming", "Completed"] as const;
 
 const ShiftsPage = () => {
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>("All");
+  const { data: shifts = [], isLoading } = useShifts();
 
-  const today = "2026-03-02";
+  const today = new Date().toISOString().split("T")[0];
   const filteredShifts = shifts.filter((s) => {
     if (activeTab === "Today") return s.date === today;
     if (activeTab === "Upcoming") return s.date > today;
@@ -21,7 +23,6 @@ const ShiftsPage = () => {
       <div className="px-5 py-5 space-y-4">
         <h2 className="text-xl font-bold text-foreground">My Shifts</h2>
 
-        {/* Tabs */}
         <div className="flex gap-2 overflow-x-auto pb-1">
           {tabs.map((tab) => (
             <button
@@ -38,9 +39,10 @@ const ShiftsPage = () => {
           ))}
         </div>
 
-        {/* Shifts list */}
         <div className="space-y-3">
-          {filteredShifts.length > 0 ? (
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)
+          ) : filteredShifts.length > 0 ? (
             filteredShifts.map((shift) => <ShiftCard key={shift.id} shift={shift} />)
           ) : (
             <div className="bg-card rounded-2xl p-8 shadow-card text-center">

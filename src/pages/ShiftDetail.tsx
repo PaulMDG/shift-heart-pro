@@ -1,17 +1,27 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, User } from "lucide-react";
-import { shifts } from "@/data/mockData";
-import type { ShiftStatus } from "@/data/mockData";
+import { useShift, useUpdateShiftStatus } from "@/hooks/useShifts";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const ShiftDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const shift = shifts.find((s) => s.id === id);
-  const [status, setStatus] = useState<ShiftStatus>(shift?.status ?? "not_started");
+  const { data: shift, isLoading } = useShift(id);
+  const updateStatus = useUpdateShiftStatus();
   const [showClockOut, setShowClockOut] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-background max-w-lg mx-auto px-5 py-10 space-y-4">
+        <Skeleton className="h-8 w-32" />
+        <Skeleton className="h-20 rounded-2xl" />
+        <Skeleton className="h-40 rounded-2xl" />
+      </div>
+    );
+  }
 
   if (!shift) {
     return (
@@ -21,20 +31,21 @@ const ShiftDetail = () => {
     );
   }
 
+  const status = shift.status;
+
   const handleClockIn = () => setShowConfirm(true);
   const confirmClockIn = () => {
-    setStatus("in_progress");
+    updateStatus.mutate({ id: shift.id, status: "in_progress", clock_in_time: new Date().toISOString() });
     setShowConfirm(false);
   };
   const handleClockOut = () => setShowClockOut(true);
-  const handleClockOutSubmit = () => {
-    setStatus("completed");
+  const handleClockOutSubmit = (notes?: string) => {
+    updateStatus.mutate({ id: shift.id, status: "completed", clock_out_time: new Date().toISOString(), clock_out_notes: notes });
     setShowClockOut(false);
   };
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
-      {/* Header */}
       <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
         <button onClick={() => navigate(-1)} className="text-primary font-medium flex items-center gap-1">
           <ArrowLeft className="w-4 h-4" />
@@ -46,7 +57,6 @@ const ShiftDetail = () => {
       <div className="px-5 py-6 space-y-6 pb-36">
         <h2 className="text-2xl font-bold text-foreground">Shift Details</h2>
 
-        {/* Client Info */}
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shrink-0">
             <User className="w-7 h-7 text-primary-foreground" />
@@ -59,28 +69,26 @@ const ShiftDetail = () => {
 
         <div className="border-t border-border" />
 
-        {/* Scheduled */}
         <div className="flex gap-8">
           <span className="text-base font-semibold text-foreground w-24 shrink-0">Scheduled</span>
           <div>
-            <p className="text-lg font-bold text-foreground">{shift.startTime} – {shift.endTime}</p>
-            <p className="text-sm text-muted-foreground">{shift.client.careType}</p>
+            <p className="text-lg font-bold text-foreground">{shift.start_time} – {shift.end_time}</p>
+            <p className="text-sm text-muted-foreground">{shift.client.care_type}</p>
           </div>
         </div>
 
         <div className="border-t border-border" />
 
-        {/* Notes */}
         <div className="flex gap-8">
           <span className="text-base font-semibold text-foreground w-24 shrink-0">Notes</span>
-          <p className="text-sm text-muted-foreground leading-relaxed">{shift.adminNotes}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{shift.admin_notes}</p>
         </div>
 
-        {/* Clock In/Out Button */}
         {status !== "completed" && status !== "missed" && (
           <button
             onClick={status === "not_started" ? handleClockIn : handleClockOut}
-            className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-lg font-bold tracking-wide mt-4 active:scale-[0.98] transition-transform"
+            disabled={updateStatus.isPending}
+            className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-lg font-bold tracking-wide mt-4 active:scale-[0.98] transition-transform disabled:opacity-50"
           >
             {status === "not_started" ? "CLOCK IN" : "CLOCK OUT"}
           </button>
@@ -94,7 +102,6 @@ const ShiftDetail = () => {
 
         <div className="border-t border-border" />
 
-        {/* Shift Actions */}
         <div>
           <h3 className="text-xl font-bold text-foreground mb-3">Shift Actions</h3>
           <button
@@ -107,7 +114,6 @@ const ShiftDetail = () => {
         </div>
       </div>
 
-      {/* Confirm Clock In Dialog */}
       {showConfirm && (
         <div className="fixed inset-0 z-50 bg-foreground/40 flex items-end max-w-lg mx-auto">
           <div className="bg-card w-full rounded-t-3xl p-6 animate-slide-up">

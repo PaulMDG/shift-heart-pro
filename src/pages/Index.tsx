@@ -1,24 +1,32 @@
 import MobileLayout from "@/components/layout/MobileLayout";
 import ShiftCard from "@/components/shifts/ShiftCard";
-import { shifts } from "@/data/mockData";
+import { useShifts } from "@/hooks/useShifts";
 import { CalendarDays, Clock, TrendingUp } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useProfile } from "@/hooks/useProfile";
 
 const Dashboard = () => {
-  const today = "2026-03-02";
+  const { data: shifts = [], isLoading } = useShifts();
+  const { data: profile } = useProfile();
+
+  const today = new Date().toISOString().split("T")[0];
   const todayShifts = shifts.filter((s) => s.date === today);
   const upcomingShifts = shifts.filter((s) => s.date > today);
+  const completedCount = shifts.filter((s) => s.status === "completed").length;
+
+  const firstName = profile?.full_name?.split(" ")[0] || "there";
 
   const stats = [
     { icon: CalendarDays, label: "Today", value: todayShifts.length, color: "text-primary" },
-    { icon: Clock, label: "This week", value: "24h", color: "text-info" },
-    { icon: TrendingUp, label: "Done", value: "12", color: "text-success" },
+    { icon: Clock, label: "This week", value: `${shifts.length}`, color: "text-info" },
+    { icon: TrendingUp, label: "Done", value: String(completedCount), color: "text-success" },
   ];
 
   return (
     <MobileLayout>
       <div className="px-5 py-5 space-y-6">
         <div>
-          <h2 className="text-2xl font-bold text-foreground">Good morning, Sarah 👋</h2>
+          <h2 className="text-2xl font-bold text-foreground">Good morning, {firstName} 👋</h2>
           <p className="text-sm text-muted-foreground mt-1">
             You have {todayShifts.length} shift{todayShifts.length !== 1 ? "s" : ""} today
           </p>
@@ -37,10 +45,12 @@ const Dashboard = () => {
         <section>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-lg font-bold text-foreground">Today's Shifts</h3>
-            <span className="text-xs text-muted-foreground">March 2, 2026</span>
+            <span className="text-xs text-muted-foreground">{new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}</span>
           </div>
           <div className="space-y-3">
-            {todayShifts.length > 0 ? (
+            {isLoading ? (
+              Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)
+            ) : todayShifts.length > 0 ? (
               todayShifts.map((shift) => <ShiftCard key={shift.id} shift={shift} />)
             ) : (
               <div className="bg-card rounded-2xl p-8 border border-border text-center">
@@ -50,14 +60,16 @@ const Dashboard = () => {
           </div>
         </section>
 
-        <section>
-          <h3 className="text-lg font-bold text-foreground mb-3">Upcoming</h3>
-          <div className="space-y-3">
-            {upcomingShifts.map((shift) => (
-              <ShiftCard key={shift.id} shift={shift} />
-            ))}
-          </div>
-        </section>
+        {upcomingShifts.length > 0 && (
+          <section>
+            <h3 className="text-lg font-bold text-foreground mb-3">Upcoming</h3>
+            <div className="space-y-3">
+              {upcomingShifts.map((shift) => (
+                <ShiftCard key={shift.id} shift={shift} />
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </MobileLayout>
   );
