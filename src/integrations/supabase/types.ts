@@ -14,7 +14,193 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      clients: {
+        Row: {
+          address: string
+          care_plan_summary: string
+          care_type: string
+          created_at: string
+          emergency_contact: string
+          emergency_phone: string
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+        }
+        Insert: {
+          address?: string
+          care_plan_summary?: string
+          care_type?: string
+          created_at?: string
+          emergency_contact?: string
+          emergency_phone?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+        }
+        Update: {
+          address?: string
+          care_plan_summary?: string
+          care_type?: string
+          created_at?: string
+          emergency_contact?: string
+          emergency_phone?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+        }
+        Relationships: []
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          full_name: string
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          full_name?: string
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shift_swap_requests: {
+        Row: {
+          created_at: string
+          id: string
+          requester_id: string
+          shift_id: string
+          status: string
+          target_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          requester_id: string
+          shift_id: string
+          status?: string
+          target_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          requester_id?: string
+          shift_id?: string
+          status?: string
+          target_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_swap_requests_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      shifts: {
+        Row: {
+          admin_notes: string
+          caregiver_id: string | null
+          client_id: string
+          clock_in_time: string | null
+          clock_out_notes: string | null
+          clock_out_time: string | null
+          created_at: string
+          date: string
+          end_time: string
+          id: string
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          admin_notes?: string
+          caregiver_id?: string | null
+          client_id: string
+          clock_in_time?: string | null
+          clock_out_notes?: string | null
+          clock_out_time?: string | null
+          created_at?: string
+          date: string
+          end_time: string
+          id?: string
+          start_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          admin_notes?: string
+          caregiver_id?: string | null
+          client_id?: string
+          clock_in_time?: string | null
+          clock_out_notes?: string | null
+          clock_out_time?: string | null
+          created_at?: string
+          date?: string
+          end_time?: string
+          id?: string
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shifts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
