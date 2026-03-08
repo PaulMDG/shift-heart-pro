@@ -5,6 +5,7 @@ import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, Al
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 const tabs = ["Overview", "Swaps", "Shifts", "Clients", "Caregivers"] as const;
 
