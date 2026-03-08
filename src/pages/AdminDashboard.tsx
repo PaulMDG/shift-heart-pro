@@ -19,6 +19,9 @@ const AdminDashboard = () => {
   const declineSwap = useAdminDeclineSwap();
   const navigate = useNavigate();
 
+  // Real-time auto-refresh
+  useRealtimeSync([]);
+
   const pendingSwaps = swapRequests.filter((r: any) => r.status === "pending");
   const today = new Date().toISOString().split("T")[0];
   const todayShifts = shifts.filter((s) => s.date === today);
