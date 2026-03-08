@@ -53,12 +53,24 @@ export function useIncomingSwapRequests() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shift_swap_requests")
-        .select("*, shift:shifts(id, date, start_time, end_time, status, client:clients(id, name, address, care_type)), requester:profiles!shift_swap_requests_requester_id_fkey(id, full_name)")
+        .select("*, shift:shifts(id, date, start_time, end_time, status, client:clients(id, name, address, care_type))")
         .eq("target_id", user!.id)
         .eq("status", "pending")
         .order("created_at", { ascending: false });
       if (error) throw error;
-      return data as unknown as SwapRequestWithDetails[];
+      
+      // Fetch requester profiles separately
+      const requesterIds = [...new Set((data || []).map((d: any) => d.requester_id))];
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("id, full_name")
+        .in("id", requesterIds);
+      
+      const profileMap = new Map((profiles || []).map((p: any) => [p.id, p]));
+      return (data || []).map((d: any) => ({
+        ...d,
+        requester: profileMap.get(d.requester_id) || { id: d.requester_id, full_name: "Unknown" },
+      })) as SwapRequestWithDetails[];
     },
   });
 }
