@@ -206,7 +206,11 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      accept_swap_request: { Args: { swap_id: string }; Returns: undefined }
+      create_swap_request: {
+        Args: { p_shift_id: string; p_target_id?: string }
+        Returns: string
+      }
     }
     Enums: {
       [_ in never]: never
