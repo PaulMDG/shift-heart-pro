@@ -5,6 +5,7 @@ import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, Al
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
+import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
 const tabs = ["Overview", "Swaps", "Shifts", "Clients", "Caregivers"] as const;
 
@@ -17,6 +18,9 @@ const AdminDashboard = () => {
   const approveSwap = useAdminApproveSwap();
   const declineSwap = useAdminDeclineSwap();
   const navigate = useNavigate();
+
+  // Real-time auto-refresh
+  useRealtimeSync([]);
 
   const pendingSwaps = swapRequests.filter((r: any) => r.status === "pending");
   const today = new Date().toISOString().split("T")[0];
