@@ -10,6 +10,8 @@ import ShiftsPage from "./pages/ShiftsPage";
 import ShiftDetail from "./pages/ShiftDetail";
 import ShiftSwapPage from "./pages/ShiftSwapPage";
 import MessagesPage from "./pages/MessagesPage";
+import ChatPage from "./pages/ChatPage";
+import NewChatPage from "./pages/NewChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AuthPage from "./pages/AuthPage";
@@ -34,6 +36,8 @@ const App = () => (
             <Route path="/shifts/:id" element={<ProtectedRoute><ShiftDetail /></ProtectedRoute>} />
             <Route path="/shifts/:id/swap" element={<ProtectedRoute><ShiftSwapPage /></ProtectedRoute>} />
             <Route path="/messages" element={<ProtectedRoute><MessagesPage /></ProtectedRoute>} />
+            <Route path="/messages/new" element={<ProtectedRoute><NewChatPage /></ProtectedRoute>} />
+            <Route path="/messages/:userId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
