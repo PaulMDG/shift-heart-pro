@@ -10,6 +10,8 @@ import ShiftsPage from "./pages/ShiftsPage";
 import ShiftDetail from "./pages/ShiftDetail";
 import ShiftSwapPage from "./pages/ShiftSwapPage";
 import MessagesPage from "./pages/MessagesPage";
+import ChatPage from "./pages/ChatPage";
+import NewChatPage from "./pages/NewChatPage";
 import ProfilePage from "./pages/ProfilePage";
 import NotificationsPage from "./pages/NotificationsPage";
 import AuthPage from "./pages/AuthPage";
