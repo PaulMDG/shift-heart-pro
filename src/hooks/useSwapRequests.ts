@@ -67,7 +67,7 @@ export function useCreateSwapRequest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ shiftId, targetId }: { shiftId: string; targetId?: string }) => {
-      const { data, error } = await supabase.rpc("create_swap_request", {
+      const { data, error } = await (supabase.rpc as any)("create_swap_request", {
         p_shift_id: shiftId,
         p_target_id: targetId ?? null,
       });
@@ -84,7 +84,7 @@ export function useAcceptSwapRequest() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async (swapId: string) => {
-      const { error } = await supabase.rpc("accept_swap_request", { swap_id: swapId });
+      const { error } = await (supabase.rpc as any)("accept_swap_request", { swap_id: swapId });
       if (error) throw error;
     },
     onSuccess: () => {
