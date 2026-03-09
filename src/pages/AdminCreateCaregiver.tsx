@@ -4,6 +4,7 @@ import { ArrowLeft, Loader2 } from "lucide-react";
 import { useCreateCaregiver } from "@/hooks/useAdmin";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/components/ui/sonner";
 
 const AdminCreateCaregiver = () => {
@@ -14,6 +15,7 @@ const AdminCreateCaregiver = () => {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [role, setRole] = useState<string>("user");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,6 +25,7 @@ const AdminCreateCaregiver = () => {
         password,
         full_name: fullName,
         phone,
+        role,
       });
       toast.success("Caregiver added successfully!");
       navigate("/admin");
@@ -59,6 +62,20 @@ const AdminCreateCaregiver = () => {
         <div className="space-y-2">
           <Label>Phone Number</Label>
           <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 234 567 8900" />
+        </div>
+
+        <div className="space-y-2">
+          <Label>Role</Label>
+          <Select value={role} onValueChange={setRole}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select role" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="user">Caregiver</SelectItem>
+              <SelectItem value="moderator">Moderator</SelectItem>
+              <SelectItem value="admin">Admin</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
 
         <button type="submit" disabled={createCaregiver.isPending} className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-lg font-bold disabled:opacity-50">
