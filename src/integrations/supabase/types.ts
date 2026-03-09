@@ -190,6 +190,7 @@ export type Database = {
           client_id: string
           clock_in_lat: number | null
           clock_in_lng: number | null
+          clock_in_selfie_url: string | null
           clock_in_time: string | null
           clock_out_lat: number | null
           clock_out_lng: number | null
@@ -209,6 +210,7 @@ export type Database = {
           client_id: string
           clock_in_lat?: number | null
           clock_in_lng?: number | null
+          clock_in_selfie_url?: string | null
           clock_in_time?: string | null
           clock_out_lat?: number | null
           clock_out_lng?: number | null
@@ -228,6 +230,7 @@ export type Database = {
           client_id?: string
           clock_in_lat?: number | null
           clock_in_lng?: number | null
+          clock_in_selfie_url?: string | null
           clock_in_time?: string | null
           clock_out_lat?: number | null
           clock_out_lng?: number | null
