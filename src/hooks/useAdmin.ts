@@ -193,6 +193,8 @@ export function useCreateClient() {
       care_plan_summary?: string;
       emergency_contact?: string;
       emergency_phone?: string;
+      lat?: number | null;
+      lng?: number | null;
     }) => {
       const { error } = await supabase.from("clients").insert(client);
       if (error) throw error;

@@ -1,11 +1,23 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2, MapPin, Search } from "lucide-react";
 import { useCreateClient } from "@/hooks/useAdmin";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
+
+async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
+    { headers: { "User-Agent": "CareLink-Pro/1.0" } }
+  );
+  const data = await res.json();
+  if (data.length > 0) {
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  }
+  return null;
+}
 
 const AdminCreateClient = () => {
   const navigate = useNavigate();
@@ -17,9 +29,38 @@ const AdminCreateClient = () => {
   const [carePlan, setCarePlan] = useState("");
   const [emergencyContact, setEmergencyContact] = useState("");
   const [emergencyPhone, setEmergencyPhone] = useState("");
+  const [lat, setLat] = useState<number | null>(null);
+  const [lng, setLng] = useState<number | null>(null);
+  const [geocoding, setGeocoding] = useState(false);
+
+  const handleGeocode = async () => {
+    if (!address.trim()) {
+      toast.error("Enter an address first");
+      return;
+    }
+    setGeocoding(true);
+    try {
+      const result = await geocodeAddress(address);
+      if (result) {
+        setLat(result.lat);
+        setLng(result.lng);
+        toast.success(`Location found: ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)}`);
+      } else {
+        toast.error("Could not find coordinates for this address. Try a more specific address.");
+      }
+    } catch {
+      toast.error("Geocoding failed. Please try again.");
+    } finally {
+      setGeocoding(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!lat || !lng) {
+      toast.error("Please look up the address coordinates before saving.");
+      return;
+    }
     try {
       await createClient.mutateAsync({
         name,
@@ -28,6 +69,8 @@ const AdminCreateClient = () => {
         care_plan_summary: carePlan,
         emergency_contact: emergencyContact,
         emergency_phone: emergencyPhone,
+        lat,
+        lng,
       });
       toast.success("Client added successfully!");
       navigate("/admin");
@@ -53,7 +96,29 @@ const AdminCreateClient = () => {
 
         <div className="space-y-2">
           <Label>Address</Label>
-          <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Street address" />
+          <div className="flex gap-2">
+            <Input
+              value={address}
+              onChange={(e) => { setAddress(e.target.value); setLat(null); setLng(null); }}
+              placeholder="Street address, city, country"
+              className="flex-1"
+            />
+            <button
+              type="button"
+              onClick={handleGeocode}
+              disabled={geocoding || !address.trim()}
+              className="shrink-0 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 flex items-center gap-1"
+            >
+              {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+              Lookup
+            </button>
+          </div>
+          {lat !== null && lng !== null && (
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+              <MapPin className="w-3.5 h-3.5 text-primary" />
+              <span>GPS: {lat.toFixed(5)}, {lng.toFixed(5)}</span>
+            </div>
+          )}
         </div>
 
         <div className="space-y-2">
