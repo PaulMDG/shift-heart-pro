@@ -1,6 +1,7 @@
 import MobileLayout from "@/components/layout/MobileLayout";
 import { User, Shield, FileText, LogOut, ChevronRight, Star } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
+import { useNotifications } from "@/hooks/useNotifications";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
@@ -14,7 +15,10 @@ const menuItems = [
 
 const ProfilePage = () => {
   const { data: profile, isLoading } = useProfile();
+  const { data: notifications } = useNotifications();
   const navigate = useNavigate();
+
+  const unreadCount = notifications?.filter((n) => !n.read).length ?? 0;
 
   const initials = profile?.full_name
     ? profile.full_name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
@@ -29,8 +33,15 @@ const ProfilePage = () => {
     <MobileLayout>
       <div className="px-5 py-5 space-y-5">
         <div className="bg-card rounded-2xl p-5 shadow-card text-center">
-          <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center mx-auto mb-3">
-            <span className="text-2xl font-bold text-primary-foreground">{initials}</span>
+          <div className="relative w-20 h-20 mx-auto mb-3">
+            <div className="w-20 h-20 rounded-full gradient-primary flex items-center justify-center">
+              <span className="text-2xl font-bold text-primary-foreground">{initials}</span>
+            </div>
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 w-6 h-6 rounded-full bg-destructive text-destructive-foreground text-xs font-bold flex items-center justify-center ring-2 ring-card">
+                {unreadCount > 9 ? "9+" : unreadCount}
+              </span>
+            )}
           </div>
           {isLoading ? (
             <Skeleton className="h-6 w-40 mx-auto" />
