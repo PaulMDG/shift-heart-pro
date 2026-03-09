@@ -59,7 +59,7 @@ export function useShift(id: string | undefined) {
 export function useUpdateShiftStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status, clock_in_time, clock_out_time, clock_out_notes, clock_in_lat, clock_in_lng, clock_out_lat, clock_out_lng }: {
+    mutationFn: async ({ id, status, clock_in_time, clock_out_time, clock_out_notes, clock_in_lat, clock_in_lng, clock_out_lat, clock_out_lng, clock_in_selfie_url }: {
       id: string;
       status: string;
       clock_in_time?: string;
@@ -69,6 +69,7 @@ export function useUpdateShiftStatus() {
       clock_in_lng?: number;
       clock_out_lat?: number;
       clock_out_lng?: number;
+      clock_in_selfie_url?: string;
     }) => {
       const updates: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
       if (clock_in_time) updates.clock_in_time = clock_in_time;
@@ -78,6 +79,7 @@ export function useUpdateShiftStatus() {
       if (clock_in_lng !== undefined) updates.clock_in_lng = clock_in_lng;
       if (clock_out_lat !== undefined) updates.clock_out_lat = clock_out_lat;
       if (clock_out_lng !== undefined) updates.clock_out_lng = clock_out_lng;
+      if (clock_in_selfie_url) updates.clock_in_selfie_url = clock_in_selfie_url;
       const { error } = await supabase.from("shifts").update(updates).eq("id", id);
       if (error) throw error;
     },
