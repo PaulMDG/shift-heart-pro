@@ -16,6 +16,7 @@ const ShiftDetail = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [verifyingLocation, setVerifyingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [lastVerifiedPosition, setLastVerifiedPosition] = useState<{lat: number; lng: number} | null>(null);
 
   if (isLoading) {
     return (
@@ -38,7 +39,6 @@ const ShiftDetail = () => {
   const status = shift.status;
   const clientHasLocation = shift.client.lat != null && shift.client.lng != null;
 
-  const [lastVerifiedPosition, setLastVerifiedPosition] = useState<{lat: number; lng: number} | null>(null);
 
   const verifyLocationAndProceed = async (onSuccess: () => void) => {
     setLocationError(null);
