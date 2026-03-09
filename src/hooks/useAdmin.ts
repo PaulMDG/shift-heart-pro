@@ -185,3 +185,18 @@ export function useUpdateClient() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-clients"] }),
   });
 }
+
+export function useCreateCaregiver() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (caregiver: any) => {
+      const { data, error } = await supabase.functions.invoke("admin-create-user", {
+        body: caregiver,
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-caregivers"] }),
+  });
+}
