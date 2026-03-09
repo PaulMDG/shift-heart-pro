@@ -65,8 +65,34 @@ export function useAllCaregivers() {
         .select("*")
         .order("full_name");
       if (error) throw error;
-      return data || [];
+
+      // Fetch roles for all caregivers
+      const ids = (data || []).map((p: any) => p.id);
+      const { data: roles } = ids.length
+        ? await supabase.from("user_roles").select("user_id, role").in("user_id", ids)
+        : { data: [] };
+      const roleMap = new Map((roles || []).map((r: any) => [r.user_id, r.role]));
+
+      return (data || []).map((p: any) => ({
+        ...p,
+        role: roleMap.get(p.id) || null,
+      }));
     },
+  });
+}
+
+export function useUpdateUserRole() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ targetUserId, role }: { targetUserId: string; role: string }) => {
+      const { data, error } = await supabase.functions.invoke("admin-update-role", {
+        body: { target_user_id: targetUserId, role },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      return data;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["admin-caregivers"] }),
   });
 }
 

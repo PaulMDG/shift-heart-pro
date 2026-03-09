@@ -1,6 +1,8 @@
 import { useState } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
-import { useAllShifts, useAllClients, useAllCaregivers, useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap } from "@/hooks/useAdmin";
+import { useAllShifts, useAllClients, useAllCaregivers, useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap, useUpdateUserRole } from "@/hooks/useAdmin";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
