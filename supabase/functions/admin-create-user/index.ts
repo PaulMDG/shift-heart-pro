@@ -32,7 +32,7 @@ serve(async (req) => {
       throw new Error('Requires admin role');
     }
 
-    const { email, password, full_name, phone } = await req.json();
+    const { email, password, full_name, phone, role } = await req.json();
 
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
@@ -49,9 +49,18 @@ serve(async (req) => {
 
     if (createError) throw createError;
 
-    // The trigger 'handle_new_user' will create the profile, let's update it with phone if needed
+    // Update profile with phone if needed
     if (phone) {
       await supabaseAdmin.from('profiles').update({ phone }).eq('id', newUser.user.id);
+    }
+
+    // Assign role if provided
+    if (role && ['admin', 'moderator', 'user'].includes(role)) {
+      const { error: roleError } = await supabaseAdmin.from('user_roles').insert({
+        user_id: newUser.user.id,
+        role,
+      });
+      if (roleError) console.error('Failed to assign role:', roleError);
     }
 
     return new Response(JSON.stringify({ success: true, user: newUser.user }), {
