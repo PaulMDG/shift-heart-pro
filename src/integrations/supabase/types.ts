@@ -188,7 +188,11 @@ export type Database = {
           admin_notes: string
           caregiver_id: string | null
           client_id: string
+          clock_in_lat: number | null
+          clock_in_lng: number | null
           clock_in_time: string | null
+          clock_out_lat: number | null
+          clock_out_lng: number | null
           clock_out_notes: string | null
           clock_out_time: string | null
           created_at: string
@@ -203,7 +207,11 @@ export type Database = {
           admin_notes?: string
           caregiver_id?: string | null
           client_id: string
+          clock_in_lat?: number | null
+          clock_in_lng?: number | null
           clock_in_time?: string | null
+          clock_out_lat?: number | null
+          clock_out_lng?: number | null
           clock_out_notes?: string | null
           clock_out_time?: string | null
           created_at?: string
@@ -218,7 +226,11 @@ export type Database = {
           admin_notes?: string
           caregiver_id?: string | null
           client_id?: string
+          clock_in_lat?: number | null
+          clock_in_lng?: number | null
           clock_in_time?: string | null
+          clock_out_lat?: number | null
+          clock_out_lng?: number | null
           clock_out_notes?: string | null
           clock_out_time?: string | null
           created_at?: string

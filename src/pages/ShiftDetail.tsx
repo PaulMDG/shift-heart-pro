@@ -16,6 +16,7 @@ const ShiftDetail = () => {
   const [showConfirm, setShowConfirm] = useState(false);
   const [verifyingLocation, setVerifyingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
+  const [lastVerifiedPosition, setLastVerifiedPosition] = useState<{lat: number; lng: number} | null>(null);
 
   if (isLoading) {
     return (
@@ -38,12 +39,13 @@ const ShiftDetail = () => {
   const status = shift.status;
   const clientHasLocation = shift.client.lat != null && shift.client.lng != null;
 
+
   const verifyLocationAndProceed = async (onSuccess: () => void) => {
     setLocationError(null);
 
     if (!clientHasLocation) {
-      // If client has no GPS set, allow through with warning
       toast.warning("Client location not configured. Proceeding without GPS verification.");
+      setLastVerifiedPosition(null);
       onSuccess();
       return;
     }
@@ -58,6 +60,7 @@ const ShiftDetail = () => {
 
       if (distance <= MAX_DISTANCE_METERS) {
         toast.success(`Location verified (${Math.round(distance)}m from client)`);
+        setLastVerifiedPosition(pos);
         onSuccess();
       } else {
         const distanceText = distance >= 1000
@@ -85,6 +88,7 @@ const ShiftDetail = () => {
         id: shift.id,
         status: "in_progress",
         clock_in_time: new Date().toISOString(),
+        ...(lastVerifiedPosition && { clock_in_lat: lastVerifiedPosition.lat, clock_in_lng: lastVerifiedPosition.lng }),
       });
       setShowConfirm(false);
     });
@@ -103,6 +107,7 @@ const ShiftDetail = () => {
       status: "completed",
       clock_out_time: new Date().toISOString(),
       clock_out_notes: notes,
+      ...(lastVerifiedPosition && { clock_out_lat: lastVerifiedPosition.lat, clock_out_lng: lastVerifiedPosition.lng }),
     });
     setShowClockOut(false);
   };
