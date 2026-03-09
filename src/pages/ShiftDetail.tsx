@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, User } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, MapPin, Loader2 } from "lucide-react";
 import { useShift, useUpdateShiftStatus } from "@/hooks/useShifts";
+import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/components/ui/sonner";
 
 const ShiftDetail = () => {
   const { id } = useParams();
@@ -12,6 +14,8 @@ const ShiftDetail = () => {
   const updateStatus = useUpdateShiftStatus();
   const [showClockOut, setShowClockOut] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [verifyingLocation, setVerifyingLocation] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
 
   if (isLoading) {
     return (
@@ -32,15 +36,74 @@ const ShiftDetail = () => {
   }
 
   const status = shift.status;
+  const clientHasLocation = shift.client.lat != null && shift.client.lng != null;
 
-  const handleClockIn = () => setShowConfirm(true);
-  const confirmClockIn = () => {
-    updateStatus.mutate({ id: shift.id, status: "in_progress", clock_in_time: new Date().toISOString() });
-    setShowConfirm(false);
+  const verifyLocationAndProceed = async (onSuccess: () => void) => {
+    setLocationError(null);
+
+    if (!clientHasLocation) {
+      // If client has no GPS set, allow through with warning
+      toast.warning("Client location not configured. Proceeding without GPS verification.");
+      onSuccess();
+      return;
+    }
+
+    setVerifyingLocation(true);
+    try {
+      const pos = await getCurrentPosition();
+      const distance = getDistanceMeters(pos, {
+        lat: shift.client.lat!,
+        lng: shift.client.lng!,
+      });
+
+      if (distance <= MAX_DISTANCE_METERS) {
+        toast.success(`Location verified (${Math.round(distance)}m from client)`);
+        onSuccess();
+      } else {
+        const distanceText = distance >= 1000
+          ? `${(distance / 1000).toFixed(1)}km`
+          : `${Math.round(distance)}m`;
+        setLocationError(
+          `You are ${distanceText} away from ${shift.client.name}'s location. You must be within ${MAX_DISTANCE_METERS}m to clock in/out. Please travel to the client's address: ${shift.client.address}`
+        );
+      }
+    } catch (err: any) {
+      setLocationError(err.message);
+    } finally {
+      setVerifyingLocation(false);
+    }
   };
-  const handleClockOut = () => setShowClockOut(true);
+
+  const handleClockIn = () => {
+    setLocationError(null);
+    setShowConfirm(true);
+  };
+
+  const confirmClockIn = () => {
+    verifyLocationAndProceed(() => {
+      updateStatus.mutate({
+        id: shift.id,
+        status: "in_progress",
+        clock_in_time: new Date().toISOString(),
+      });
+      setShowConfirm(false);
+    });
+  };
+
+  const handleClockOut = () => {
+    setLocationError(null);
+    verifyLocationAndProceed(() => {
+      setShowClockOut(true);
+    });
+  };
+
   const handleClockOutSubmit = (notes?: string) => {
-    updateStatus.mutate({ id: shift.id, status: "completed", clock_out_time: new Date().toISOString(), clock_out_notes: notes });
+    updateStatus.mutate({
+      id: shift.id,
+      status: "completed",
+      clock_out_time: new Date().toISOString(),
+      clock_out_notes: notes,
+    });
     setShowClockOut(false);
   };
 
@@ -84,13 +147,38 @@ const ShiftDetail = () => {
           <p className="text-sm text-muted-foreground leading-relaxed">{shift.admin_notes}</p>
         </div>
 
+        {/* Location error banner */}
+        {locationError && (
+          <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-4 space-y-2">
+            <div className="flex items-start gap-2">
+              <MapPin className="w-5 h-5 text-destructive shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-destructive">Location Verification Failed</p>
+                <p className="text-xs text-destructive/80 mt-1 leading-relaxed">{locationError}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Verifying location spinner */}
+        {verifyingLocation && (
+          <div className="flex items-center justify-center gap-2 py-3">
+            <Loader2 className="w-5 h-5 animate-spin text-primary" />
+            <span className="text-sm text-muted-foreground">Verifying your location…</span>
+          </div>
+        )}
+
         {status !== "completed" && status !== "missed" && (
           <button
             onClick={status === "not_started" ? handleClockIn : handleClockOut}
-            disabled={updateStatus.isPending}
+            disabled={updateStatus.isPending || verifyingLocation}
             className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-lg font-bold tracking-wide mt-4 active:scale-[0.98] transition-transform disabled:opacity-50"
           >
-            {status === "not_started" ? "CLOCK IN" : "CLOCK OUT"}
+            {verifyingLocation ? (
+              <span className="flex items-center justify-center gap-2">
+                <Loader2 className="w-5 h-5 animate-spin" /> Verifying Location…
+              </span>
+            ) : status === "not_started" ? "CLOCK IN" : "CLOCK OUT"}
           </button>
         )}
 
@@ -120,20 +208,33 @@ const ShiftDetail = () => {
             <div className="w-10 h-1 bg-muted rounded-full mx-auto mb-5" />
             <div className="text-center mb-6">
               <div className="w-14 h-14 gradient-primary rounded-full flex items-center justify-center mx-auto mb-3">
-                <User className="w-7 h-7 text-primary-foreground" />
+                <MapPin className="w-7 h-7 text-primary-foreground" />
               </div>
               <h3 className="text-lg font-bold text-foreground">Confirm Clock In</h3>
               <p className="text-sm text-muted-foreground mt-2">
                 You are clocking in for <strong>{shift.client.name}</strong>
               </p>
-              <p className="text-xs text-muted-foreground mt-1">📍 GPS location will be captured</p>
+              <p className="text-xs text-muted-foreground mt-1">📍 Your GPS location will be verified against the client's address</p>
+              {locationError && (
+                <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mt-3 text-left">
+                  <p className="text-xs text-destructive leading-relaxed">{locationError}</p>
+                </div>
+              )}
             </div>
             <div className="flex gap-3">
-              <button onClick={() => setShowConfirm(false)} className="flex-1 py-3.5 rounded-xl border border-border text-sm font-semibold text-foreground">
+              <button onClick={() => { setShowConfirm(false); setLocationError(null); }} className="flex-1 py-3.5 rounded-xl border border-border text-sm font-semibold text-foreground">
                 Cancel
               </button>
-              <button onClick={confirmClockIn} className="flex-1 py-3.5 rounded-xl gradient-primary text-primary-foreground text-sm font-bold">
-                Confirm
+              <button
+                onClick={confirmClockIn}
+                disabled={verifyingLocation}
+                className="flex-1 py-3.5 rounded-xl gradient-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+              >
+                {verifyingLocation ? (
+                  <span className="flex items-center justify-center gap-1">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Verifying…
+                  </span>
+                ) : "Confirm"}
               </button>
             </div>
           </div>
