@@ -1,6 +1,8 @@
 import { useState } from "react";
 import MobileLayout from "@/components/layout/MobileLayout";
-import { useAllShifts, useAllClients, useAllCaregivers, useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap } from "@/hooks/useAdmin";
+import { useAllShifts, useAllClients, useAllCaregivers, useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap, useUpdateUserRole } from "@/hooks/useAdmin";
+import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
@@ -17,6 +19,7 @@ const AdminDashboard = () => {
   const { data: swapRequests = [] } = useAllSwapRequests();
   const approveSwap = useAdminApproveSwap();
   const declineSwap = useAdminDeclineSwap();
+  const updateRole = useUpdateUserRole();
   const navigate = useNavigate();
 
   // Real-time auto-refresh
@@ -193,10 +196,37 @@ const AdminDashboard = () => {
                       {(cg.full_name || "?")[0].toUpperCase()}
                     </span>
                   </div>
-                  <div>
-                    <h4 className="font-semibold text-card-foreground text-sm">{cg.full_name || "Unnamed"}</h4>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <h4 className="font-semibold text-card-foreground text-sm">{cg.full_name || "Unnamed"}</h4>
+                      {cg.role && (
+                        <Badge variant={cg.role === "admin" ? "destructive" : cg.role === "moderator" ? "default" : "secondary"} className="text-[10px]">
+                          {cg.role}
+                        </Badge>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">{cg.phone || "No phone"}</p>
                   </div>
+                  <Select
+                    value={cg.role || "user"}
+                    onValueChange={async (newRole) => {
+                      try {
+                        await updateRole.mutateAsync({ targetUserId: cg.id, role: newRole });
+                        toast.success(`Role updated to ${newRole}`);
+                      } catch (e: any) {
+                        toast.error(e.message);
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="w-[110px] h-8 text-xs shrink-0">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="user">Caregiver</SelectItem>
+                      <SelectItem value="moderator">Moderator</SelectItem>
+                      <SelectItem value="admin">Admin</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               ))
             ) : (
