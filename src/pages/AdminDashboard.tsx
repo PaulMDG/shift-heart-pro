@@ -182,6 +182,9 @@ const AdminDashboard = () => {
 
         {activeTab === "Caregivers" && (
           <div className="space-y-3">
+            <button onClick={() => navigate("/admin/caregivers/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
+              + Add New Staff
+            </button>
             {caregivers.length > 0 ? (
               caregivers.map((cg: any) => (
                 <div key={cg.id} className="bg-card rounded-2xl p-4 border border-border flex items-center gap-3">

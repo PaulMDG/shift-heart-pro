@@ -44,6 +44,13 @@ export function useRealtimeSync(
           queryClient.invalidateQueries({ queryKey: ["notifications"] });
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "profiles" },
+        () => {
+          queryClient.invalidateQueries({ queryKey: ["admin-caregivers"] });
+        }
+      )
       .subscribe();
 
     return () => {
