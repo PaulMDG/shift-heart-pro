@@ -7,10 +7,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
 const menuItems = [
-  { icon: User, label: "Personal Information", description: "Name, email, phone" },
-  { icon: Shield, label: "Certifications", description: "Licenses & background check" },
-  { icon: FileText, label: "Timesheets", description: "View past timesheets" },
-  { icon: Star, label: "Performance", description: "Ratings & feedback" },
+  { icon: User, label: "Personal Information", description: "Name, email, phone", path: "/profile/personal" },
+  { icon: Shield, label: "Certifications", description: "Licenses & background check", path: "/profile/certifications" },
+  { icon: FileText, label: "Timesheets", description: "View past timesheets", path: "/profile/timesheets" },
+  { icon: Star, label: "Performance", description: "Ratings & feedback", path: "/profile/performance" },
 ];
 
 const ProfilePage = () => {
@@ -73,6 +73,7 @@ const ProfilePage = () => {
           {menuItems.map((item, i) => (
             <button
               key={item.label}
+              onClick={() => navigate(item.path)}
               className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/50 transition-colors ${
                 i < menuItems.length - 1 ? "border-b border-border" : ""
               }`}

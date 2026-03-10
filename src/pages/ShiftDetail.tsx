@@ -46,9 +46,7 @@ const ShiftDetail = () => {
     setLocationError(null);
 
     if (!clientHasLocation) {
-      toast.warning("Client location not configured. Proceeding without GPS verification.");
-      setLastVerifiedPosition(null);
-      onSuccess();
+      setLocationError("Client location is not configured. GPS verification is mandatory — please contact your administrator to set the client's address coordinates.");
       return;
     }
 
