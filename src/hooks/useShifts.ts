@@ -13,6 +13,11 @@ export interface ShiftWithClient {
   clock_in_time: string | null;
   clock_out_time: string | null;
   clock_out_notes: string | null;
+  clock_in_lat: number | null;
+  clock_in_lng: number | null;
+  clock_out_lat: number | null;
+  clock_out_lng: number | null;
+  clock_in_selfie_url: string | null;
   client: {
     id: string;
     name: string;
