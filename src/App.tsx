@@ -19,6 +19,7 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminCreateShift from "./pages/AdminCreateShift";
 import AdminCreateClient from "./pages/AdminCreateClient";
 import AdminCreateCaregiver from "./pages/AdminCreateCaregiver";
+import AdminShiftDetail from "./pages/AdminShiftDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
