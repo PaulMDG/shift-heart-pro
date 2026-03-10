@@ -1,8 +1,63 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Camera, Clock, User, Navigation } from "lucide-react";
+import { ArrowLeft, MapPin, Camera, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import { useShift } from "@/hooks/useShifts";
+import { getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
 import { Skeleton } from "@/components/ui/skeleton";
 import MobileLayout from "@/components/layout/MobileLayout";
+
+function formatDistance(meters: number) {
+  return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
+}
+
+function DistanceBadge({ distance }: { distance: number }) {
+  const isSuspicious = distance > MAX_DISTANCE_METERS;
+  return (
+    <div className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-full ${
+      isSuspicious
+        ? "bg-destructive/15 text-destructive"
+        : "bg-success/15 text-success"
+    }`}>
+      {isSuspicious ? (
+        <AlertTriangle className="w-3.5 h-3.5" />
+      ) : (
+        <CheckCircle2 className="w-3.5 h-3.5" />
+      )}
+      {formatDistance(distance)} from client
+      {isSuspicious && " — Suspicious"}
+    </div>
+  );
+}
+
+function exportShiftCSV(shift: any) {
+  const rows = [
+    ["Field", "Value"],
+    ["Shift ID", shift.id],
+    ["Client", shift.client.name],
+    ["Address", shift.client.address],
+    ["Date", shift.date],
+    ["Scheduled", `${shift.start_time} – ${shift.end_time}`],
+    ["Status", shift.status],
+    ["Clock-In Time", shift.clock_in_time || "N/A"],
+    ["Clock-In Lat", shift.clock_in_lat ?? "N/A"],
+    ["Clock-In Lng", shift.clock_in_lng ?? "N/A"],
+    ["Clock-Out Time", shift.clock_out_time || "N/A"],
+    ["Clock-Out Lat", shift.clock_out_lat ?? "N/A"],
+    ["Clock-Out Lng", shift.clock_out_lng ?? "N/A"],
+    ["Client Lat", shift.client.lat ?? "N/A"],
+    ["Client Lng", shift.client.lng ?? "N/A"],
+    ["Selfie URL", shift.clock_in_selfie_url || "N/A"],
+    ["Clock-Out Notes", shift.clock_out_notes || "N/A"],
+    ["Admin Notes", shift.admin_notes || "N/A"],
+  ];
+  const csv = rows.map(r => r.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `shift-audit-${shift.id.slice(0, 8)}-${shift.date}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 const AdminShiftDetail = () => {
   const { id } = useParams();
@@ -36,6 +91,20 @@ const AdminShiftDetail = () => {
   const hasClientGPS = shift.client.lat != null && shift.client.lng != null;
   const hasSelfie = !!shift.clock_in_selfie_url;
 
+  const clockInDistance = hasClockInGPS && hasClientGPS
+    ? getDistanceMeters(
+        { lat: shift.clock_in_lat!, lng: shift.clock_in_lng! },
+        { lat: shift.client.lat!, lng: shift.client.lng! }
+      )
+    : null;
+
+  const clockOutDistance = hasClockOutGPS && hasClientGPS
+    ? getDistanceMeters(
+        { lat: shift.clock_out_lat!, lng: shift.clock_out_lng! },
+        { lat: shift.client.lat!, lng: shift.client.lng! }
+      )
+    : null;
+
   const renderMapEmbed = (lat: number, lng: number, label: string) => (
     <iframe
       title={label}
@@ -59,12 +128,21 @@ const AdminShiftDetail = () => {
   return (
     <MobileLayout>
       <div className="px-5 py-5 space-y-5">
-        <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-primary font-medium flex items-center gap-1">
-            <ArrowLeft className="w-4 h-4" />
-            Back
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="text-primary font-medium flex items-center gap-1">
+              <ArrowLeft className="w-4 h-4" />
+              Back
+            </button>
+            <h2 className="text-lg font-bold text-foreground">Shift Audit</h2>
+          </div>
+          <button
+            onClick={() => exportShiftCSV(shift)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted text-muted-foreground text-xs font-semibold hover:bg-accent transition-colors"
+          >
+            <Download className="w-3.5 h-3.5" />
+            CSV
           </button>
-          <h2 className="text-lg font-bold text-foreground">Shift Audit</h2>
         </div>
 
         {/* Shift Info */}
@@ -116,6 +194,7 @@ const AdminShiftDetail = () => {
           <div className="p-4 space-y-3">
             {hasClockInGPS ? (
               <>
+                {clockInDistance != null && <DistanceBadge distance={clockInDistance} />}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <MapPin className="w-3.5 h-3.5 text-success" />
                   <span>Lat: {shift.clock_in_lat!.toFixed(6)}, Lng: {shift.clock_in_lng!.toFixed(6)}</span>
@@ -143,6 +222,7 @@ const AdminShiftDetail = () => {
           <div className="p-4 space-y-3">
             {hasClockOutGPS ? (
               <>
+                {clockOutDistance != null && <DistanceBadge distance={clockOutDistance} />}
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <MapPin className="w-3.5 h-3.5 text-destructive" />
                   <span>Lat: {shift.clock_out_lat!.toFixed(6)}, Lng: {shift.clock_out_lng!.toFixed(6)}</span>
