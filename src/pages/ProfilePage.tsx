@@ -73,6 +73,7 @@ const ProfilePage = () => {
           {menuItems.map((item, i) => (
             <button
               key={item.label}
+              onClick={() => navigate(item.path)}
               className={`w-full flex items-center gap-3 px-4 py-3.5 text-left hover:bg-muted/50 transition-colors ${
                 i < menuItems.length - 1 ? "border-b border-border" : ""
               }`}

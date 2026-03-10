@@ -45,6 +45,10 @@ const App = () => (
             <Route path="/messages/new" element={<ProtectedRoute><NewChatPage /></ProtectedRoute>} />
             <Route path="/messages/:userId" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/profile/personal" element={<ProtectedRoute><ProfilePersonalInfo /></ProtectedRoute>} />
+            <Route path="/profile/certifications" element={<ProtectedRoute><ProfileCertifications /></ProtectedRoute>} />
+            <Route path="/profile/timesheets" element={<ProtectedRoute><ProfileTimesheets /></ProtectedRoute>} />
+            <Route path="/profile/performance" element={<ProtectedRoute><ProfilePerformance /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
             <Route path="/admin/shifts/new" element={<ProtectedRoute><AdminCreateShift /></ProtectedRoute>} />
