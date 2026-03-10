@@ -249,9 +249,13 @@ const statusStyles: Record<string, { label: string; className: string }> = {
 };
 
 function ShiftRow({ shift }: { shift: any }) {
+  const navigate = useNavigate();
   const st = statusStyles[shift.status] ?? statusStyles.not_started;
   return (
-    <div className="bg-card rounded-2xl p-4 border border-border">
+    <div
+      onClick={() => navigate(`/admin/shifts/${shift.id}`)}
+      className="bg-card rounded-2xl p-4 border border-border cursor-pointer hover:border-primary/30 transition-colors"
+    >
       <div className="flex items-start justify-between mb-1">
         <h4 className="font-semibold text-card-foreground text-sm">{shift.client?.name}</h4>
         <span className={`text-[10px] px-2 py-0.5 rounded-full ${st.className}`}>{st.label}</span>
