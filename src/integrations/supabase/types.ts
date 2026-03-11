@@ -14,6 +14,68 @@ export type Database = {
   }
   public: {
     Tables: {
+      billing_rates: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          created_by: string
+          effective_from: string
+          hourly_rate: number
+          id: string
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          created_by: string
+          effective_from?: string
+          hourly_rate?: number
+          id?: string
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          created_by?: string
+          effective_from?: string
+          hourly_rate?: number
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "billing_rates_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certifications: {
+        Row: {
+          created_at: string
+          expiry_date: string | null
+          id: string
+          issuer: string
+          name: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          issuer?: string
+          name: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expiry_date?: string | null
+          id?: string
+          issuer?: string
+          name?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string
