@@ -24,6 +24,7 @@ import AdminCreateShift from "./pages/AdminCreateShift";
 import AdminCreateClient from "./pages/AdminCreateClient";
 import AdminCreateCaregiver from "./pages/AdminCreateCaregiver";
 import AdminShiftDetail from "./pages/AdminShiftDetail";
+import AdminBillingRates from "./pages/AdminBillingRates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -55,6 +56,7 @@ const App = () => (
             <Route path="/admin/shifts/:id" element={<ProtectedRoute><AdminShiftDetail /></ProtectedRoute>} />
             <Route path="/admin/clients/new" element={<ProtectedRoute><AdminCreateClient /></ProtectedRoute>} />
             <Route path="/admin/caregivers/new" element={<ProtectedRoute><AdminCreateCaregiver /></ProtectedRoute>} />
+            <Route path="/admin/billing" element={<ProtectedRoute><AdminBillingRates /></ProtectedRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
