@@ -9,6 +9,8 @@ import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 
+import { DollarSign } from "lucide-react";
+
 const tabs = ["Overview", "Swaps", "Shifts", "Clients", "Caregivers"] as const;
 
 const AdminDashboard = () => {
