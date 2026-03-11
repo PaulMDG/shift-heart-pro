@@ -68,12 +68,20 @@ const AdminDashboard = () => {
             <h2 className="text-xl font-bold text-foreground">Admin Dashboard</h2>
             <p className="text-xs text-muted-foreground mt-0.5">Manage shifts, clients & staff</p>
           </div>
-          <button
-            onClick={() => navigate("/admin/billing")}
-            className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
-          >
-            <DollarSign className="w-4 h-4 text-accent-foreground" />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => navigate("/admin/timesheets")}
+              className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+            >
+              <FileText className="w-4 h-4 text-accent-foreground" />
+            </button>
+            <button
+              onClick={() => navigate("/admin/billing")}
+              className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+            >
+              <DollarSign className="w-4 h-4 text-accent-foreground" />
+            </button>
+          </div>
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1">
