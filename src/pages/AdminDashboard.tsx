@@ -63,9 +63,17 @@ const AdminDashboard = () => {
   return (
     <MobileLayout>
       <div className="px-5 py-5 space-y-5">
-        <div>
-          <h2 className="text-xl font-bold text-foreground">Admin Dashboard</h2>
-          <p className="text-xs text-muted-foreground mt-0.5">Manage shifts, clients & staff</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-foreground">Admin Dashboard</h2>
+            <p className="text-xs text-muted-foreground mt-0.5">Manage shifts, clients & staff</p>
+          </div>
+          <button
+            onClick={() => navigate("/admin/billing")}
+            className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+          >
+            <DollarSign className="w-4 h-4 text-accent-foreground" />
+          </button>
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1">
