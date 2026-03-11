@@ -264,6 +264,7 @@ export type Database = {
           id: string
           start_time: string
           status: string
+          timesheet_status: string
           updated_at: string
         }
         Insert: {
@@ -284,6 +285,7 @@ export type Database = {
           id?: string
           start_time: string
           status?: string
+          timesheet_status?: string
           updated_at?: string
         }
         Update: {
@@ -304,6 +306,7 @@ export type Database = {
           id?: string
           start_time?: string
           status?: string
+          timesheet_status?: string
           updated_at?: string
         }
         Relationships: [
