@@ -24,6 +24,7 @@ import AdminCreateShift from "./pages/AdminCreateShift";
 import AdminCreateClient from "./pages/AdminCreateClient";
 import AdminCreateCaregiver from "./pages/AdminCreateCaregiver";
 import AdminShiftDetail from "./pages/AdminShiftDetail";
+import AdminBillingRates from "./pages/AdminBillingRates";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
