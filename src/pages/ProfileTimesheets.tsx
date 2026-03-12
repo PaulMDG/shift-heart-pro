@@ -1,3 +1,4 @@
+import { useState, useMemo } from "react";
 import { ArrowLeft, Clock, Calendar, DollarSign, FileDown } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useShifts } from "@/hooks/useShifts";
@@ -5,14 +6,31 @@ import { useBillingRates, getApplicableRate } from "@/hooks/useBillingRates";
 import { useProfile } from "@/hooks/useProfile";
 import { Skeleton } from "@/components/ui/skeleton";
 import MobileLayout from "@/components/layout/MobileLayout";
-import { format, parseISO, differenceInMinutes } from "date-fns";
+import { format, parseISO, differenceInMinutes, startOfWeek, startOfMonth, isAfter, isBefore, addWeeks, addMonths } from "date-fns";
 import { toast } from "@/components/ui/sonner";
 
-function generateInvoicePDF(
-  shifts: any[],
-  rates: any[],
-  caregiverName: string
-) {
+const periods = ["all", "weekly", "biweekly", "monthly"] as const;
+type Period = typeof periods[number];
+
+function getPeriodRange(period: Period): { start: Date; end: Date } | null {
+  if (period === "all") return null;
+  const now = new Date();
+  if (period === "weekly") {
+    const start = startOfWeek(now, { weekStartsOn: 1 });
+    return { start, end: addWeeks(start, 1) };
+  }
+  if (period === "biweekly") {
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekNum = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) / (7 * 86400000));
+    const biweekStart = weekNum % 2 === 0 ? weekStart : addWeeks(weekStart, -1);
+    return { start: biweekStart, end: addWeeks(biweekStart, 2) };
+  }
+  // monthly
+  const start = startOfMonth(now);
+  return { start, end: addMonths(start, 1) };
+}
+
+function generateInvoicePDF(shifts: any[], rates: any[], caregiverName: string, periodLabel: string) {
   import("jspdf").then(({ jsPDF }) => {
     import("jspdf-autotable").then((autoTableModule) => {
       const doc = new jsPDF();
@@ -23,8 +41,9 @@ function generateInvoicePDF(
 
       doc.setFontSize(10);
       doc.text(`Caregiver: ${caregiverName}`, 14, 32);
-      doc.text(`Generated: ${format(new Date(), "MMM d, yyyy")}`, 14, 38);
-      doc.text(`Shifts: ${shifts.length}`, 14, 44);
+      doc.text(`Period: ${periodLabel}`, 14, 38);
+      doc.text(`Generated: ${format(new Date(), "MMM d, yyyy")}`, 14, 44);
+      doc.text(`Shifts: ${shifts.length}`, 14, 50);
 
       const rows = shifts.map((s) => {
         const mins = differenceInMinutes(new Date(s.clock_out_time!), new Date(s.clock_in_time!));
@@ -48,7 +67,7 @@ function generateInvoicePDF(
       }, 0);
 
       autoTable(doc, {
-        startY: 52,
+        startY: 56,
         head: [["Date", "Client", "Time", "Hours", "Rate", "Earned"]],
         body: rows,
         foot: [["", "", "", "", "Total:", `$${totalEarnings.toFixed(2)}`]],
@@ -68,27 +87,36 @@ const ProfileTimesheets = () => {
   const { data: shifts, isLoading } = useShifts();
   const { data: rates = [] } = useBillingRates();
   const { data: profile } = useProfile();
+  const [period, setPeriod] = useState<Period>("all");
 
-  // Only show approved timesheets in earnings
-  const approved = shifts?.filter(
-    (s) => s.status === "completed" && s.clock_in_time && s.clock_out_time && (s as any).timesheet_status === "approved"
-  ) ?? [];
+  const range = useMemo(() => getPeriodRange(period), [period]);
 
-  // Show all completed for display, but mark status
-  const completed = shifts?.filter(
-    (s) => s.status === "completed" && s.clock_in_time && s.clock_out_time
-  ) ?? [];
+  const periodLabel = useMemo(() => {
+    if (!range) return "All Time";
+    return `${format(range.start, "MMM d")} – ${format(range.end, "MMM d, yyyy")}`;
+  }, [range]);
+
+  const completed = useMemo(() => {
+    const all = shifts?.filter(
+      (s) => s.status === "completed" && s.clock_in_time && s.clock_out_time
+    ) ?? [];
+    if (!range) return all;
+    return all.filter((s) => {
+      const d = parseISO(s.date);
+      return !isBefore(d, range.start) && isBefore(d, range.end);
+    });
+  }, [shifts, range]);
+
+  const approved = completed.filter((s) => (s as any).timesheet_status === "approved");
 
   const totalMinutes = approved.reduce((sum, s) => {
-    if (!s.clock_in_time || !s.clock_out_time) return sum;
-    return sum + differenceInMinutes(new Date(s.clock_out_time), new Date(s.clock_in_time));
+    return sum + differenceInMinutes(new Date(s.clock_out_time!), new Date(s.clock_in_time!));
   }, 0);
 
   const totalHours = (totalMinutes / 60).toFixed(1);
 
   const totalEarnings = approved.reduce((sum, s) => {
-    if (!s.clock_in_time || !s.clock_out_time) return sum;
-    const mins = differenceInMinutes(new Date(s.clock_out_time), new Date(s.clock_in_time));
+    const mins = differenceInMinutes(new Date(s.clock_out_time!), new Date(s.clock_in_time!));
     const rate = getApplicableRate(rates, s.client_id, s.date);
     return sum + (mins / 60) * rate;
   }, 0);
@@ -116,7 +144,7 @@ const ProfileTimesheets = () => {
           <h2 className="text-xl font-bold text-foreground">Timesheets & Invoices</h2>
           {approved.length > 0 && (
             <button
-              onClick={() => generateInvoicePDF(approved, rates, profile?.full_name || "Caregiver")}
+              onClick={() => generateInvoicePDF(approved, rates, profile?.full_name || "Caregiver", periodLabel)}
               className="flex items-center gap-1.5 px-3 py-2 rounded-xl gradient-primary text-primary-foreground text-xs font-semibold"
             >
               <FileDown className="w-3.5 h-3.5" />
@@ -124,6 +152,24 @@ const ProfileTimesheets = () => {
             </button>
           )}
         </div>
+
+        {/* Pay period filter */}
+        <div className="flex gap-2 mb-4 overflow-x-auto pb-1">
+          {periods.map((p) => (
+            <button
+              key={p}
+              onClick={() => setPeriod(p)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold capitalize whitespace-nowrap transition-colors ${
+                period === p ? "gradient-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {p === "all" ? "All Time" : p}
+            </button>
+          ))}
+        </div>
+        {range && (
+          <p className="text-xs text-muted-foreground mb-4">{periodLabel}</p>
+        )}
 
         <div className="grid grid-cols-2 gap-3 mb-6">
           <div className="bg-card rounded-2xl p-4 shadow-card text-center">
@@ -143,7 +189,7 @@ const ProfileTimesheets = () => {
         ) : completed.length === 0 ? (
           <div className="text-center py-10">
             <Clock className="w-10 h-10 text-muted-foreground/40 mx-auto mb-2" />
-            <p className="text-sm text-muted-foreground">No completed shifts yet</p>
+            <p className="text-sm text-muted-foreground">No completed shifts {period !== "all" ? "in this period" : "yet"}</p>
           </div>
         ) : (
           <div className="space-y-3">

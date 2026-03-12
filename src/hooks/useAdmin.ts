@@ -144,7 +144,7 @@ export function useAdminDeclineSwap() {
     mutationFn: async (swapId: string) => {
       const { error } = await supabase
         .from("shift_swap_requests")
-        .update({ status: "declined" })
+        .update({ status: "rejected" })
         .eq("id", swapId);
       if (error) throw error;
     },
