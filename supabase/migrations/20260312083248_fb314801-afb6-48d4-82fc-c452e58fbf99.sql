@@ -1,0 +1,2 @@
+ALTER TABLE public.shift_swap_requests DROP CONSTRAINT shift_swap_requests_status_check;
+ALTER TABLE public.shift_swap_requests ADD CONSTRAINT shift_swap_requests_status_check CHECK (status IN ('pending', 'approved', 'rejected', 'cancelled', 'accepted', 'declined'));
