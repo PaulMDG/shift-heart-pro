@@ -97,10 +97,8 @@ const ShiftDetail = () => {
 
     let selfieUrl: string | undefined;
     if (!uploadError) {
-      const { data: urlData } = supabase.storage
-        .from("verification-selfies")
-        .getPublicUrl(fileName);
-      selfieUrl = urlData.publicUrl;
+      // Store the file path (not public URL) since bucket is private
+      selfieUrl = fileName;
     } else {
       toast.error("Selfie upload failed, clocking in without selfie.");
     }
