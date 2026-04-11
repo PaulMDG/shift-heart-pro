@@ -8,7 +8,7 @@ const AppHeader = () => {
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
-    <header className="sticky top-0 z-40 gradient-header">
+    <header className="sticky top-0 z-40 gradient-header shadow-md">
       <div className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
         <div>
           <h1 className="text-lg font-bold text-primary-foreground tracking-tight">
