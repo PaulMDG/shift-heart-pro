@@ -76,7 +76,7 @@ export function useUpdateShiftStatus() {
       clock_out_lng?: number;
       clock_in_selfie_url?: string;
     }) => {
-      const updates: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
+      const updates: { status: string; updated_at: string; clock_in_time?: string; clock_out_time?: string; clock_out_notes?: string; clock_in_lat?: number; clock_in_lng?: number; clock_out_lat?: number; clock_out_lng?: number; clock_in_selfie_url?: string } = { status, updated_at: new Date().toISOString() };
       if (clock_in_time) updates.clock_in_time = clock_in_time;
       if (clock_out_time) updates.clock_out_time = clock_out_time;
       if (clock_out_notes !== undefined) updates.clock_out_notes = clock_out_notes;

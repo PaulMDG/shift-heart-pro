@@ -206,7 +206,7 @@ export function useCreateClient() {
 export function useUpdateClient() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; [key: string]: any }) => {
+    mutationFn: async ({ id, ...updates }: { id: string; name?: string; address?: string; care_type?: string; care_plan_summary?: string; emergency_contact?: string; emergency_phone?: string; lat?: number | null; lng?: number | null }) => {
       const { error } = await supabase.from("clients").update(updates).eq("id", id);
       if (error) throw error;
     },
