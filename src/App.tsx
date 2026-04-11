@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import AdminRoute from "@/components/AdminRoute";
 import Index from "./pages/Index";
 import ShiftsPage from "./pages/ShiftsPage";
 import ShiftDetail from "./pages/ShiftDetail";
@@ -52,13 +53,13 @@ const App = () => (
             <Route path="/profile/timesheets" element={<ProtectedRoute><ProfileTimesheets /></ProtectedRoute>} />
             <Route path="/profile/performance" element={<ProtectedRoute><ProfilePerformance /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
-            <Route path="/admin" element={<ProtectedRoute><AdminDashboard /></ProtectedRoute>} />
-            <Route path="/admin/shifts/new" element={<ProtectedRoute><AdminCreateShift /></ProtectedRoute>} />
-            <Route path="/admin/shifts/:id" element={<ProtectedRoute><AdminShiftDetail /></ProtectedRoute>} />
-            <Route path="/admin/clients/new" element={<ProtectedRoute><AdminCreateClient /></ProtectedRoute>} />
-            <Route path="/admin/caregivers/new" element={<ProtectedRoute><AdminCreateCaregiver /></ProtectedRoute>} />
-            <Route path="/admin/billing" element={<ProtectedRoute><AdminBillingRates /></ProtectedRoute>} />
-            <Route path="/admin/timesheets" element={<ProtectedRoute><AdminTimesheets /></ProtectedRoute>} />
+            <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
+            <Route path="/admin/shifts/new" element={<AdminRoute><AdminCreateShift /></AdminRoute>} />
+            <Route path="/admin/shifts/:id" element={<AdminRoute><AdminShiftDetail /></AdminRoute>} />
+            <Route path="/admin/clients/new" element={<AdminRoute><AdminCreateClient /></AdminRoute>} />
+            <Route path="/admin/caregivers/new" element={<AdminRoute><AdminCreateCaregiver /></AdminRoute>} />
+            <Route path="/admin/billing" element={<AdminRoute><AdminBillingRates /></AdminRoute>} />
+            <Route path="/admin/timesheets" element={<AdminRoute><AdminTimesheets /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
