@@ -2,6 +2,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, MapPin, Camera, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download } from "lucide-react";
 import { useShift } from "@/hooks/useShifts";
 import { getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
+import { useSignedSelfieUrl } from "@/hooks/useSignedSelfieUrl";
 import { Skeleton } from "@/components/ui/skeleton";
 import MobileLayout from "@/components/layout/MobileLayout";
 
