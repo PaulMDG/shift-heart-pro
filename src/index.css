@@ -55,6 +55,19 @@
     --sidebar-ring: 18 80% 50%;
   }
 
+  .admin-theme {
+    --primary: 152 60% 36%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 152 40% 93%;
+    --accent-foreground: 152 60% 30%;
+    --ring: 152 60% 36%;
+    --sidebar-primary: 152 60% 36%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 152 40% 93%;
+    --sidebar-accent-foreground: 152 60% 30%;
+    --sidebar-ring: 152 60% 36%;
+  }
+
   .dark {
     --background: 220 20% 8%;
     --foreground: 0 0% 95%;
@@ -99,6 +112,18 @@
 
 @layer utilities {
   .gradient-primary {
-    background: linear-gradient(135deg, hsl(18 80% 48%), hsl(24 85% 52%));
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.85));
+  }
+
+  .admin-theme .gradient-primary {
+    background: linear-gradient(135deg, hsl(152 60% 34%), hsl(152 50% 42%));
+  }
+
+  .gradient-header {
+    background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary) / 0.85));
+  }
+
+  .admin-theme .gradient-header {
+    background: linear-gradient(135deg, hsl(152 60% 30%), hsl(152 50% 38%));
   }
 }
