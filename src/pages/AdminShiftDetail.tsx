@@ -64,6 +64,7 @@ const AdminShiftDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: shift, isLoading } = useShift(id);
+  const selfieUrl = useSignedSelfieUrl(shift?.clock_in_selfie_url);
 
   if (isLoading) {
     return (
@@ -174,9 +175,9 @@ const AdminShiftDetail = () => {
             <h3 className="text-sm font-bold text-card-foreground">Verification Selfie</h3>
           </div>
           <div className="p-4">
-            {hasSelfie ? (
+            {hasSelfie && selfieUrl ? (
               <img
-                src={shift.clock_in_selfie_url!}
+                src={selfieUrl}
                 alt="Clock-in verification selfie"
                 className="w-full rounded-xl object-cover max-h-64"
               />
