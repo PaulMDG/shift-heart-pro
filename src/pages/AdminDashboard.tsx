@@ -3,18 +3,20 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import { useAllShifts, useAllClients, useAllCaregivers, useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap, useUpdateUserRole } from "@/hooks/useAdmin";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X } from "lucide-react";
+import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X, DollarSign, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
-
-import { DollarSign, FileText } from "lucide-react";
+import CaregiverDetailSheet from "@/components/admin/CaregiverDetailSheet";
+import ClientDetailSheet from "@/components/admin/ClientDetailSheet";
 
 const tabs = ["Overview", "Swaps", "Shifts", "Clients", "Caregivers"] as const;
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>("Overview");
+  const [selectedCaregiver, setSelectedCaregiver] = useState<any>(null);
+  const [selectedClient, setSelectedClient] = useState<any>(null);
   const { data: shifts = [], isLoading: shiftsLoading } = useAllShifts();
   const { data: clients = [], isLoading: clientsLoading } = useAllClients();
   const { data: caregivers = [] } = useAllCaregivers();
@@ -24,7 +26,6 @@ const AdminDashboard = () => {
   const updateRole = useUpdateUserRole();
   const navigate = useNavigate();
 
-  // Real-time auto-refresh
   useRealtimeSync([]);
 
   const pendingSwaps = swapRequests.filter((r: any) => r.status === "pending");
@@ -104,160 +105,65 @@ const AdminDashboard = () => {
         </div>
 
         {activeTab === "Overview" && (
-          <div className="space-y-5">
-            <div className="grid grid-cols-3 gap-3">
-              {stats.map((s) => (
-                <div key={s.label} className="bg-card rounded-2xl p-3 border border-border text-center">
-                  <s.icon className={`w-5 h-5 mx-auto mb-1 ${s.color}`} />
-                  <p className="text-lg font-bold text-card-foreground">{s.value}</p>
-                  <p className="text-[10px] text-muted-foreground font-medium">{s.label}</p>
-                </div>
-              ))}
-            </div>
-
-            {pendingSwaps.length > 0 && (
-              <section>
-                <h3 className="text-sm font-bold text-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 text-warning" />
-                  Pending Swap Approvals
-                </h3>
-                <div className="space-y-2">
-                  {pendingSwaps.slice(0, 3).map((req: any) => (
-                    <SwapRow key={req.id} req={req} onApprove={handleApprove} onDecline={handleDecline} loading={approveSwap.isPending || declineSwap.isPending} />
-                  ))}
-                  {pendingSwaps.length > 3 && (
-                    <button onClick={() => setActiveTab("Swaps")} className="text-xs text-primary font-semibold">
-                      View all {pendingSwaps.length} requests →
-                    </button>
-                  )}
-                </div>
-              </section>
-            )}
-
-            <section>
-              <h3 className="text-sm font-bold text-foreground mb-2 uppercase tracking-wider">Today's Shifts</h3>
-              {shiftsLoading ? (
-                <Skeleton className="h-20 rounded-2xl" />
-              ) : todayShifts.length > 0 ? (
-                <div className="space-y-2">
-                  {todayShifts.map((s) => (
-                    <ShiftRow key={s.id} shift={s} />
-                  ))}
-                </div>
-              ) : (
-                <p className="text-sm text-muted-foreground bg-card rounded-2xl p-6 text-center border border-border">No shifts scheduled today</p>
-              )}
-            </section>
-          </div>
+          <OverviewTab
+            stats={stats}
+            pendingSwaps={pendingSwaps}
+            todayShifts={todayShifts}
+            shiftsLoading={shiftsLoading}
+            handleApprove={handleApprove}
+            handleDecline={handleDecline}
+            swapLoading={approveSwap.isPending || declineSwap.isPending}
+            setActiveTab={setActiveTab}
+          />
         )}
 
         {activeTab === "Swaps" && (
-          <div className="space-y-3">
-            {swapRequests.length > 0 ? (
-              swapRequests.map((req: any) => (
-                <SwapRow key={req.id} req={req} onApprove={handleApprove} onDecline={handleDecline} loading={approveSwap.isPending || declineSwap.isPending} />
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No swap requests</p>
-            )}
-          </div>
+          <SwapsTab
+            swapRequests={swapRequests}
+            handleApprove={handleApprove}
+            handleDecline={handleDecline}
+            loading={approveSwap.isPending || declineSwap.isPending}
+          />
         )}
 
         {activeTab === "Shifts" && (
-          <div className="space-y-3">
-            <button onClick={() => navigate("/admin/shifts/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
-              + Create New Shift
-            </button>
-            {shiftsLoading ? (
-              Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
-            ) : shifts.length > 0 ? (
-              shifts.map((s) => <ShiftRow key={s.id} shift={s} />)
-            ) : (
-              <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No shifts</p>
-            )}
-          </div>
+          <ShiftsTab shifts={shifts} shiftsLoading={shiftsLoading} navigate={navigate} />
         )}
 
         {activeTab === "Clients" && (
-          <div className="space-y-3">
-            <button onClick={() => navigate("/admin/clients/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
-              + Add New Client
-            </button>
-            {clientsLoading ? (
-              Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-2xl" />)
-            ) : clients.length > 0 ? (
-              clients.map((c: any) => (
-                <div key={c.id} className="bg-card rounded-2xl p-4 border border-border">
-                  <h4 className="font-semibold text-card-foreground text-sm">{c.name}</h4>
-                  <p className="text-xs text-muted-foreground mt-0.5">{c.address}</p>
-                  <div className="flex items-center gap-2 mt-2">
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{c.care_type}</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No clients</p>
-            )}
-          </div>
+          <ClientsTab
+            clients={clients}
+            clientsLoading={clientsLoading}
+            navigate={navigate}
+            onClientClick={setSelectedClient}
+          />
         )}
 
         {activeTab === "Caregivers" && (
-          <div className="space-y-3">
-            <button onClick={() => navigate("/admin/caregivers/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
-              + Add New Staff
-            </button>
-            {caregivers.length > 0 ? (
-              caregivers.map((cg: any) => (
-                <div key={cg.id} className="bg-card rounded-2xl p-4 border border-border flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center shrink-0">
-                    <span className="text-primary-foreground font-bold text-sm">
-                      {(cg.full_name || "?")[0].toUpperCase()}
-                    </span>
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold text-card-foreground text-sm">{cg.full_name || "Unnamed"}</h4>
-                      {cg.role && (
-                        <Badge variant={cg.role === "admin" ? "destructive" : cg.role === "moderator" ? "default" : "secondary"} className="text-[10px]">
-                          {cg.role}
-                        </Badge>
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground">{cg.phone || "No phone"}</p>
-                  </div>
-                  <Select
-                    value={cg.role || "user"}
-                    onValueChange={async (newRole) => {
-                      try {
-                        await updateRole.mutateAsync({ targetUserId: cg.id, role: newRole });
-                        toast.success(`Role updated to ${newRole}`);
-                      } catch (e: any) {
-                        toast.error(e.message);
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="w-[110px] h-8 text-xs shrink-0">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="user">Caregiver</SelectItem>
-                      <SelectItem value="moderator">Moderator</SelectItem>
-                      <SelectItem value="admin">Admin</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              ))
-            ) : (
-              <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No caregivers</p>
-            )}
-          </div>
+          <CaregiversTab
+            caregivers={caregivers}
+            updateRole={updateRole}
+            navigate={navigate}
+            onCaregiverClick={setSelectedCaregiver}
+          />
         )}
       </div>
+
+      <CaregiverDetailSheet
+        caregiver={selectedCaregiver}
+        open={!!selectedCaregiver}
+        onClose={() => setSelectedCaregiver(null)}
+      />
+      <ClientDetailSheet
+        client={selectedClient}
+        open={!!selectedClient}
+        onClose={() => setSelectedClient(null)}
+      />
     </MobileLayout>
   );
 };
 
-// Sub-components
+// --- Sub-components ---
 
 const statusStyles: Record<string, { label: string; className: string }> = {
   not_started: { label: "Not Started", className: "bg-muted text-muted-foreground" },
@@ -317,6 +223,187 @@ function SwapRow({ req, onApprove, onDecline, loading }: { req: any; onApprove: 
             <X className="w-3 h-3" /> Decline
           </button>
         </div>
+      )}
+    </div>
+  );
+}
+
+function CaregiverAvatar({ caregiver }: { caregiver: any }) {
+  if (caregiver.avatar_url) {
+    return (
+      <img
+        src={caregiver.avatar_url}
+        alt={caregiver.full_name || "Caregiver"}
+        className="w-10 h-10 rounded-full object-cover shrink-0"
+      />
+    );
+  }
+  return (
+    <div className="w-10 h-10 rounded-full gradient-primary flex items-center justify-center shrink-0">
+      <span className="text-primary-foreground font-bold text-sm">
+        {(caregiver.full_name || "?")[0].toUpperCase()}
+      </span>
+    </div>
+  );
+}
+
+// Tab components
+
+function OverviewTab({ stats, pendingSwaps, todayShifts, shiftsLoading, handleApprove, handleDecline, swapLoading, setActiveTab }: any) {
+  return (
+    <div className="space-y-5">
+      <div className="grid grid-cols-3 gap-3">
+        {stats.map((s: any) => (
+          <div key={s.label} className="bg-card rounded-2xl p-3 border border-border text-center">
+            <s.icon className={`w-5 h-5 mx-auto mb-1 ${s.color}`} />
+            <p className="text-lg font-bold text-card-foreground">{s.value}</p>
+            <p className="text-[10px] text-muted-foreground font-medium">{s.label}</p>
+          </div>
+        ))}
+      </div>
+      {pendingSwaps.length > 0 && (
+        <section>
+          <h3 className="text-sm font-bold text-foreground mb-2 uppercase tracking-wider flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-warning" />
+            Pending Swap Approvals
+          </h3>
+          <div className="space-y-2">
+            {pendingSwaps.slice(0, 3).map((req: any) => (
+              <SwapRow key={req.id} req={req} onApprove={handleApprove} onDecline={handleDecline} loading={swapLoading} />
+            ))}
+            {pendingSwaps.length > 3 && (
+              <button onClick={() => setActiveTab("Swaps")} className="text-xs text-primary font-semibold">
+                View all {pendingSwaps.length} requests →
+              </button>
+            )}
+          </div>
+        </section>
+      )}
+      <section>
+        <h3 className="text-sm font-bold text-foreground mb-2 uppercase tracking-wider">Today's Shifts</h3>
+        {shiftsLoading ? (
+          <Skeleton className="h-20 rounded-2xl" />
+        ) : todayShifts.length > 0 ? (
+          <div className="space-y-2">
+            {todayShifts.map((s: any) => (
+              <ShiftRow key={s.id} shift={s} />
+            ))}
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground bg-card rounded-2xl p-6 text-center border border-border">No shifts scheduled today</p>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function SwapsTab({ swapRequests, handleApprove, handleDecline, loading }: any) {
+  return (
+    <div className="space-y-3">
+      {swapRequests.length > 0 ? (
+        swapRequests.map((req: any) => (
+          <SwapRow key={req.id} req={req} onApprove={handleApprove} onDecline={handleDecline} loading={loading} />
+        ))
+      ) : (
+        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No swap requests</p>
+      )}
+    </div>
+  );
+}
+
+function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
+  return (
+    <div className="space-y-3">
+      <button onClick={() => navigate("/admin/shifts/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
+        + Create New Shift
+      </button>
+      {shiftsLoading ? (
+        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
+      ) : shifts.length > 0 ? (
+        shifts.map((s: any) => <ShiftRow key={s.id} shift={s} />)
+      ) : (
+        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No shifts</p>
+      )}
+    </div>
+  );
+}
+
+function ClientsTab({ clients, clientsLoading, navigate, onClientClick }: any) {
+  return (
+    <div className="space-y-3">
+      <button onClick={() => navigate("/admin/clients/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
+        + Add New Client
+      </button>
+      {clientsLoading ? (
+        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-2xl" />)
+      ) : clients.length > 0 ? (
+        clients.map((c: any) => (
+          <div
+            key={c.id}
+            onClick={() => onClientClick(c)}
+            className="bg-card rounded-2xl p-4 border border-border cursor-pointer hover:border-primary/30 transition-colors"
+          >
+            <h4 className="font-semibold text-card-foreground text-sm">{c.name}</h4>
+            <p className="text-xs text-muted-foreground mt-0.5">{c.address}</p>
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{c.care_type}</span>
+            </div>
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No clients</p>
+      )}
+    </div>
+  );
+}
+
+function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick }: any) {
+  return (
+    <div className="space-y-3">
+      <button onClick={() => navigate("/admin/caregivers/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
+        + Add New Staff
+      </button>
+      {caregivers.length > 0 ? (
+        caregivers.map((cg: any) => (
+          <div key={cg.id} className="bg-card rounded-2xl p-4 border border-border flex items-center gap-3 cursor-pointer hover:border-primary/30 transition-colors">
+            <div onClick={() => onCaregiverClick(cg)}>
+              <CaregiverAvatar caregiver={cg} />
+            </div>
+            <div className="flex-1 min-w-0" onClick={() => onCaregiverClick(cg)}>
+              <div className="flex items-center gap-2">
+                <h4 className="font-semibold text-card-foreground text-sm">{cg.full_name || "Unnamed"}</h4>
+                {cg.role && (
+                  <Badge variant={cg.role === "admin" ? "destructive" : cg.role === "moderator" ? "default" : "secondary"} className="text-[10px]">
+                    {cg.role}
+                  </Badge>
+                )}
+              </div>
+              <p className="text-xs text-muted-foreground">{cg.phone || "No phone"}</p>
+            </div>
+            <Select
+              value={cg.role || "user"}
+              onValueChange={async (newRole) => {
+                try {
+                  await updateRole.mutateAsync({ targetUserId: cg.id, role: newRole });
+                  toast.success(`Role updated to ${newRole}`);
+                } catch (e: any) {
+                  toast.error(e.message);
+                }
+              }}
+            >
+              <SelectTrigger className="w-[110px] h-8 text-xs shrink-0" onClick={(e) => e.stopPropagation()}>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="user">Caregiver</SelectItem>
+                <SelectItem value="moderator">Moderator</SelectItem>
+                <SelectItem value="admin">Admin</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        ))
+      ) : (
+        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No caregivers</p>
       )}
     </div>
   );
