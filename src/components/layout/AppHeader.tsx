@@ -12,7 +12,7 @@ const AppHeader = () => {
       <div className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
         <div>
           <h1 className="text-lg font-bold text-primary-foreground tracking-tight">
-            CareLink Pro
+            ComfortLink Pro
           </h1>
           <p className="text-xs text-primary-foreground/70 font-medium">
             Homecare Management
