@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Phone, Mail, Pencil, Save, X, Loader2 } from "lucide-react";
+import { User, Phone, Mail, Pencil, Save, X, Loader2, Camera } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
@@ -18,6 +18,8 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
   const [editing, setEditing] = useState(false);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
 
   const updateProfile = useMutation({
@@ -35,6 +37,51 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
     },
     onError: (e: any) => toast.error(e.message),
   });
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select an image file");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be less than 5MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const ext = file.name.split(".").pop();
+      const filePath = `${caregiver.id}/avatar.${ext}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, file, { upsert: true });
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from("avatars")
+        .getPublicUrl(filePath);
+
+      const avatarUrl = `${urlData.publicUrl}?t=${Date.now()}`;
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", caregiver.id);
+      if (updateError) throw updateError;
+
+      qc.invalidateQueries({ queryKey: ["admin-caregivers"] });
+      toast.success("Profile photo updated");
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
 
   const startEditing = () => {
     setFullName(caregiver.full_name || "");
@@ -76,15 +123,35 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
         </SheetHeader>
         <div className="space-y-4">
           <div className="flex items-center gap-4">
-            {caregiver.avatar_url ? (
-              <img src={caregiver.avatar_url} alt={caregiver.full_name} className="w-16 h-16 rounded-full object-cover" />
-            ) : (
-              <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center">
-                <span className="text-primary-foreground font-bold text-xl">
-                  {(caregiver.full_name || "?")[0].toUpperCase()}
-                </span>
-              </div>
-            )}
+            <div className="relative group">
+              {caregiver.avatar_url ? (
+                <img src={caregiver.avatar_url} alt={caregiver.full_name} className="w-16 h-16 rounded-full object-cover" />
+              ) : (
+                <div className="w-16 h-16 rounded-full gradient-primary flex items-center justify-center">
+                  <span className="text-primary-foreground font-bold text-xl">
+                    {(caregiver.full_name || "?")[0].toUpperCase()}
+                  </span>
+                </div>
+              )}
+              <button
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading}
+                className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+              >
+                {uploading ? (
+                  <Loader2 className="w-5 h-5 text-white animate-spin" />
+                ) : (
+                  <Camera className="w-5 h-5 text-white" />
+                )}
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoUpload}
+                className="hidden"
+              />
+            </div>
             <div className="flex-1">
               {editing ? (
                 <div className="space-y-2">
