@@ -28,6 +28,7 @@ import AdminCreateCaregiver from "./pages/AdminCreateCaregiver";
 import AdminShiftDetail from "./pages/AdminShiftDetail";
 import AdminBillingRates from "./pages/AdminBillingRates";
 import AdminTimesheets from "./pages/AdminTimesheets";
+import AdminLoginPage from "./pages/AdminLoginPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,7 @@ const App = () => (
           <AdminThemeProvider />
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/shifts" element={<ProtectedRoute><ShiftsPage /></ProtectedRoute>} />
             <Route path="/shifts/:id" element={<ProtectedRoute><ShiftDetail /></ProtectedRoute>} />

@@ -107,6 +107,13 @@ const AuthPage = () => {
             >
               {isLogin ? "Don't have an account? Sign up" : "Already have an account? Sign in"}
             </button>
+            <button
+              type="button"
+              className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors mt-1"
+              onClick={() => navigate("/admin/login")}
+            >
+              Admin Portal →
+            </button>
           </CardFooter>
         </form>
       </Card>
