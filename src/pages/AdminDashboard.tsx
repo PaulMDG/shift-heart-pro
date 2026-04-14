@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
+import { Input } from "@/components/ui/input";
+import { Search } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useAllShifts, useAllClients, useAllCaregivers, useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap, useUpdateUserRole } from "@/hooks/useAdmin";
 import { Badge } from "@/components/ui/badge";
@@ -329,15 +331,35 @@ function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
 }
 
 function ClientsTab({ clients, clientsLoading, navigate, onClientClick }: any) {
+  const [search, setSearch] = useState("");
+  const filtered = useMemo(() => {
+    if (!search.trim()) return clients;
+    const q = search.toLowerCase();
+    return clients.filter((c: any) =>
+      c.name?.toLowerCase().includes(q) ||
+      c.address?.toLowerCase().includes(q) ||
+      c.care_type?.toLowerCase().includes(q)
+    );
+  }, [clients, search]);
+
   return (
     <div className="space-y-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search clients by name, address, care type..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9 h-10 rounded-xl text-sm"
+        />
+      </div>
       <button onClick={() => navigate("/admin/clients/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
         + Add New Client
       </button>
       {clientsLoading ? (
         Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-16 rounded-2xl" />)
-      ) : clients.length > 0 ? (
-        clients.map((c: any) => (
+      ) : filtered.length > 0 ? (
+        filtered.map((c: any) => (
           <div
             key={c.id}
             onClick={() => onClientClick(c)}
@@ -351,20 +373,42 @@ function ClientsTab({ clients, clientsLoading, navigate, onClientClick }: any) {
           </div>
         ))
       ) : (
-        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No clients</p>
+        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">
+          {search ? "No clients match your search" : "No clients"}
+        </p>
       )}
     </div>
   );
 }
 
 function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick }: any) {
+  const [search, setSearch] = useState("");
+  const filtered = useMemo(() => {
+    if (!search.trim()) return caregivers;
+    const q = search.toLowerCase();
+    return caregivers.filter((cg: any) =>
+      cg.full_name?.toLowerCase().includes(q) ||
+      cg.phone?.toLowerCase().includes(q) ||
+      cg.role?.toLowerCase().includes(q)
+    );
+  }, [caregivers, search]);
+
   return (
     <div className="space-y-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search staff by name, phone, role..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9 h-10 rounded-xl text-sm"
+        />
+      </div>
       <button onClick={() => navigate("/admin/caregivers/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
         + Add New Staff
       </button>
-      {caregivers.length > 0 ? (
-        caregivers.map((cg: any) => (
+      {filtered.length > 0 ? (
+        filtered.map((cg: any) => (
           <div key={cg.id} className="bg-card rounded-2xl p-4 border border-border flex items-center gap-3 cursor-pointer hover:border-primary/30 transition-colors">
             <div onClick={() => onCaregiverClick(cg)}>
               <CaregiverAvatar caregiver={cg} />
@@ -403,7 +447,9 @@ function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick }: a
           </div>
         ))
       ) : (
-        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No caregivers</p>
+        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">
+          {search ? "No staff match your search" : "No caregivers"}
+        </p>
       )}
     </div>
   );
