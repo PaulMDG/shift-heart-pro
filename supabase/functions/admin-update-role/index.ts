@@ -6,6 +6,17 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function safeErrorMessage(error: any): string {
+  const msg = error?.message || '';
+  if (msg === 'Unauthorized' || msg === 'Requires admin role') {
+    return msg;
+  }
+  if (msg === 'Invalid target_user_id or role') {
+    return msg;
+  }
+  return 'An internal error occurred. Please try again.';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -56,7 +67,8 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('[admin-update-role] error:', error);
+    return new Response(JSON.stringify({ error: safeErrorMessage(error) }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     });
