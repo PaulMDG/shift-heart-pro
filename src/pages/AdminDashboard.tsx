@@ -5,7 +5,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import { useAllShifts, useAllClients, useAllCaregivers, useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap, useUpdateUserRole } from "@/hooks/useAdmin";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X, DollarSign, FileText } from "lucide-react";
+import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X, DollarSign, FileText, Settings } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
@@ -83,6 +83,12 @@ const AdminDashboard = () => {
               className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
             >
               <DollarSign className="w-4 h-4 text-accent-foreground" />
+            </button>
+            <button
+              onClick={() => navigate("/admin/settings")}
+              className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+            >
+              <Settings className="w-4 h-4 text-accent-foreground" />
             </button>
           </div>
         </div>
@@ -314,17 +320,40 @@ function SwapsTab({ swapRequests, handleApprove, handleDecline, loading }: any) 
 }
 
 function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
+  const [search, setSearch] = useState("");
+  const filtered = useMemo(() => {
+    if (!search.trim()) return shifts;
+    const q = search.toLowerCase();
+    return shifts.filter((s: any) =>
+      s.client?.name?.toLowerCase().includes(q) ||
+      s.date?.includes(q) ||
+      s.status?.toLowerCase().includes(q) ||
+      s.caregiver?.full_name?.toLowerCase().includes(q)
+    );
+  }, [shifts, search]);
+
   return (
     <div className="space-y-3">
+      <div className="relative">
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+        <Input
+          placeholder="Search by client, caregiver, date, status..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="pl-9 h-10 rounded-xl text-sm"
+        />
+      </div>
       <button onClick={() => navigate("/admin/shifts/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
         + Create New Shift
       </button>
       {shiftsLoading ? (
         Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
-      ) : shifts.length > 0 ? (
-        shifts.map((s: any) => <ShiftRow key={s.id} shift={s} />)
+      ) : filtered.length > 0 ? (
+        filtered.map((s: any) => <ShiftRow key={s.id} shift={s} />)
       ) : (
-        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">No shifts</p>
+        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">
+          {search ? "No shifts match your search" : "No shifts"}
+        </p>
       )}
     </div>
   );
