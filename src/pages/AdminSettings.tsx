@@ -1,7 +1,8 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Mail, Shield, Users, DollarSign, Bell, Database } from "lucide-react";
+import { ArrowLeft, Mail, Shield, Users, DollarSign, Bell, Database, ExternalLink } from "lucide-react";
 
 const settingsItems = [
   {
@@ -19,9 +20,9 @@ const settingsItems = [
   {
     icon: Mail,
     title: "Email Configuration",
-    description: "Set up branded emails for registration confirmations",
+    description: "Set up branded emails from comfortlink.app",
     path: null,
-    badge: "Coming Soon",
+    action: "email-setup",
   },
   {
     icon: Bell,
@@ -48,6 +49,15 @@ const settingsItems = [
 
 const AdminSettings = () => {
   const navigate = useNavigate();
+  const [showEmailInfo, setShowEmailInfo] = useState(false);
+
+  const handleItemClick = (item: typeof settingsItems[0]) => {
+    if (item.action === "email-setup") {
+      setShowEmailInfo(true);
+      return;
+    }
+    if (item.path) navigate(item.path);
+  };
 
   return (
     <MobileLayout>
@@ -69,8 +79,8 @@ const AdminSettings = () => {
           {settingsItems.map((item) => (
             <Card
               key={item.title}
-              className={`border-border ${item.path ? "cursor-pointer hover:border-primary/30 transition-colors" : "opacity-70"}`}
-              onClick={() => item.path && navigate(item.path)}
+              className={`border-border ${item.path || item.action ? "cursor-pointer hover:border-primary/30 transition-colors" : "opacity-70"}`}
+              onClick={() => handleItemClick(item)}
             >
               <CardHeader className="p-4 pb-2 flex flex-row items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
@@ -91,6 +101,38 @@ const AdminSettings = () => {
             </Card>
           ))}
         </div>
+
+        {showEmailInfo && (
+          <Card className="border-primary/30 bg-primary/5">
+            <CardHeader className="p-4 pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Mail className="w-4 h-4" /> Email Domain Setup
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-4 pt-0 space-y-3">
+              <p className="text-xs text-muted-foreground">
+                To send branded registration emails from <strong>comfortlink.app</strong>, 
+                set up a sender domain through Lovable Cloud. This lets your emails come from 
+                your own domain (e.g., notify@comfortlink.app) instead of a generic address.
+              </p>
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-foreground">Steps:</p>
+                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
+                  <li>Open <strong>Cloud → Emails</strong> in your Lovable project settings</li>
+                  <li>Click "Set up email domain" and enter <strong>comfortlink.app</strong></li>
+                  <li>Add the provided DNS records at your domain registrar</li>
+                  <li>Wait for DNS verification (up to 72 hours)</li>
+                </ol>
+              </div>
+              <button
+                onClick={() => setShowEmailInfo(false)}
+                className="text-xs text-primary font-medium"
+              >
+                Dismiss
+              </button>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </MobileLayout>
   );
