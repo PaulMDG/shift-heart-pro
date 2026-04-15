@@ -6,6 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+function safeErrorMessage(error: any): string {
+  const msg = error?.message || '';
+  if (msg.includes('already been registered') || msg.includes('duplicate') || msg.includes('unique')) {
+    return 'A user with this email already exists.';
+  }
+  if (msg === 'Unauthorized' || msg === 'Requires admin role') {
+    return msg;
+  }
+  if (msg.includes('Invalid') || msg.includes('valid email')) {
+    return 'Invalid input provided. Please check email and password.';
+  }
+  return 'An internal error occurred. Please try again.';
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -68,7 +82,8 @@ serve(async (req) => {
       status: 200,
     });
   } catch (error: any) {
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error('[admin-create-user] error:', error);
+    return new Response(JSON.stringify({ error: safeErrorMessage(error) }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,
     });
