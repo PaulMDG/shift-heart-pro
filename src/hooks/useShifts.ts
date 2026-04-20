@@ -23,9 +23,6 @@ export interface ShiftWithClient {
     name: string;
     address: string;
     care_type: string;
-    emergency_contact: string;
-    emergency_phone: string;
-    care_plan_summary: string;
     lat: number | null;
     lng: number | null;
   };
@@ -37,7 +34,7 @@ export function useShifts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("*, client:clients(*)")
+        .select("*, client:clients_caregiver_safe(id, name, address, care_type, lat, lng)")
         .order("date", { ascending: true });
       if (error) throw error;
       return data as unknown as ShiftWithClient[];
@@ -52,7 +49,7 @@ export function useShift(id: string | undefined) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("*, client:clients(*)")
+        .select("*, client:clients_caregiver_safe(id, name, address, care_type, lat, lng)")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
