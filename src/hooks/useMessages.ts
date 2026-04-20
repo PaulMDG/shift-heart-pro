@@ -30,7 +30,7 @@ export function useConversations() {
   useEffect(() => {
     if (!user) return;
     const channel = supabase
-      .channel("messages-realtime")
+      .channel(`user:${user.id}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "messages" },
@@ -114,8 +114,10 @@ export function useChatMessages(partnerId: string | undefined) {
   // Real-time subscription for this chat
   useEffect(() => {
     if (!user || !partnerId) return;
+    // Sort ids so both participants share the same channel topic
+    const [a, b] = [user.id, partnerId].sort();
     const channel = supabase
-      .channel(`chat-${partnerId}`)
+      .channel(`chat-${a}-${b}`)
       .on(
         "postgres_changes",
         { event: "INSERT", schema: "public", table: "messages" },
