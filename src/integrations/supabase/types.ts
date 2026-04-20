@@ -47,6 +47,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "billing_rates_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_caregiver_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       certifications: {
@@ -317,6 +324,13 @@ export type Database = {
             referencedRelation: "clients"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "shifts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients_caregiver_safe"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_roles: {
@@ -339,7 +353,36 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      clients_caregiver_safe: {
+        Row: {
+          address: string | null
+          care_type: string | null
+          created_at: string | null
+          id: string | null
+          lat: number | null
+          lng: number | null
+          name: string | null
+        }
+        Insert: {
+          address?: string | null
+          care_type?: string | null
+          created_at?: string | null
+          id?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+        }
+        Update: {
+          address?: string | null
+          care_type?: string | null
+          created_at?: string | null
+          id?: string | null
+          lat?: number | null
+          lng?: number | null
+          name?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       accept_swap_request: { Args: { swap_id: string }; Returns: undefined }
