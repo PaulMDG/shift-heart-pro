@@ -1,21 +1,26 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Trash2, ShieldCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ShieldCheck, Loader2, Pencil, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import MobileLayout from "@/components/layout/MobileLayout";
-import { useCertifications, useAddCertification, useRemoveCertification } from "@/hooks/useCertifications";
+import { useCertifications, useAddCertification, useRemoveCertification, useUpdateCertification } from "@/hooks/useCertifications";
 
 const ProfileCertifications = () => {
   const navigate = useNavigate();
   const { data: certs, isLoading } = useCertifications();
   const addCert = useAddCertification();
   const removeCert = useRemoveCertification();
+  const updateCert = useUpdateCertification();
   const [name, setName] = useState("");
   const [issuer, setIssuer] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editIssuer, setEditIssuer] = useState("");
+  const [editExpiry, setEditExpiry] = useState("");
 
   const handleAdd = async () => {
     if (!name.trim()) { toast.error("Certification name is required"); return; }
@@ -34,6 +39,35 @@ const ProfileCertifications = () => {
       toast.success("Certification removed");
     } catch (err: any) {
       toast.error(err.message || "Failed to remove");
+    }
+  };
+
+  const startEdit = (cert: { id: string; name: string; issuer: string; expiry_date: string | null }) => {
+    setEditingId(cert.id);
+    setEditName(cert.name);
+    setEditIssuer(cert.issuer || "");
+    setEditExpiry(cert.expiry_date || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditName(""); setEditIssuer(""); setEditExpiry("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+    if (!editName.trim()) { toast.error("Certification name is required"); return; }
+    try {
+      await updateCert.mutateAsync({
+        id: editingId,
+        name: editName.trim(),
+        issuer: editIssuer.trim(),
+        expiry_date: editExpiry || null,
+      });
+      toast.success("Certification updated");
+      cancelEdit();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update");
     }
   };
 
