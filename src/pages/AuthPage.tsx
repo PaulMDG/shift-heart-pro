@@ -22,8 +22,23 @@ const AuthPage = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
+        // Block admins from caregiver portal
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", data.user.id)
+          .eq("role", "admin");
+
+        if (roles && roles.length > 0) {
+          await supabase.auth.signOut();
+          toast.error("Admins must sign in via the Admin Portal.");
+          navigate("/admin/login");
+          return;
+        }
+
         toast.success("Welcome back!");
         navigate("/");
       } else {
