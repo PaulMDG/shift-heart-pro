@@ -86,11 +86,6 @@ const AdminSettings = () => {
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-sm">{item.title}</CardTitle>
-                    {item.badge && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                        {item.badge}
-                      </span>
-                    )}
                   </div>
                   <CardDescription className="text-xs mt-0.5">{item.description}</CardDescription>
                 </div>
