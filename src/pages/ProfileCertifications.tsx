@@ -1,21 +1,26 @@
 import { useState } from "react";
-import { ArrowLeft, Plus, Trash2, ShieldCheck, Loader2 } from "lucide-react";
+import { ArrowLeft, Plus, Trash2, ShieldCheck, Loader2, Pencil, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/components/ui/sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import MobileLayout from "@/components/layout/MobileLayout";
-import { useCertifications, useAddCertification, useRemoveCertification } from "@/hooks/useCertifications";
+import { useCertifications, useAddCertification, useRemoveCertification, useUpdateCertification } from "@/hooks/useCertifications";
 
 const ProfileCertifications = () => {
   const navigate = useNavigate();
   const { data: certs, isLoading } = useCertifications();
   const addCert = useAddCertification();
   const removeCert = useRemoveCertification();
+  const updateCert = useUpdateCertification();
   const [name, setName] = useState("");
   const [issuer, setIssuer] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editIssuer, setEditIssuer] = useState("");
+  const [editExpiry, setEditExpiry] = useState("");
 
   const handleAdd = async () => {
     if (!name.trim()) { toast.error("Certification name is required"); return; }
@@ -34,6 +39,35 @@ const ProfileCertifications = () => {
       toast.success("Certification removed");
     } catch (err: any) {
       toast.error(err.message || "Failed to remove");
+    }
+  };
+
+  const startEdit = (cert: { id: string; name: string; issuer: string; expiry_date: string | null }) => {
+    setEditingId(cert.id);
+    setEditName(cert.name);
+    setEditIssuer(cert.issuer || "");
+    setEditExpiry(cert.expiry_date || "");
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditName(""); setEditIssuer(""); setEditExpiry("");
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+    if (!editName.trim()) { toast.error("Certification name is required"); return; }
+    try {
+      await updateCert.mutateAsync({
+        id: editingId,
+        name: editName.trim(),
+        issuer: editIssuer.trim(),
+        expiry_date: editExpiry || null,
+      });
+      toast.success("Certification updated");
+      cancelEdit();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update");
     }
   };
 
@@ -81,15 +115,55 @@ const ProfileCertifications = () => {
         ) : (
           <div className="space-y-3">
             {certs.map((cert) => (
-              <div key={cert.id} className="bg-card rounded-2xl p-4 shadow-card flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-card-foreground">{cert.name}</p>
-                  {cert.issuer && <p className="text-xs text-muted-foreground">{cert.issuer}</p>}
-                  {cert.expiry_date && <p className="text-xs text-muted-foreground">Expires: {cert.expiry_date}</p>}
-                </div>
-                <button onClick={() => handleRemove(cert.id)} disabled={removeCert.isPending} className="text-destructive p-1">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div key={cert.id} className="bg-card rounded-2xl p-4 shadow-card">
+                {editingId === cert.id ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label htmlFor={`edit-name-${cert.id}`}>Name</Label>
+                      <Input id={`edit-name-${cert.id}`} value={editName} onChange={(e) => setEditName(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`edit-issuer-${cert.id}`}>Issuing Organization</Label>
+                      <Input id={`edit-issuer-${cert.id}`} value={editIssuer} onChange={(e) => setEditIssuer(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`edit-expiry-${cert.id}`}>Expiry Date</Label>
+                      <Input id={`edit-expiry-${cert.id}`} type="date" value={editExpiry} onChange={(e) => setEditExpiry(e.target.value)} />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveEdit}
+                        disabled={updateCert.isPending}
+                        className="flex-1 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      >
+                        {updateCert.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        Save
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="flex-1 py-2.5 rounded-xl bg-muted text-muted-foreground text-sm font-semibold flex items-center justify-center gap-1.5"
+                      >
+                        <X className="w-4 h-4" /> Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-card-foreground">{cert.name}</p>
+                      {cert.issuer && <p className="text-xs text-muted-foreground">{cert.issuer}</p>}
+                      {cert.expiry_date && <p className="text-xs text-muted-foreground">Expires: {cert.expiry_date}</p>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => startEdit(cert)} className="text-primary p-1.5 rounded-lg hover:bg-muted" aria-label="Edit">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleRemove(cert.id)} disabled={removeCert.isPending} className="text-destructive p-1.5 rounded-lg hover:bg-muted" aria-label="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

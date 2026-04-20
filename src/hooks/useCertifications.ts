@@ -55,3 +55,21 @@ export function useRemoveCertification() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ["certifications"] }),
   });
 }
+
+export function useUpdateCertification() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (cert: { id: string; name: string; issuer: string; expiry_date: string | null }) => {
+      const { error } = await supabase
+        .from("certifications")
+        .update({
+          name: cert.name,
+          issuer: cert.issuer,
+          expiry_date: cert.expiry_date || null,
+        })
+        .eq("id", cert.id);
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["certifications"] }),
+  });
+}
