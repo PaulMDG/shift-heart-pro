@@ -115,15 +115,55 @@ const ProfileCertifications = () => {
         ) : (
           <div className="space-y-3">
             {certs.map((cert) => (
-              <div key={cert.id} className="bg-card rounded-2xl p-4 shadow-card flex items-start justify-between">
-                <div>
-                  <p className="text-sm font-semibold text-card-foreground">{cert.name}</p>
-                  {cert.issuer && <p className="text-xs text-muted-foreground">{cert.issuer}</p>}
-                  {cert.expiry_date && <p className="text-xs text-muted-foreground">Expires: {cert.expiry_date}</p>}
-                </div>
-                <button onClick={() => handleRemove(cert.id)} disabled={removeCert.isPending} className="text-destructive p-1">
-                  <Trash2 className="w-4 h-4" />
-                </button>
+              <div key={cert.id} className="bg-card rounded-2xl p-4 shadow-card">
+                {editingId === cert.id ? (
+                  <div className="space-y-3">
+                    <div className="space-y-1">
+                      <Label htmlFor={`edit-name-${cert.id}`}>Name</Label>
+                      <Input id={`edit-name-${cert.id}`} value={editName} onChange={(e) => setEditName(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`edit-issuer-${cert.id}`}>Issuing Organization</Label>
+                      <Input id={`edit-issuer-${cert.id}`} value={editIssuer} onChange={(e) => setEditIssuer(e.target.value)} />
+                    </div>
+                    <div className="space-y-1">
+                      <Label htmlFor={`edit-expiry-${cert.id}`}>Expiry Date</Label>
+                      <Input id={`edit-expiry-${cert.id}`} type="date" value={editExpiry} onChange={(e) => setEditExpiry(e.target.value)} />
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleSaveEdit}
+                        disabled={updateCert.isPending}
+                        className="flex-1 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-1.5 disabled:opacity-50"
+                      >
+                        {updateCert.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
+                        Save
+                      </button>
+                      <button
+                        onClick={cancelEdit}
+                        className="flex-1 py-2.5 rounded-xl bg-muted text-muted-foreground text-sm font-semibold flex items-center justify-center gap-1.5"
+                      >
+                        <X className="w-4 h-4" /> Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="text-sm font-semibold text-card-foreground">{cert.name}</p>
+                      {cert.issuer && <p className="text-xs text-muted-foreground">{cert.issuer}</p>}
+                      {cert.expiry_date && <p className="text-xs text-muted-foreground">Expires: {cert.expiry_date}</p>}
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <button onClick={() => startEdit(cert)} className="text-primary p-1.5 rounded-lg hover:bg-muted" aria-label="Edit">
+                        <Pencil className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleRemove(cert.id)} disabled={removeCert.isPending} className="text-destructive p-1.5 rounded-lg hover:bg-muted" aria-label="Delete">
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
