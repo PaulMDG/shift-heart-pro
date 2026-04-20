@@ -30,6 +30,9 @@ import AdminBillingRates from "./pages/AdminBillingRates";
 import AdminTimesheets from "./pages/AdminTimesheets";
 import AdminLoginPage from "./pages/AdminLoginPage";
 import AdminSettings from "./pages/AdminSettings";
+import AdminNotifications from "./pages/AdminNotifications";
+import AdminSecurity from "./pages/AdminSecurity";
+import AdminDataManagement from "./pages/AdminDataManagement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -66,6 +69,9 @@ const App = () => (
             <Route path="/admin/billing" element={<AdminRoute><AdminBillingRates /></AdminRoute>} />
             <Route path="/admin/timesheets" element={<AdminRoute><AdminTimesheets /></AdminRoute>} />
             <Route path="/admin/settings" element={<AdminRoute><AdminSettings /></AdminRoute>} />
+            <Route path="/admin/settings/notifications" element={<AdminRoute><AdminNotifications /></AdminRoute>} />
+            <Route path="/admin/settings/security" element={<AdminRoute><AdminSecurity /></AdminRoute>} />
+            <Route path="/admin/settings/data" element={<AdminRoute><AdminDataManagement /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

@@ -28,22 +28,19 @@ const settingsItems = [
     icon: Bell,
     title: "Notifications",
     description: "Configure automated alerts and notification triggers",
-    path: null,
-    badge: "Coming Soon",
+    path: "/admin/settings/notifications",
   },
   {
     icon: Shield,
     title: "Security & Access",
     description: "Role-based access control and audit logs",
-    path: null,
-    badge: "Coming Soon",
+    path: "/admin/settings/security",
   },
   {
     icon: Database,
     title: "Data Management",
     description: "Export data, manage backups, and compliance settings",
-    path: null,
-    badge: "Coming Soon",
+    path: "/admin/settings/data",
   },
 ];
 
