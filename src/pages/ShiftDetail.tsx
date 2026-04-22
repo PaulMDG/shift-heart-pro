@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, User, MapPin, Loader2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare } from "lucide-react";
 import { useShift, useUpdateShiftStatus } from "@/hooks/useShifts";
 import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
@@ -229,6 +229,17 @@ const ShiftDetail = () => {
             className="w-full flex items-center justify-between py-3"
           >
             <span className="text-base text-foreground">Swap Shift</span>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+          <div className="border-t border-border" />
+          <button
+            onClick={() => navigate(`/messages/new?shiftId=${id}`)}
+            className="w-full flex items-center justify-between py-3"
+          >
+            <span className="text-base text-foreground flex items-center gap-2">
+              <MessageSquare className="w-4 h-4 text-primary" />
+              Message about this shift
+            </span>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </button>
         </div>
