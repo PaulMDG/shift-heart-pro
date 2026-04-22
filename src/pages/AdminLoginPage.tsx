@@ -46,7 +46,7 @@ const AdminLoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: "linear-gradient(135deg, hsl(142, 60%, 15%) 0%, hsl(142, 50%, 25%) 50%, hsl(142, 40%, 20%) 100%)" }}>
+    <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm border-0 shadow-2xl" style={{ background: "hsl(142, 30%, 10%)", borderColor: "hsl(142, 40%, 30%)" }}>
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, hsl(142, 70%, 45%), hsl(142, 60%, 35%))" }}>
