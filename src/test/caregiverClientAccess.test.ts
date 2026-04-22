@@ -113,7 +113,7 @@ describe("caregiver access to client PII", () => {
       .select("id, name, address, emergency_contact, emergency_phone, care_plan_summary");
 
     expect(Array.isArray(data)).toBe(true);
-    const row = (data as Row[])[0];
+    const row = (data as unknown as Row[])[0];
     for (const col of PII_COLUMNS) {
       expect(row?.[col]).toBeUndefined();
     }
