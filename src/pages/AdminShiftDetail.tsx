@@ -71,7 +71,7 @@ const AdminShiftDetail = () => {
     isLoading: isLoadingClient,
     isError: isClientError,
     error: clientError,
-  } = useAdminClient(shift?.client_id);
+  } = useAdminClient(shift?.client_id, shift?.id);
 
   if (isLoading) {
     return (
