@@ -66,7 +66,12 @@ const AdminShiftDetail = () => {
   const navigate = useNavigate();
   const { data: shift, isLoading } = useShift(id);
   const selfieUrl = useSignedSelfieUrl(shift?.clock_in_selfie_url);
-  const { data: fullClient } = useAdminClient(shift?.client_id);
+  const {
+    data: fullClient,
+    isLoading: isLoadingClient,
+    isError: isClientError,
+    error: clientError,
+  } = useAdminClient(shift?.client_id);
 
   if (isLoading) {
     return (
@@ -277,7 +282,42 @@ const AdminShiftDetail = () => {
             <h3 className="text-sm font-bold text-card-foreground">Emergency Contact (Admin Only)</h3>
           </div>
           <div className="p-4 space-y-3 text-sm">
-            {fullClient ? (
+            {isLoadingClient ? (
+              <div className="space-y-3">
+                <div className="flex items-start gap-2">
+                  <Skeleton className="w-4 h-4 mt-0.5 rounded" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-4 w-40" />
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Skeleton className="w-4 h-4 mt-0.5 rounded" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3 w-12" />
+                    <Skeleton className="h-4 w-32" />
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 pt-2 border-t border-border">
+                  <Skeleton className="w-4 h-4 mt-0.5 rounded" />
+                  <div className="flex-1 space-y-1.5">
+                    <Skeleton className="h-3 w-28" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-3/4" />
+                  </div>
+                </div>
+              </div>
+            ) : isClientError ? (
+              <div className="flex items-start gap-2 p-3 rounded-xl bg-destructive/10 border border-destructive/30">
+                <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-destructive font-semibold">Failed to load client details</p>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {clientError instanceof Error ? clientError.message : "Please try again or check your admin permissions."}
+                  </p>
+                </div>
+              </div>
+            ) : fullClient ? (
               <>
                 <div className="flex items-start gap-2">
                   <User className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
@@ -315,7 +355,7 @@ const AdminShiftDetail = () => {
                 </div>
               </>
             ) : (
-              <p className="text-muted-foreground text-center py-4">Loading client details…</p>
+              <p className="text-muted-foreground text-center py-4">No client details available.</p>
             )}
           </div>
         </div>

@@ -5,6 +5,9 @@ export function useAdminClient(clientId: string | undefined) {
   return useQuery({
     queryKey: ["admin-client", clientId],
     enabled: !!clientId,
+    staleTime: 5 * 60 * 1000, // 5 min: cache full client per shift, avoid refetch on re-render
+    gcTime: 30 * 60 * 1000,
+    refetchOnWindowFocus: false,
     queryFn: async () => {
       const { data, error } = await supabase
         .from("clients")
