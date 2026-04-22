@@ -1,16 +1,18 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useChatMessages, useSendMessage } from "@/hooks/useMessages";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useState, useRef, useEffect } from "react";
-import { ArrowLeft, Send } from "lucide-react";
+import { ArrowLeft, Send, Link2 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { format, isToday, isYesterday } from "date-fns";
 
 const ChatPage = () => {
   const { userId } = useParams<{ userId: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const shiftId = searchParams.get("shiftId") || undefined;
   const { user } = useAuth();
   const { data: messages, isLoading } = useChatMessages(userId);
   const sendMessage = useSendMessage();
@@ -38,7 +40,7 @@ const ChatPage = () => {
 
   const handleSend = () => {
     if (!text.trim() || !userId) return;
-    sendMessage.mutate({ recipientId: userId, content: text.trim() });
+    sendMessage.mutate({ recipientId: userId, content: text.trim(), shiftId });
     setText("");
   };
 
@@ -72,6 +74,15 @@ const ChatPage = () => {
           {partner?.full_name || "Loading..."}
         </h2>
       </div>
+
+      {shiftId && (
+        <div className="flex items-center gap-2 text-xs text-primary bg-primary/10 border-b border-primary/20 px-4 py-2">
+          <Link2 className="w-3.5 h-3.5 shrink-0" />
+          <span>
+            Linked to shift <span className="font-mono">{shiftId.slice(0, 8)}</span> — new messages here will reference it.
+          </span>
+        </div>
+      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3 pb-20">
