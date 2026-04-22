@@ -2,12 +2,17 @@ import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Shield, Users, Lock, FileCheck } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { ArrowLeft, Shield, Users, Lock, FileCheck, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
 import { useAllCaregivers } from "@/hooks/useAdmin";
+import { useSecurityAudit } from "@/hooks/useSecurityAudit";
 
 const AdminSecurity = () => {
   const navigate = useNavigate();
   const { data: users = [] } = useAllCaregivers();
+  const { data: audit, isLoading: auditLoading, refetch, isFetching } = useSecurityAudit();
+  const failing = (audit ?? []).filter((c) => !c.ok);
 
   const counts = users.reduce(
     (acc: any, u: any) => {
@@ -51,6 +56,72 @@ const AdminSecurity = () => {
             <div className="flex justify-between"><span>Admin portal isolation</span><Badge variant="secondary">Enforced</Badge></div>
             <div className="flex justify-between"><span>Caregiver shift mutation guard</span><Badge variant="secondary">Active</Badge></div>
             <div className="flex justify-between"><span>Service-role JWT validation</span><Badge variant="secondary">getClaims()</Badge></div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-border">
+          <CardHeader className="p-4 pb-2 flex flex-row items-center justify-between">
+            <div>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Shield className="w-4 h-4" /> Live RLS Audit
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Probes clients PII, safe view masking, and avatars bucket.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-8"
+              onClick={() => refetch()}
+              disabled={isFetching}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 mr-1.5 ${isFetching ? "animate-spin" : ""}`} />
+              Re-run
+            </Button>
+          </CardHeader>
+          <CardContent className="p-4 pt-2 space-y-2">
+            {auditLoading && (
+              <div className="space-y-2">
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+                <Skeleton className="h-10 w-full" />
+              </div>
+            )}
+
+            {!auditLoading && failing.length > 0 && (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 mb-2">
+                <p className="text-xs font-semibold text-destructive flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {failing.length} access-control issue{failing.length === 1 ? "" : "s"} detected
+                </p>
+              </div>
+            )}
+
+            {!auditLoading &&
+              (audit ?? []).map((c) => (
+                <div
+                  key={c.id}
+                  className={`rounded-lg border p-3 ${
+                    c.ok ? "border-border" : "border-destructive/40 bg-destructive/5"
+                  }`}
+                >
+                  <div className="flex items-start gap-2">
+                    {c.ok ? (
+                      <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                    ) : (
+                      <AlertTriangle className="w-4 h-4 text-destructive mt-0.5 shrink-0" />
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs font-semibold text-foreground">{c.label}</p>
+                      <p className="text-[11px] text-muted-foreground">{c.description}</p>
+                      <p className="text-[11px] mt-1 break-words text-muted-foreground/80">
+                        {c.detail}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              ))}
           </CardContent>
         </Card>
 
