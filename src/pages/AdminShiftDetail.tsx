@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Camera, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download } from "lucide-react";
+import { ArrowLeft, MapPin, Camera, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download, ShieldAlert, Phone, FileText } from "lucide-react";
 import { useShift } from "@/hooks/useShifts";
+import { useAdminClient } from "@/hooks/useAdminClient";
 import { getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
 import { useSignedSelfieUrl } from "@/hooks/useSignedSelfieUrl";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -65,6 +66,7 @@ const AdminShiftDetail = () => {
   const navigate = useNavigate();
   const { data: shift, isLoading } = useShift(id);
   const selfieUrl = useSignedSelfieUrl(shift?.clock_in_selfie_url);
+  const { data: fullClient } = useAdminClient(shift?.client_id);
 
   if (isLoading) {
     return (
@@ -267,6 +269,56 @@ const AdminShiftDetail = () => {
             <p className="text-sm text-muted-foreground leading-relaxed">{shift.clock_out_notes}</p>
           </div>
         )}
+
+        {/* Admin-only: Emergency Contact & Care Plan */}
+        <div className="bg-card rounded-2xl border border-destructive/30 overflow-hidden">
+          <div className="px-4 py-3 border-b border-border flex items-center gap-2 bg-destructive/5">
+            <ShieldAlert className="w-4 h-4 text-destructive" />
+            <h3 className="text-sm font-bold text-card-foreground">Emergency Contact (Admin Only)</h3>
+          </div>
+          <div className="p-4 space-y-3 text-sm">
+            {fullClient ? (
+              <>
+                <div className="flex items-start gap-2">
+                  <User className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Contact</p>
+                    <p className="text-card-foreground font-medium">
+                      {fullClient.emergency_contact || "—"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Phone className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Phone</p>
+                    {fullClient.emergency_phone ? (
+                      <a
+                        href={`tel:${fullClient.emergency_phone}`}
+                        className="text-primary font-medium hover:underline"
+                      >
+                        {fullClient.emergency_phone}
+                      </a>
+                    ) : (
+                      <p className="text-card-foreground">—</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-start gap-2 pt-2 border-t border-border">
+                  <FileText className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Care Plan Summary</p>
+                    <p className="text-card-foreground leading-relaxed whitespace-pre-wrap">
+                      {fullClient.care_plan_summary || "—"}
+                    </p>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <p className="text-muted-foreground text-center py-4">Loading client details…</p>
+            )}
+          </div>
+        </div>
       </div>
     </MobileLayout>
   );
