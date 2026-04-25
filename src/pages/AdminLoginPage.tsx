@@ -49,7 +49,7 @@ const AdminLoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm border-0 shadow-2xl" style={{ background: "hsl(142, 30%, 10%)", borderColor: "hsl(142, 40%, 30%)" }}>
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl" style={{ background: "linear-gradient(135deg, hsl(142, 70%, 45%), hsl(142, 60%, 35%))" }}>
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
             <Shield className="h-7 w-7 text-white" />
           </div>
           <CardTitle className="text-2xl text-white">ComfortLink Pro</CardTitle>
