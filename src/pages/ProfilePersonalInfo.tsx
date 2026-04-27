@@ -5,21 +5,40 @@ import { useProfile } from "@/hooks/useProfile";
 import { supabase } from "@/integrations/supabase/client";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
 import MobileLayout from "@/components/layout/MobileLayout";
 
 const ProfilePersonalInfo = () => {
   const navigate = useNavigate();
   const { data: profile, isLoading, refetch } = useProfile();
-  const [fullName, setFullName] = useState("");
-  const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [saving, setSaving] = useState(false);
+  const [form, setForm] = useState({
+    full_name: "",
+    phone: "",
+    address: "",
+    date_of_birth: "",
+    bio: "",
+    emergency_contact_name: "",
+    emergency_contact_phone: "",
+    certifications: "",
+    availability_notes: "",
+  });
 
   useEffect(() => {
     if (profile) {
-      setFullName(profile.full_name || "");
-      setPhone(profile.phone || "");
+      setForm({
+        full_name: profile.full_name || "",
+        phone: profile.phone || "",
+        address: (profile as any).address || "",
+        date_of_birth: (profile as any).date_of_birth || "",
+        bio: (profile as any).bio || "",
+        emergency_contact_name: (profile as any).emergency_contact_name || "",
+        emergency_contact_phone: (profile as any).emergency_contact_phone || "",
+        certifications: (profile as any).certifications || "",
+        availability_notes: (profile as any).availability_notes || "",
+      });
     }
   }, [profile]);
 
@@ -29,6 +48,9 @@ const ProfilePersonalInfo = () => {
     });
   }, []);
 
+  const set = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+    setForm((f) => ({ ...f, [k]: e.target.value }));
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -37,18 +59,23 @@ const ProfilePersonalInfo = () => {
 
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: fullName.trim(), phone: phone.trim() || null, updated_at: new Date().toISOString() })
+        .update({
+          full_name: form.full_name.trim(),
+          phone: form.phone.trim() || null,
+          address: form.address.trim() || null,
+          date_of_birth: form.date_of_birth || null,
+          bio: form.bio.trim() || null,
+          emergency_contact_name: form.emergency_contact_name.trim() || null,
+          emergency_contact_phone: form.emergency_contact_phone.trim() || null,
+          certifications: form.certifications.trim() || null,
+          availability_notes: form.availability_notes.trim() || null,
+          updated_at: new Date().toISOString(),
+        } as any)
         .eq("id", user.id);
       if (error) throw error;
 
-      if (email !== user.email) {
-        const { error: emailErr } = await supabase.auth.updateUser({ email });
-        if (emailErr) throw emailErr;
-        toast.info("Confirmation email sent to your new address.");
-      }
-
       await refetch();
-      toast.success("Personal information updated!");
+      toast.success("Profile updated!");
     } catch (err: any) {
       toast.error(err.message || "Failed to save");
     } finally {
@@ -69,17 +96,56 @@ const ProfilePersonalInfo = () => {
         ) : (
           <div className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
-              <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Your full name" />
+              <Label htmlFor="full_name">Full Name</Label>
+              <Input id="full_name" value={form.full_name} onChange={set("full_name")} placeholder="Your full name" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="your@email.com" />
+              <Input id="email" type="email" value={email} disabled className="opacity-60" />
+              <p className="text-xs text-muted-foreground">Email is managed by your administrator and can't be changed here.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="phone">Phone</Label>
-              <Input id="phone" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+1 (555) 123-4567" />
+              <Input id="phone" type="tel" value={form.phone} onChange={set("phone")} placeholder="+1 (555) 123-4567" />
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="address">Home Address</Label>
+              <Input id="address" value={form.address} onChange={set("address")} placeholder="123 Main St, City" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="dob">Date of Birth</Label>
+              <Input id="dob" type="date" value={form.date_of_birth} onChange={set("date_of_birth")} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="bio">Bio / About</Label>
+              <Textarea id="bio" value={form.bio} onChange={set("bio")} placeholder="Tell us a bit about yourself" rows={3} />
+            </div>
+
+            <div className="pt-3 border-t border-border">
+              <h3 className="text-sm font-bold text-foreground mb-3">Emergency Contact</h3>
+              <div className="space-y-3">
+                <div className="space-y-2">
+                  <Label htmlFor="ec_name">Contact Name</Label>
+                  <Input id="ec_name" value={form.emergency_contact_name} onChange={set("emergency_contact_name")} placeholder="Jane Doe" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ec_phone">Contact Phone</Label>
+                  <Input id="ec_phone" type="tel" value={form.emergency_contact_phone} onChange={set("emergency_contact_phone")} placeholder="+1 (555) 123-4567" />
+                </div>
+              </div>
+            </div>
+
+            <div className="pt-3 border-t border-border space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="certs">Certifications</Label>
+                <Textarea id="certs" value={form.certifications} onChange={set("certifications")} placeholder="CPR, First Aid, CNA…" rows={2} />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="avail">Availability Notes</Label>
+                <Textarea id="avail" value={form.availability_notes} onChange={set("availability_notes")} placeholder="Weekday evenings, no Sundays…" rows={2} />
+              </div>
+            </div>
+
             <button
               onClick={handleSave}
               disabled={saving}
