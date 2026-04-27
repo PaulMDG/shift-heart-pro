@@ -55,12 +55,12 @@ const AdminDashboard = () => {
   };
 
   const stats = [
-    { icon: CalendarDays, label: "Today", value: todayShifts.length, color: "text-primary" },
-    { icon: Clock, label: "Active", value: activeShifts.length, color: "text-info" },
-    { icon: CheckCircle2, label: "Done", value: completedShifts.length, color: "text-success" },
-    { icon: ArrowRightLeft, label: "Swaps", value: pendingSwaps.length, color: "text-warning" },
-    { icon: Users, label: "Clients", value: clients.length, color: "text-accent-foreground" },
-    { icon: UserCheck, label: "Staff", value: caregivers.length, color: "text-primary" },
+    { icon: CalendarDays, label: "Today", value: todayShifts.length, color: "text-primary", onClick: () => setActiveTab("Shifts") },
+    { icon: Clock, label: "Active", value: activeShifts.length, color: "text-info", onClick: () => setActiveTab("Shifts") },
+    { icon: CheckCircle2, label: "Done", value: completedShifts.length, color: "text-success", onClick: () => navigate("/admin/timesheets") },
+    { icon: ArrowRightLeft, label: "Swaps", value: pendingSwaps.length, color: "text-warning", onClick: () => setActiveTab("Swaps") },
+    { icon: Users, label: "Clients", value: clients.length, color: "text-accent-foreground", onClick: () => setActiveTab("Clients") },
+    { icon: UserCheck, label: "Staff", value: caregivers.length, color: "text-primary", onClick: () => setActiveTab("Caregivers") },
   ];
 
   return (
@@ -262,11 +262,15 @@ function OverviewTab({ stats, pendingSwaps, todayShifts, shiftsLoading, handleAp
     <div className="space-y-5">
       <div className="grid grid-cols-3 gap-3">
         {stats.map((s: any) => (
-          <div key={s.label} className="bg-card rounded-2xl p-3 border border-border text-center">
+          <button
+            key={s.label}
+            onClick={s.onClick}
+            className="bg-card rounded-2xl p-3 border border-border text-center hover:border-primary/40 hover:shadow-sm active:scale-[0.98] transition-all"
+          >
             <s.icon className={`w-5 h-5 mx-auto mb-1 ${s.color}`} />
             <p className="text-lg font-bold text-card-foreground">{s.value}</p>
             <p className="text-[10px] text-muted-foreground font-medium">{s.label}</p>
-          </div>
+          </button>
         ))}
       </div>
       {pendingSwaps.length > 0 && (
