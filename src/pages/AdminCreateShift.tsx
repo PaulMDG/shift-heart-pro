@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
+import { sendNotificationEmail, emailTemplate } from "@/lib/notifyEmail";
 
 const AdminCreateShift = () => {
   const navigate = useNavigate();
@@ -32,6 +33,27 @@ const AdminCreateShift = () => {
         admin_notes: notes,
       });
       toast.success("Shift created successfully!");
+
+      // If a caregiver was assigned, notify them by email (best-effort; needs email).
+      if (caregiverId) {
+        const cg = caregivers.find((c: any) => c.id === caregiverId);
+        const client = clients.find((c: any) => c.id === clientId);
+        const recipient = cg?.email || cg?.full_name; // profiles table doesn't expose email — see note below
+        if (cg?.email) {
+          sendNotificationEmail({
+            to: cg.email,
+            subject: `New shift assigned — ${date}`,
+            html: emailTemplate(
+              "You've been assigned a new shift",
+              `<p>Hi ${cg.full_name || "there"},</p>
+               <p>You've been assigned a shift with <strong>${client?.name ?? "a client"}</strong>.</p>
+               <p>Date: ${date} &middot; ${startTime} – ${endTime}</p>
+               <p>Please open the ComfortLink app to <strong>accept or decline</strong> this assignment.</p>`
+            ),
+          });
+        }
+      }
+
       navigate("/admin");
     } catch (err: any) {
       toast.error(err.message);
