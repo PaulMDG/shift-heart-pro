@@ -17,12 +17,10 @@ const AdminLoginPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-
     try {
       const { data, error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
-      // Verify user is actually an admin
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
@@ -47,20 +45,18 @@ const AdminLoginPage = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-sm border-0 shadow-2xl" style={{ background: "hsl(142, 30%, 10%)", borderColor: "hsl(142, 40%, 30%)" }}>
+      <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl">
-            <Shield className="h-7 w-7 text-white" />
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <Shield className="h-6 w-6 text-primary" />
           </div>
-          <CardTitle className="text-2xl text-white">ComfortLink Pro</CardTitle>
-          <CardDescription className="text-emerald-300/70">
-            Administrator Portal
-          </CardDescription>
+          <CardTitle className="text-2xl">ComfortLink</CardTitle>
+          <CardDescription>Administrator Portal</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="admin-email" className="text-emerald-200/80">Email</Label>
+              <Label htmlFor="admin-email">Email</Label>
               <Input
                 id="admin-email"
                 type="email"
@@ -68,11 +64,10 @@ const AdminLoginPage = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@comfortlink.app"
                 required
-                className="bg-white/10 border-emerald-600/30 text-white placeholder:text-emerald-300/40 focus:border-emerald-400"
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="admin-password" className="text-emerald-200/80">Password</Label>
+              <Label htmlFor="admin-password">Password</Label>
               <Input
                 id="admin-password"
                 type="password"
@@ -81,26 +76,20 @@ const AdminLoginPage = () => {
                 placeholder="••••••••"
                 required
                 minLength={6}
-                className="bg-white/10 border-emerald-600/30 text-white placeholder:text-emerald-300/40 focus:border-emerald-400"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button
-              type="submit"
-              className="w-full text-white font-bold"
-              disabled={loading}
-              style={{ background: "linear-gradient(135deg, hsl(142, 70%, 45%), hsl(142, 60%, 35%))" }}
-            >
-              {loading && <Loader2 className="animate-spin mr-2" />}
-              Sign In as Admin
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="animate-spin" />}
+              Sign In
             </Button>
             <button
               type="button"
-              className="text-sm text-emerald-400/60 hover:text-emerald-300 transition-colors"
+              className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors mt-1"
               onClick={() => navigate("/auth")}
             >
-              ← Back to Caregiver Login
+              ← Caregiver Portal
             </button>
           </CardFooter>
         </form>
