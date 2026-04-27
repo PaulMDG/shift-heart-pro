@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { sendNotificationEmail, getAdminEmails, emailTemplate } from "@/lib/notifyEmail";
 
 export interface ShiftWithClient {
   id: string;
@@ -9,6 +10,7 @@ export interface ShiftWithClient {
   start_time: string;
   end_time: string;
   status: string;
+  assignment_status?: string;
   admin_notes: string;
   clock_in_time: string | null;
   clock_out_time: string | null;
@@ -84,6 +86,70 @@ export function useUpdateShiftStatus() {
       if (clock_in_selfie_url) updates.clock_in_selfie_url = clock_in_selfie_url;
       const { error } = await supabase.from("shifts").update(updates).eq("id", id);
       if (error) throw error;
+
+      // Notify admins of clock-in / clock-out events (best-effort).
+      try {
+        if (status === "in_progress" || status === "completed") {
+          const { data: shift } = await supabase
+            .from("shifts")
+            .select("date, start_time, end_time, caregiver_id, client_id")
+            .eq("id", id)
+            .maybeSingle();
+          const { data: { user } } = await supabase.auth.getUser();
+          const adminEmails = await getAdminEmails();
+          const action = status === "in_progress" ? "clocked in" : "clocked out of";
+          const caregiverName = user?.user_metadata?.full_name || user?.email || "A caregiver";
+          await sendNotificationEmail({
+            to: adminEmails,
+            subject: `Shift ${action} — ${shift?.date ?? ""}`,
+            html: emailTemplate(
+              `Caregiver ${action} a shift`,
+              `<p><strong>${caregiverName}</strong> just ${action} their shift.</p>
+               <p>Date: ${shift?.date} &middot; ${shift?.start_time} – ${shift?.end_time}</p>`
+            ),
+          });
+        }
+      } catch (e) {
+        console.warn("[useUpdateShiftStatus] email notify failed", e);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
+    },
+  });
+}
+
+export function useUpdateAssignmentStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, assignment_status }: { id: string; assignment_status: "accepted" | "declined" }) => {
+      const { error } = await supabase
+        .from("shifts")
+        .update({ assignment_status, updated_at: new Date().toISOString() } as any)
+        .eq("id", id);
+      if (error) throw error;
+
+      try {
+        const { data: shift } = await supabase
+          .from("shifts")
+          .select("date, start_time, end_time")
+          .eq("id", id)
+          .maybeSingle();
+        const { data: { user } } = await supabase.auth.getUser();
+        const adminEmails = await getAdminEmails();
+        const name = user?.user_metadata?.full_name || user?.email || "A caregiver";
+        await sendNotificationEmail({
+          to: adminEmails,
+          subject: `Shift ${assignment_status} — ${shift?.date ?? ""}`,
+          html: emailTemplate(
+            `Caregiver ${assignment_status} an assigned shift`,
+            `<p><strong>${name}</strong> has <strong>${assignment_status}</strong> a shift.</p>
+             <p>Date: ${shift?.date} &middot; ${shift?.start_time} – ${shift?.end_time}</p>`
+          ),
+        });
+      } catch (e) {
+        console.warn("[useUpdateAssignmentStatus] email notify failed", e);
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["shifts"] });

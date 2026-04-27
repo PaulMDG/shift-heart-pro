@@ -7,13 +7,18 @@ const BottomNav = () => {
   const navigate = useNavigate();
   const { isAdmin } = useIsAdmin();
 
-  const navItems = [
-    { icon: Home, label: "Home", path: "/" },
-    { icon: CalendarDays, label: "Shifts", path: "/shifts" },
-    { icon: MessageCircle, label: "Messages", path: "/messages" },
-    ...(isAdmin ? [{ icon: Shield, label: "Admin", path: "/admin" }] : []),
-    { icon: User, label: "Profile", path: "/profile" },
-  ];
+  // Admins see only Admin + Profile; caregivers see the full nav (no Admin item).
+  const navItems = isAdmin
+    ? [
+        { icon: Shield, label: "Admin", path: "/admin" },
+        { icon: User, label: "Profile", path: "/profile" },
+      ]
+    : [
+        { icon: Home, label: "Home", path: "/" },
+        { icon: CalendarDays, label: "Shifts", path: "/shifts" },
+        { icon: MessageCircle, label: "Messages", path: "/messages" },
+        { icon: User, label: "Profile", path: "/profile" },
+      ];
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-card border-t border-border">

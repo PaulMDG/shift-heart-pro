@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare } from "lucide-react";
-import { useShift, useUpdateShiftStatus } from "@/hooks/useShifts";
+import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
 import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
 import SelfieCapture from "@/components/shifts/SelfieCapture";
@@ -14,6 +14,7 @@ const ShiftDetail = () => {
   const navigate = useNavigate();
   const { data: shift, isLoading } = useShift(id);
   const updateStatus = useUpdateShiftStatus();
+  const updateAssignment = useUpdateAssignmentStatus();
   const [showClockOut, setShowClockOut] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [showSelfie, setShowSelfie] = useState(false);
@@ -217,6 +218,34 @@ const ShiftDetail = () => {
         {status === "completed" && (
           <div className="w-full py-4 rounded-2xl bg-success/15 text-success text-lg font-bold text-center">
             ✓ Completed
+          </div>
+        )}
+
+        {(shift as any).assignment_status === "pending" && status === "not_started" && (
+          <div className="space-y-2">
+            <p className="text-sm font-semibold text-foreground">This shift is awaiting your response</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => updateAssignment.mutate({ id: shift.id, assignment_status: "accepted" })}
+                disabled={updateAssignment.isPending}
+                className="flex-1 py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold disabled:opacity-50"
+              >
+                Accept Shift
+              </button>
+              <button
+                onClick={() => updateAssignment.mutate({ id: shift.id, assignment_status: "declined" })}
+                disabled={updateAssignment.isPending}
+                className="flex-1 py-3 rounded-2xl border border-border text-sm font-bold text-foreground disabled:opacity-50"
+              >
+                Decline
+              </button>
+            </div>
+          </div>
+        )}
+
+        {(shift as any).assignment_status === "declined" && (
+          <div className="w-full py-3 rounded-2xl bg-destructive/10 text-destructive text-sm font-bold text-center">
+            You declined this shift — admin has been notified.
           </div>
         )}
 

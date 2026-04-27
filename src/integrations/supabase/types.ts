@@ -192,24 +192,45 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          availability_notes: string | null
           avatar_url: string | null
+          bio: string | null
+          certifications: string | null
           created_at: string
+          date_of_birth: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
           full_name: string
           id: string
           phone: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          availability_notes?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          certifications?: string | null
           created_at?: string
+          date_of_birth?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           full_name?: string
           id: string
           phone?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          availability_notes?: string | null
           avatar_url?: string | null
+          bio?: string | null
+          certifications?: string | null
           created_at?: string
+          date_of_birth?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
           full_name?: string
           id?: string
           phone?: string | null
@@ -255,6 +276,7 @@ export type Database = {
       shifts: {
         Row: {
           admin_notes: string
+          assignment_status: string
           caregiver_id: string | null
           client_id: string
           clock_in_lat: number | null
@@ -276,6 +298,7 @@ export type Database = {
         }
         Insert: {
           admin_notes?: string
+          assignment_status?: string
           caregiver_id?: string | null
           client_id: string
           clock_in_lat?: number | null
@@ -297,6 +320,7 @@ export type Database = {
         }
         Update: {
           admin_notes?: string
+          assignment_status?: string
           caregiver_id?: string | null
           client_id?: string
           clock_in_lat?: number | null
