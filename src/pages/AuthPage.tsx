@@ -93,7 +93,7 @@ const AuthPage = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                placeholder=""
                 required
               />
             </div>
@@ -104,7 +104,7 @@ const AuthPage = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder=""
                 required
                 minLength={6}
               />
