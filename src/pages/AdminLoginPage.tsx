@@ -86,7 +86,7 @@ const AdminLoginPage = () => {
             </Button>
             <button
               type="button"
-              className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors mt-1"
+              className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors mt-1 linear-gradient(135deg,#238b5a,#36a16f)"
               onClick={() => navigate("/auth")}
             >
               ← Caregiver Portal
