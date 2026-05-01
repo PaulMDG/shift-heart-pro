@@ -59,6 +59,7 @@ const AdminDashboard = () => {
     { icon: Clock, label: "Active", value: activeShifts.length, color: "text-info", onClick: () => setActiveTab("Shifts") },
     { icon: CheckCircle2, label: "Done", value: completedShifts.length, color: "text-success", onClick: () => navigate("/admin/timesheets") },
     { icon: ArrowRightLeft, label: "Swaps", value: pendingSwaps.length, color: "text-warning", onClick: () => setActiveTab("Swaps") },
+    // Also accessible via /admin/swaps for dedicated approval screen
     { icon: Users, label: "Clients", value: clients.length, color: "text-accent-foreground", onClick: () => setActiveTab("Clients") },
     { icon: UserCheck, label: "Staff", value: caregivers.length, color: "text-primary", onClick: () => setActiveTab("Caregivers") },
   ];

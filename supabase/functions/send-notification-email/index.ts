@@ -1,5 +1,8 @@
 // Sends notification emails via Resend connector gateway.
 // Triggered from client code on shift events (clock-in/out, swap, assignment, accept/decline).
+// Supports looking up caregiver email from auth.users when caregiver_id is provided.
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -12,6 +15,8 @@ interface Payload {
   to: string | string[];
   subject: string;
   html: string;
+  /** If provided, the function will look up the user's email from auth.users */
+  caregiver_id?: string;
 }
 
 function isValidEmail(e: string) {
@@ -28,7 +33,23 @@ Deno.serve(async (req) => {
     if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY not configured');
 
     const body = (await req.json()) as Payload;
-    const recipients = Array.isArray(body.to) ? body.to : [body.to];
+    let recipients = Array.isArray(body.to) ? body.to : body.to ? [body.to] : [];
+
+    // If caregiver_id is provided, look up their email server-side
+    if (body.caregiver_id) {
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+      const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (SUPABASE_URL && SERVICE_ROLE_KEY) {
+        const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+        const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(body.caregiver_id);
+        if (!userErr && userData?.user?.email) {
+          recipients = [...recipients, userData.user.email];
+        } else {
+          console.warn('Could not look up caregiver email:', userErr?.message);
+        }
+      }
+    }
+
     const validRecipients = recipients.filter(isValidEmail);
     if (validRecipients.length === 0) {
       return new Response(JSON.stringify({ error: 'No valid recipients' }), {
