@@ -62,7 +62,7 @@ const AdminLoginPage = () => {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@comfortlink.app"
+                placeholder=""
                 required
               />
             </div>
@@ -73,7 +73,7 @@ const AdminLoginPage = () => {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder=""
                 required
                 minLength={6}
               />
