@@ -8,6 +8,7 @@ export async function sendNotificationEmail(args: {
   to: string | string[];
   subject: string;
   html: string;
+  caregiver_id?: string;
 }): Promise<void> {
   try {
     const { error } = await supabase.functions.invoke("send-notification-email", {
