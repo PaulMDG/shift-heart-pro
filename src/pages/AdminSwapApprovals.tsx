@@ -38,6 +38,12 @@ const AdminSwapApprovals = () => {
           "Your swap request was approved",
           `<p>Your swap request for the shift on <strong>${swap.shift?.date}</strong> (${swap.shift?.start_time} – ${swap.shift?.end_time}) with <strong>${swap.shift?.client?.name ?? "a client"}</strong> has been <strong>approved</strong> by an admin.</p>`
         ),
+        create_notification: {
+          user_id: swap.requester_id,
+          title: "Swap approved",
+          message: `Your swap for ${swap.shift?.date} (${swap.shift?.start_time}–${swap.shift?.end_time}) was approved.`,
+          type: "swap",
+        },
       });
       // Notify target if exists
       if (swap.target_id) {
@@ -49,6 +55,12 @@ const AdminSwapApprovals = () => {
             "A shift has been swapped to you",
             `<p>You've been assigned a shift on <strong>${swap.shift?.date}</strong> (${swap.shift?.start_time} – ${swap.shift?.end_time}) with <strong>${swap.shift?.client?.name ?? "a client"}</strong> via an approved swap.</p>`
           ),
+          create_notification: {
+            user_id: swap.target_id,
+            title: "Shift swapped to you",
+            message: `A shift on ${swap.shift?.date} (${swap.shift?.start_time}–${swap.shift?.end_time}) was swapped to you.`,
+            type: "swap",
+          },
         });
       }
     } catch (err: any) {
@@ -71,6 +83,12 @@ const AdminSwapApprovals = () => {
           "Your swap request was declined",
           `<p>Your swap request for the shift on <strong>${swap.shift?.date}</strong> has been <strong>declined</strong> by an admin.</p>`
         ),
+        create_notification: {
+          user_id: swap.requester_id,
+          title: "Swap declined",
+          message: `Your swap request for ${swap.shift?.date} was declined by an admin.`,
+          type: "swap",
+        },
       });
     } catch (err: any) {
       toast.error(err.message);
