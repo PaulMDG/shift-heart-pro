@@ -15,7 +15,7 @@ interface CaregiverDetailSheetProps {
 }
 
 const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheetProps) => {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(true);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
   const [uploading, setUploading] = useState(false);
@@ -83,10 +83,10 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
     }
   };
 
-  const startEditing = () => {
-    setFullName(caregiver.full_name || "");
-    setPhone(caregiver.phone || "");
-    setEditing(true);
+  // Auto-populate form fields when caregiver changes
+  const resetForm = () => {
+    setFullName(caregiver?.full_name || "");
+    setPhone(caregiver?.phone || "");
   };
 
   const handleSave = () => {
@@ -100,13 +100,13 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
   if (!caregiver) return null;
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) { setEditing(false); onClose(); } }}>
-      <SheetContent side="bottom" className="rounded-t-3xl max-h-[80vh] overflow-y-auto">
+    <Sheet open={open} onOpenChange={(v) => { if (!v) { setEditing(true); onClose(); } else { resetForm(); } }}>
+      <SheetContent side="bottom" className="rounded-t-3xl max-h-[80vh] overflow-y-auto max-w-lg mx-auto">
         <SheetHeader className="pb-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg">Caregiver Profile</SheetTitle>
             {!editing ? (
-              <button onClick={startEditing} className="p-2 rounded-xl bg-accent hover:bg-accent/80 transition-colors">
+              <button onClick={() => { resetForm(); setEditing(true); }} className="p-2 rounded-xl bg-accent hover:bg-accent/80 transition-colors">
                 <Pencil className="w-4 h-4 text-accent-foreground" />
               </button>
             ) : (
