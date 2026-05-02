@@ -43,7 +43,7 @@ const AuthPage = () => {
         toast.success("Welcome back!");
         navigate("/");
       } else {
-        const { data: signUpData, error } = await supabase.auth.signUp({
+        const { error } = await supabase.auth.signUp({
           email,
           password,
           options: {
