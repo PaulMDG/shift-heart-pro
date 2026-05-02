@@ -50,6 +50,12 @@ const AdminCreateShift = () => {
              <p>Date: ${date} &middot; ${startTime} – ${endTime}</p>
              <p>Please open the ComfortLink app to <strong>accept or decline</strong> this assignment.</p>`
           ),
+          create_notification: {
+            user_id: caregiverId,
+            title: "New shift assigned",
+            message: `Shift with ${client?.name ?? "a client"} on ${date} (${startTime}–${endTime}). Accept or decline in the app.`,
+            type: "shift",
+          },
         });
       }
 
