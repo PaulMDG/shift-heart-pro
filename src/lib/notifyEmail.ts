@@ -9,6 +9,13 @@ export async function sendNotificationEmail(args: {
   subject: string;
   html: string;
   caregiver_id?: string;
+  create_notification?: {
+    user_id: string;
+    title: string;
+    message: string;
+    type?: string;
+    related_shift_id?: string;
+  };
 }): Promise<void> {
   try {
     const { error } = await supabase.functions.invoke("send-notification-email", {
@@ -32,7 +39,7 @@ export async function getAdminEmails(): Promise<string[]> {
     // Fall back to a single configured admin alias on the org domain.
     return ["care@comfortlink.app"];
   } catch {
-    return ["care@comfortlink.app"];
+    return ["noreply@comfortlink.app"];
   }
 }
 
@@ -52,6 +59,6 @@ export const emailTemplate = (title: string, bodyHtml: string) => `
   <h2 style="font-size:18px;margin:0 0 12px;">${title}</h2>
   <div style="font-size:14px;line-height:1.6;color:#334155;">${bodyHtml}</div>
   <p style="font-size:12px;color:#94a3b8;margin-top:32px;border-top:1px solid #e2e8f0;padding-top:12px;">
-    Sent by ComfortLink &middot; care@comfortlink.app
+    Sent by ComfortLink &middot; noreply@comfortlink.app
   </p>
 </div>`;

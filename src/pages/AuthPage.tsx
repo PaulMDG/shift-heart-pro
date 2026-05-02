@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { sendNotificationEmail, emailTemplate } from "@/lib/notifyEmail";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -51,7 +52,23 @@ const AuthPage = () => {
           },
         });
         if (error) throw error;
-        toast.success("Account created! Check your email to confirm.");
+
+        // Send welcome email via Resend
+        try {
+          await sendNotificationEmail({
+            to: email,
+            subject: "Welcome to ComfortLink!",
+            html: emailTemplate(
+              "Welcome to ComfortLink!",
+              `<p>Hi <strong>${fullName || "there"}</strong>,</p>
+               <p>Your ComfortLink account has been created successfully. You can now sign in and start managing your shifts.</p>
+               <p>If you didn't create this account, please ignore this email.</p>`
+            ),
+          });
+          toast.success("Account created! Check your email for a welcome message.");
+        } catch {
+          toast.success("Account created! Email confirmation may take a moment.");
+        }
       }
     } catch (error: any) {
       toast.error(error.message);

@@ -9,7 +9,7 @@ const corsHeaders = {
 };
 
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/resend';
-const FROM = 'ComfortLink <care@comfortlink.app>';
+const FROM = 'ComfortLink <noreply@comfortlink.app>';
 
 interface Payload {
   to: string | string[];
@@ -17,6 +17,14 @@ interface Payload {
   html: string;
   /** If provided, the function will look up the user's email from auth.users */
   caregiver_id?: string;
+  /** If provided, creates an in-app notification for the caregiver */
+  create_notification?: {
+    user_id: string;
+    title: string;
+    message: string;
+    type?: string;
+    related_shift_id?: string;
+  };
 }
 
 function isValidEmail(e: string) {
@@ -80,6 +88,25 @@ Deno.serve(async (req) => {
     });
 
     const data = await response.json();
+    const emailSuccess = response.ok;
+
+    // Create in-app notification if requested
+    if (body.create_notification) {
+      const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+      const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      if (SUPABASE_URL && SERVICE_ROLE_KEY) {
+        const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+        await adminClient.from('notifications').insert({
+          user_id: body.create_notification.user_id,
+          title: body.create_notification.title,
+          message: body.create_notification.message,
+          type: body.create_notification.type || 'shift',
+          email_status: emailSuccess ? 'sent' : 'failed',
+          related_shift_id: body.create_notification.related_shift_id || null,
+        });
+      }
+    }
+
     if (!response.ok) {
       console.error('Resend API error', response.status, data);
       return new Response(JSON.stringify({ error: 'Email send failed', details: data }), {
