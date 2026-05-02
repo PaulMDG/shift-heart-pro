@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare } from "lucide-react";
 import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
-import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
+import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, metersToFeet } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
 import SelfieCapture from "@/components/shifts/SelfieCapture";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -60,15 +60,18 @@ const ShiftDetail = () => {
       });
 
       if (distance <= MAX_DISTANCE_METERS) {
-        toast.success(`Location verified (${Math.round(distance)}m from client)`);
+        const feet = Math.round(metersToFeet(distance));
+        toast.success(`Location verified (${feet} ft from client)`);
         setLastVerifiedPosition(pos);
         onSuccess();
       } else {
-        const distanceText = distance >= 1000
-          ? `${(distance / 1000).toFixed(1)}km`
-          : `${Math.round(distance)}m`;
+        const feet = Math.round(metersToFeet(distance));
+        const distanceText = feet >= 5280
+          ? `${(feet / 5280).toFixed(1)} mi`
+          : `${feet} ft`;
+        const maxFeet = Math.round(metersToFeet(MAX_DISTANCE_METERS));
         setLocationError(
-          `You are ${distanceText} away from ${shift.client.name}'s location. You must be within ${MAX_DISTANCE_METERS}m to clock in/out. Please travel to the client's address: ${shift.client.address}`
+          `You are ${distanceText} away from ${shift.client.name}'s location. You must be within ${maxFeet} ft to clock in/out. Please travel to the client's address: ${shift.client.address}`
         );
       }
     } catch (err: any) {

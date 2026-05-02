@@ -44,5 +44,10 @@ export function getDistanceMeters(a: GeoPosition, b: GeoPosition): number {
   return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
 }
 
-/** Max allowed distance in meters from client location */
-export const MAX_DISTANCE_METERS = 200;
+/** Max allowed distance: 100 ft geofence + 150 ft buffer = 250 ft ≈ 76.2 m */
+export const MAX_DISTANCE_METERS = 76.2;
+
+/** Convert meters to feet */
+export function metersToFeet(m: number): number {
+  return m * 3.28084;
+}

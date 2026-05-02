@@ -14,20 +14,19 @@ interface ClientDetailSheetProps {
 }
 
 const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) => {
-  const [editing, setEditing] = useState(false);
+  const [editing, setEditing] = useState(true);
   const [form, setForm] = useState({ name: "", address: "", care_type: "", care_plan_summary: "", emergency_contact: "", emergency_phone: "" });
   const updateClient = useUpdateClient();
 
-  const startEditing = () => {
+  const resetForm = () => {
     setForm({
-      name: client.name || "",
-      address: client.address || "",
-      care_type: client.care_type || "",
-      care_plan_summary: client.care_plan_summary || "",
-      emergency_contact: client.emergency_contact || "",
-      emergency_phone: client.emergency_phone || "",
+      name: client?.name || "",
+      address: client?.address || "",
+      care_type: client?.care_type || "",
+      care_plan_summary: client?.care_plan_summary || "",
+      emergency_contact: client?.emergency_contact || "",
+      emergency_phone: client?.emergency_phone || "",
     });
-    setEditing(true);
   };
 
   const handleSave = async () => {
@@ -49,13 +48,13 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
   const set = (key: string, val: string) => setForm((f) => ({ ...f, [key]: val }));
 
   return (
-    <Sheet open={open} onOpenChange={(v) => { if (!v) { setEditing(false); onClose(); } }}>
-      <SheetContent side="bottom" className="rounded-t-3xl max-h-[80vh] overflow-y-auto">
+    <Sheet open={open} onOpenChange={(v) => { if (!v) { setEditing(true); onClose(); } else { resetForm(); } }}>
+      <SheetContent side="bottom" className="rounded-t-3xl max-h-[80vh] overflow-y-auto max-w-lg mx-auto">
         <SheetHeader className="pb-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg">Client Profile</SheetTitle>
             {!editing ? (
-              <button onClick={startEditing} className="p-2 rounded-xl bg-accent hover:bg-accent/80 transition-colors">
+              <button onClick={() => { resetForm(); setEditing(true); }} className="p-2 rounded-xl bg-accent hover:bg-accent/80 transition-colors">
                 <Pencil className="w-4 h-4 text-accent-foreground" />
               </button>
             ) : (
