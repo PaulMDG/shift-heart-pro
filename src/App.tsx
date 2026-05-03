@@ -34,6 +34,7 @@ import AdminNotifications from "./pages/AdminNotifications";
 import AdminSecurity from "./pages/AdminSecurity";
 import AdminDataManagement from "./pages/AdminDataManagement";
 import AdminSwapApprovals from "./pages/AdminSwapApprovals";
+import AdminGeofenceTest from "./pages/AdminGeofenceTest";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -74,6 +75,7 @@ const App = () => (
             <Route path="/admin/settings/security" element={<AdminRoute><AdminSecurity /></AdminRoute>} />
             <Route path="/admin/settings/data" element={<AdminRoute><AdminDataManagement /></AdminRoute>} />
             <Route path="/admin/swaps" element={<AdminRoute><AdminSwapApprovals /></AdminRoute>} />
+            <Route path="/admin/geofence-test" element={<AdminRoute><AdminGeofenceTest /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

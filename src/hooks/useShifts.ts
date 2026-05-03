@@ -63,7 +63,7 @@ export function useShift(id: string | undefined) {
 export function useUpdateShiftStatus() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, status, clock_in_time, clock_out_time, clock_out_notes, clock_in_lat, clock_in_lng, clock_out_lat, clock_out_lng, clock_in_selfie_url }: {
+    mutationFn: async ({ id, status, clock_in_time, clock_out_time, clock_out_notes, clock_in_lat, clock_in_lng, clock_out_lat, clock_out_lng, clock_in_selfie_url, clock_in_accuracy, clock_out_accuracy }: {
       id: string;
       status: string;
       clock_in_time?: string;
@@ -74,8 +74,10 @@ export function useUpdateShiftStatus() {
       clock_out_lat?: number;
       clock_out_lng?: number;
       clock_in_selfie_url?: string;
+      clock_in_accuracy?: number;
+      clock_out_accuracy?: number;
     }) => {
-      const updates: { status: string; updated_at: string; clock_in_time?: string; clock_out_time?: string; clock_out_notes?: string; clock_in_lat?: number; clock_in_lng?: number; clock_out_lat?: number; clock_out_lng?: number; clock_in_selfie_url?: string } = { status, updated_at: new Date().toISOString() };
+      const updates: any = { status, updated_at: new Date().toISOString() };
       if (clock_in_time) updates.clock_in_time = clock_in_time;
       if (clock_out_time) updates.clock_out_time = clock_out_time;
       if (clock_out_notes !== undefined) updates.clock_out_notes = clock_out_notes;
@@ -84,6 +86,8 @@ export function useUpdateShiftStatus() {
       if (clock_out_lat !== undefined) updates.clock_out_lat = clock_out_lat;
       if (clock_out_lng !== undefined) updates.clock_out_lng = clock_out_lng;
       if (clock_in_selfie_url) updates.clock_in_selfie_url = clock_in_selfie_url;
+      if (clock_in_accuracy !== undefined) updates.clock_in_accuracy = clock_in_accuracy;
+      if (clock_out_accuracy !== undefined) updates.clock_out_accuracy = clock_out_accuracy;
       const { error } = await supabase.from("shifts").update(updates).eq("id", id);
       if (error) throw error;
 

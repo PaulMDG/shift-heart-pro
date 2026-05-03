@@ -3,10 +3,11 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { User, Phone, Mail, Pencil, Save, X, Loader2, Camera } from "lucide-react";
+import { User, Phone, Mail, Pencil, Save, X, Loader2, Camera, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
+import { useDeleteCaregiver } from "@/hooks/useAdmin";
 
 interface CaregiverDetailSheetProps {
   caregiver: any;
@@ -18,15 +19,23 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
   const [editing, setEditing] = useState(true);
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [ssnLast4, setSsnLast4] = useState("");
+  const [govIdNumber, setGovIdNumber] = useState("");
+  const [govIdState, setGovIdState] = useState("");
+  const [dlNumber, setDlNumber] = useState("");
+  const [dlState, setDlState] = useState("");
+  const [address, setAddress] = useState("");
   const [uploading, setUploading] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
+  const deleteCaregiver = useDeleteCaregiver();
 
   const updateProfile = useMutation({
-    mutationFn: async (updates: { full_name: string; phone: string }) => {
+    mutationFn: async (updates: Record<string, any>) => {
       const { error } = await supabase
         .from("profiles")
-        .update({ full_name: updates.full_name, phone: updates.phone || null })
+        .update(updates as any)
         .eq("id", caregiver.id);
       if (error) throw error;
     },
@@ -87,6 +96,12 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
   const resetForm = () => {
     setFullName(caregiver?.full_name || "");
     setPhone(caregiver?.phone || "");
+    setSsnLast4(caregiver?.ssn_last4 || "");
+    setGovIdNumber(caregiver?.government_id_number || "");
+    setGovIdState(caregiver?.government_id_state || "");
+    setDlNumber(caregiver?.drivers_license_number || "");
+    setDlState(caregiver?.drivers_license_state || "");
+    setAddress(caregiver?.address || "");
   };
 
   const handleSave = () => {
@@ -94,7 +109,26 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
       toast.error("Name is required");
       return;
     }
-    updateProfile.mutate({ full_name: fullName.trim(), phone: phone.trim() });
+    updateProfile.mutate({
+      full_name: fullName.trim(),
+      phone: phone.trim() || null,
+      address: address.trim() || null,
+      ssn_last4: ssnLast4.trim() || null,
+      government_id_number: govIdNumber.trim() || null,
+      government_id_state: govIdState.trim() || null,
+      drivers_license_number: dlNumber.trim() || null,
+      drivers_license_state: dlState.trim() || null,
+    });
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteCaregiver.mutateAsync(caregiver.id);
+      toast.success("User deleted");
+      onClose();
+    } catch (e: any) {
+      toast.error(e.message);
+    }
   };
 
   if (!caregiver) return null;
@@ -198,6 +232,70 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
               </>
             )}
           </div>
+
+          {/* Biodata Section */}
+          <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">
+            <h4 className="text-sm font-semibold text-foreground">Identification & Biodata</h4>
+            {editing ? (
+              <>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Address</Label>
+                  <Input value={address} onChange={(e) => setAddress(e.target.value)} placeholder="Home address" className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">SSN (Last 4 digits)</Label>
+                  <Input value={ssnLast4} onChange={(e) => setSsnLast4(e.target.value.replace(/\D/g, "").slice(0, 4))} placeholder="1234" maxLength={4} className="h-9 text-sm" />
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Label className="text-xs text-muted-foreground">Gov. ID Number</Label>
+                    <Input value={govIdNumber} onChange={(e) => setGovIdNumber(e.target.value)} placeholder="State ID #" className="h-9 text-sm" />
+                  </div>
+                  <div className="w-24">
+                    <Label className="text-xs text-muted-foreground">State</Label>
+                    <Input value={govIdState} onChange={(e) => setGovIdState(e.target.value.toUpperCase().slice(0, 2))} placeholder="NY" maxLength={2} className="h-9 text-sm" />
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Label className="text-xs text-muted-foreground">Driver's License #</Label>
+                    <Input value={dlNumber} onChange={(e) => setDlNumber(e.target.value)} placeholder="DL number" className="h-9 text-sm" />
+                  </div>
+                  <div className="w-24">
+                    <Label className="text-xs text-muted-foreground">State</Label>
+                    <Input value={dlState} onChange={(e) => setDlState(e.target.value.toUpperCase().slice(0, 2))} placeholder="NY" maxLength={2} className="h-9 text-sm" />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                {caregiver.address && <p className="text-xs text-muted-foreground">📍 {caregiver.address}</p>}
+                {caregiver.ssn_last4 && <p className="text-xs text-muted-foreground">SSN: •••{caregiver.ssn_last4}</p>}
+                {caregiver.government_id_number && <p className="text-xs text-muted-foreground">Gov ID: {caregiver.government_id_number} ({caregiver.government_id_state})</p>}
+                {caregiver.drivers_license_number && <p className="text-xs text-muted-foreground">DL: {caregiver.drivers_license_number} ({caregiver.drivers_license_state})</p>}
+                {!caregiver.ssn_last4 && !caregiver.government_id_number && !caregiver.drivers_license_number && (
+                  <p className="text-xs text-muted-foreground italic">No identification on file</p>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Delete Button */}
+          {!confirmDelete ? (
+            <button onClick={() => setConfirmDelete(true)} className="w-full py-3 rounded-2xl border border-destructive/30 text-destructive text-sm font-semibold flex items-center justify-center gap-2 hover:bg-destructive/10 transition-colors">
+              <Trash2 className="w-4 h-4" /> Delete User
+            </button>
+          ) : (
+            <div className="space-y-2">
+              <p className="text-xs text-destructive font-semibold text-center">This will permanently delete this user. Are you sure?</p>
+              <div className="flex gap-2">
+                <button onClick={() => setConfirmDelete(false)} className="flex-1 py-3 rounded-xl border border-border text-sm font-semibold text-foreground">Cancel</button>
+                <button onClick={handleDelete} disabled={deleteCaregiver.isPending} className="flex-1 py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold disabled:opacity-50">
+                  {deleteCaregiver.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Confirm Delete"}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </SheetContent>
     </Sheet>

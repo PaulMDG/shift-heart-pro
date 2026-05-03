@@ -21,6 +21,7 @@ const ShiftDetail = () => {
   const [verifyingLocation, setVerifyingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [lastVerifiedPosition, setLastVerifiedPosition] = useState<{lat: number; lng: number} | null>(null);
+  const [lastAccuracy, setLastAccuracy] = useState<number | null>(null);
 
   if (isLoading) {
     return (
@@ -63,6 +64,7 @@ const ShiftDetail = () => {
         const feet = Math.round(metersToFeet(distance));
         toast.success(`Location verified (${feet} ft from client)`);
         setLastVerifiedPosition(pos);
+        setLastAccuracy(pos.accuracy);
         onSuccess();
       } else {
         const feet = Math.round(metersToFeet(distance));
@@ -112,6 +114,7 @@ const ShiftDetail = () => {
       status: "in_progress",
       clock_in_time: new Date().toISOString(),
       ...(lastVerifiedPosition && { clock_in_lat: lastVerifiedPosition.lat, clock_in_lng: lastVerifiedPosition.lng }),
+      ...(lastAccuracy != null && { clock_in_accuracy: lastAccuracy }),
       ...(selfieUrl && { clock_in_selfie_url: selfieUrl }),
     });
     setShowSelfie(false);
@@ -123,6 +126,7 @@ const ShiftDetail = () => {
       status: "in_progress",
       clock_in_time: new Date().toISOString(),
       ...(lastVerifiedPosition && { clock_in_lat: lastVerifiedPosition.lat, clock_in_lng: lastVerifiedPosition.lng }),
+      ...(lastAccuracy != null && { clock_in_accuracy: lastAccuracy }),
     });
     setShowSelfie(false);
   };
@@ -141,6 +145,7 @@ const ShiftDetail = () => {
       clock_out_time: new Date().toISOString(),
       clock_out_notes: notes,
       ...(lastVerifiedPosition && { clock_out_lat: lastVerifiedPosition.lat, clock_out_lng: lastVerifiedPosition.lng }),
+      ...(lastAccuracy != null && { clock_out_accuracy: lastAccuracy }),
     });
     setShowClockOut(false);
   };
@@ -221,6 +226,43 @@ const ShiftDetail = () => {
         {status === "completed" && (
           <div className="w-full py-4 rounded-2xl bg-success/15 text-success text-lg font-bold text-center">
             ✓ Completed
+          </div>
+        )}
+
+        {/* Verification Details */}
+        {(shift.clock_in_time || shift.clock_out_time) && (
+          <div className="bg-card rounded-2xl p-4 border border-border space-y-3">
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Verification Details</h3>
+            {shift.clock_in_time && (
+              <div className="space-y-1">
+                <p className="text-xs font-semibold text-foreground">Clock In</p>
+                <p className="text-xs text-muted-foreground">Time: {new Date(shift.clock_in_time).toLocaleString()}</p>
+                {shift.clock_in_lat != null && shift.clock_in_lng != null && shift.client.lat != null && shift.client.lng != null && (
+                  <p className="text-xs text-muted-foreground">
+                    Distance: {Math.round(metersToFeet(getDistanceMeters({ lat: shift.clock_in_lat, lng: shift.clock_in_lng }, { lat: shift.client.lat, lng: shift.client.lng })))} ft
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">Geofence: 100 ft + 150 ft buffer = 250 ft max</p>
+                {(shift as any).clock_in_accuracy != null && (
+                  <p className="text-xs text-muted-foreground">GPS Accuracy: ±{Math.round(metersToFeet((shift as any).clock_in_accuracy))} ft ({Math.round((shift as any).clock_in_accuracy)}m)</p>
+                )}
+              </div>
+            )}
+            {shift.clock_out_time && (
+              <div className="space-y-1 border-t border-border pt-2">
+                <p className="text-xs font-semibold text-foreground">Clock Out</p>
+                <p className="text-xs text-muted-foreground">Time: {new Date(shift.clock_out_time).toLocaleString()}</p>
+                {shift.clock_out_lat != null && shift.clock_out_lng != null && shift.client.lat != null && shift.client.lng != null && (
+                  <p className="text-xs text-muted-foreground">
+                    Distance: {Math.round(metersToFeet(getDistanceMeters({ lat: shift.clock_out_lat, lng: shift.clock_out_lng }, { lat: shift.client.lat, lng: shift.client.lng })))} ft
+                  </p>
+                )}
+                <p className="text-xs text-muted-foreground">Geofence: 100 ft + 150 ft buffer = 250 ft max</p>
+                {(shift as any).clock_out_accuracy != null && (
+                  <p className="text-xs text-muted-foreground">GPS Accuracy: ±{Math.round(metersToFeet((shift as any).clock_out_accuracy))} ft ({Math.round((shift as any).clock_out_accuracy)}m)</p>
+                )}
+              </div>
+            )}
           </div>
         )}
 

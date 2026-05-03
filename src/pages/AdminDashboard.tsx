@@ -5,7 +5,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import { useAllShifts, useAllClients, useAllCaregivers, useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap, useUpdateUserRole } from "@/hooks/useAdmin";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X, DollarSign, FileText, Settings } from "lucide-react";
+import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X, DollarSign, FileText, Settings, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { useNavigate } from "react-router-dom";
@@ -90,6 +90,13 @@ const AdminDashboard = () => {
               className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
             >
               <Settings className="w-4 h-4 text-accent-foreground" />
+            </button>
+            <button
+              onClick={() => navigate("/admin/geofence-test")}
+              className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+              title="Geofence Test"
+            >
+              <MapPin className="w-4 h-4 text-accent-foreground" />
             </button>
           </div>
         </div>

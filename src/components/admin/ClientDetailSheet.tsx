@@ -3,8 +3,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Phone, AlertTriangle, FileText, Pencil, Save, X, Loader2 } from "lucide-react";
-import { useUpdateClient } from "@/hooks/useAdmin";
+import { MapPin, Phone, AlertTriangle, FileText, Pencil, Save, X, Loader2, Trash2 } from "lucide-react";
+import { useUpdateClient, useDeleteClient } from "@/hooks/useAdmin";
 import { toast } from "@/components/ui/sonner";
 
 interface ClientDetailSheetProps {
@@ -16,7 +16,9 @@ interface ClientDetailSheetProps {
 const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) => {
   const [editing, setEditing] = useState(true);
   const [form, setForm] = useState({ name: "", address: "", care_type: "", care_plan_summary: "", emergency_contact: "", emergency_phone: "" });
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const updateClient = useUpdateClient();
+  const deleteClient = useDeleteClient();
 
   const resetForm = () => {
     setForm({
@@ -38,6 +40,16 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
       await updateClient.mutateAsync({ id: client.id, ...form });
       toast.success("Client profile updated");
       setEditing(false);
+    } catch (e: any) {
+      toast.error(e.message);
+    }
+  };
+
+  const handleDelete = async () => {
+    try {
+      await deleteClient.mutateAsync(client.id);
+      toast.success("Client deleted");
+      onClose();
     } catch (e: any) {
       toast.error(e.message);
     }
@@ -138,6 +150,23 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* Delete Button */}
+        {!confirmDelete ? (
+          <button onClick={() => setConfirmDelete(true)} className="w-full py-3 rounded-2xl border border-destructive/30 text-destructive text-sm font-semibold flex items-center justify-center gap-2 hover:bg-destructive/10 transition-colors mt-4">
+            <Trash2 className="w-4 h-4" /> Delete Client
+          </button>
+        ) : (
+          <div className="space-y-2 mt-4">
+            <p className="text-xs text-destructive font-semibold text-center">This will permanently delete this client. Are you sure?</p>
+            <div className="flex gap-2">
+              <button onClick={() => setConfirmDelete(false)} className="flex-1 py-3 rounded-xl border border-border text-sm font-semibold text-foreground">Cancel</button>
+              <button onClick={handleDelete} disabled={deleteClient.isPending} className="flex-1 py-3 rounded-xl bg-destructive text-destructive-foreground text-sm font-bold disabled:opacity-50">
+                {deleteClient.isPending ? <Loader2 className="w-4 h-4 animate-spin mx-auto" /> : "Confirm Delete"}
+              </button>
+            </div>
           </div>
         )}
       </SheetContent>
