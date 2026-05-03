@@ -205,11 +205,16 @@ export type Database = {
           certifications: string | null
           created_at: string
           date_of_birth: string | null
+          drivers_license_number: string | null
+          drivers_license_state: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           full_name: string
+          government_id_number: string | null
+          government_id_state: string | null
           id: string
           phone: string | null
+          ssn_last4: string | null
           updated_at: string
         }
         Insert: {
@@ -220,11 +225,16 @@ export type Database = {
           certifications?: string | null
           created_at?: string
           date_of_birth?: string | null
+          drivers_license_number?: string | null
+          drivers_license_state?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           full_name?: string
+          government_id_number?: string | null
+          government_id_state?: string | null
           id: string
           phone?: string | null
+          ssn_last4?: string | null
           updated_at?: string
         }
         Update: {
@@ -235,11 +245,16 @@ export type Database = {
           certifications?: string | null
           created_at?: string
           date_of_birth?: string | null
+          drivers_license_number?: string | null
+          drivers_license_state?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           full_name?: string
+          government_id_number?: string | null
+          government_id_state?: string | null
           id?: string
           phone?: string | null
+          ssn_last4?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -285,10 +300,12 @@ export type Database = {
           assignment_status: string
           caregiver_id: string | null
           client_id: string
+          clock_in_accuracy: number | null
           clock_in_lat: number | null
           clock_in_lng: number | null
           clock_in_selfie_url: string | null
           clock_in_time: string | null
+          clock_out_accuracy: number | null
           clock_out_lat: number | null
           clock_out_lng: number | null
           clock_out_notes: string | null
@@ -307,10 +324,12 @@ export type Database = {
           assignment_status?: string
           caregiver_id?: string | null
           client_id: string
+          clock_in_accuracy?: number | null
           clock_in_lat?: number | null
           clock_in_lng?: number | null
           clock_in_selfie_url?: string | null
           clock_in_time?: string | null
+          clock_out_accuracy?: number | null
           clock_out_lat?: number | null
           clock_out_lng?: number | null
           clock_out_notes?: string | null
@@ -329,10 +348,12 @@ export type Database = {
           assignment_status?: string
           caregiver_id?: string | null
           client_id?: string
+          clock_in_accuracy?: number | null
           clock_in_lat?: number | null
           clock_in_lng?: number | null
           clock_in_selfie_url?: string | null
           clock_in_time?: string | null
+          clock_out_accuracy?: number | null
           clock_out_lat?: number | null
           clock_out_lng?: number | null
           clock_out_notes?: string | null
