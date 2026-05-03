@@ -1,17 +1,18 @@
 export interface GeoPosition {
   lat: number;
   lng: number;
+  accuracy?: number; // meters
 }
 
 /** Returns the device's current GPS position */
-export function getCurrentPosition(): Promise<GeoPosition> {
+export function getCurrentPosition(): Promise<GeoPosition & { accuracy: number }> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("Geolocation is not supported by this device."));
       return;
     }
     navigator.geolocation.getCurrentPosition(
-      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+      (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy }),
       (err) => {
         switch (err.code) {
           case err.PERMISSION_DENIED:
