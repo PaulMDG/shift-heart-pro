@@ -14,6 +14,8 @@ const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
+  const [address, setAddress] = useState("");
+  const [ssnLast4, setSsnLast4] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -52,6 +54,15 @@ const AuthPage = () => {
           },
         });
         if (error) throw error;
+
+        // Update profile with biodata
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("profiles").update({
+            address: address || null,
+            ssn_last4: ssnLast4 || null,
+          }).eq("id", user.id);
+        }
 
         // Send welcome email via Resend
         try {
@@ -102,6 +113,29 @@ const AuthPage = () => {
                   required={!isLogin}
                 />
               </div>
+            )}
+            {!isLogin && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="address">Address</Label>
+                  <Input
+                    id="address"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="123 Main St, City, ST 12345"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="ssn">SSN (Last 4 digits)</Label>
+                  <Input
+                    id="ssn"
+                    value={ssnLast4}
+                    onChange={(e) => setSsnLast4(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                    placeholder="1234"
+                    maxLength={4}
+                  />
+                </div>
+              </>
             )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
