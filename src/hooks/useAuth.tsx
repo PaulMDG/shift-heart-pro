@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { initOneSignal, setOneSignalUser, clearOneSignalUser } from "@/lib/onesignal";
 
 interface AuthContextType {
   session: Session | null;
@@ -15,12 +16,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // Initialize OneSignal (no-op if App ID not configured yet)
+    initOneSignal();
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setLoading(false);
 
       // After email confirmation, apply any pending profile updates
       if (event === "SIGNED_IN" && session?.user) {
+        // Link user to OneSignal for push notifications
+        setOneSignalUser(session.user.id);
+
         const pending = sessionStorage.getItem("pending_profile_update");
         if (pending) {
           try {
@@ -32,6 +39,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             sessionStorage.removeItem("pending_profile_update");
           }
         }
+      }
+
+      if (event === "SIGNED_OUT") {
+        clearOneSignalUser();
       }
     });
 
