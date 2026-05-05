@@ -1,6 +1,7 @@
-// Sends notification emails via Resend connector gateway.
+// Sends notification emails via Resend connector gateway with retry support.
 // Triggered from client code on shift events (clock-in/out, swap, assignment, accept/decline).
 // Supports looking up caregiver email from auth.users when caregiver_id is provided.
+// Stores email payload on notification rows for retry on failure.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
 function safeErrorMessage(msg: string): string {
@@ -31,6 +32,8 @@ interface Payload {
     type?: string;
     related_shift_id?: string;
   };
+  /** If provided, retries an existing notification instead of creating a new one */
+  retry_notification_id?: string;
 }
 
 function isValidEmail(e: string) {
@@ -71,12 +74,16 @@ Deno.serve(async (req) => {
     const body = (await req.json()) as Payload;
     let recipients = Array.isArray(body.to) ? body.to : body.to ? [body.to] : [];
 
+    // Build admin client early — needed for caregiver lookup, notification ops
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const adminClient = (SUPABASE_URL && SERVICE_ROLE_KEY)
+      ? createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
+      : null;
+
     // If caregiver_id is provided, look up their email server-side
     if (body.caregiver_id) {
-      const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-      const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      if (SUPABASE_URL && SERVICE_ROLE_KEY) {
-        const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
+      if (adminClient) {
         const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(body.caregiver_id);
         if (!userErr && userData?.user?.email) {
           recipients = [...recipients, userData.user.email];
@@ -117,22 +124,26 @@ Deno.serve(async (req) => {
 
     const data = await response.json();
     const emailSuccess = response.ok;
+    const emailPayload = { to: validRecipients, subject: body.subject, html: body.html, caregiver_id: body.caregiver_id };
 
-    // Create in-app notification if requested
-    if (body.create_notification) {
-      const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-      const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      if (SUPABASE_URL && SERVICE_ROLE_KEY) {
-        const adminClient = createClient(SUPABASE_URL, SERVICE_ROLE_KEY);
-        await adminClient.from('notifications').insert({
-          user_id: body.create_notification.user_id,
-          title: body.create_notification.title,
-          message: body.create_notification.message,
-          type: body.create_notification.type || 'shift',
-          email_status: emailSuccess ? 'sent' : 'failed',
-          related_shift_id: body.create_notification.related_shift_id || null,
-        });
-      }
+    // Handle retry: update existing notification
+    if (body.retry_notification_id && adminClient) {
+      await adminClient.from('notifications').update({
+        email_status: emailSuccess ? 'sent' : 'failed',
+        email_payload: emailSuccess ? null : emailPayload,
+      }).eq('id', body.retry_notification_id);
+    }
+    // Create in-app notification if requested (new notification)
+    else if (body.create_notification && adminClient) {
+      await adminClient.from('notifications').insert({
+        user_id: body.create_notification.user_id,
+        title: body.create_notification.title,
+        message: body.create_notification.message,
+        type: body.create_notification.type || 'shift',
+        email_status: emailSuccess ? 'sent' : 'failed',
+        related_shift_id: body.create_notification.related_shift_id || null,
+        email_payload: emailSuccess ? null : emailPayload,
+      });
     }
 
     if (!response.ok) {

@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 import { Session, User } from "@supabase/supabase-js";
 import { supabase } from "@/integrations/supabase/client";
+import { initOneSignal, setOneSignalUser, clearOneSignalUser } from "@/lib/onesignal";
 
 interface AuthContextType {
   session: Session | null;
@@ -15,9 +16,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    // Initialize OneSignal (no-op if App ID not configured yet)
+    initOneSignal();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       setLoading(false);
+
+      // After email confirmation, apply any pending profile updates
+      if (event === "SIGNED_IN" && session?.user) {
+        // Link user to OneSignal for push notifications
+        setOneSignalUser(session.user.id);
+
+        const pending = sessionStorage.getItem("pending_profile_update");
+        if (pending) {
+          try {
+            const updates = JSON.parse(pending);
+            await supabase.from("profiles").update(updates).eq("id", session.user.id);
+          } catch (e) {
+            console.warn("[AuthProvider] pending profile update failed:", e);
+          } finally {
+            sessionStorage.removeItem("pending_profile_update");
+          }
+        }
+      }
+
+      if (event === "SIGNED_OUT") {
+        clearOneSignalUser();
+      }
     });
 
     supabase.auth.getSession().then(({ data: { session } }) => {

@@ -62,3 +62,26 @@ export const emailTemplate = (title: string, bodyHtml: string) => `
     Sent by ComfortLink &middot; noreply@comfortlink.app
   </p>
 </div>`;
+
+/**
+ * Retry a failed email notification using the stored payload on the notification row.
+ * Returns true on success.
+ */
+export async function retryNotificationEmail(notificationId: string, emailPayload: {
+  to: string[];
+  subject: string;
+  html: string;
+  caregiver_id?: string;
+}): Promise<boolean> {
+  try {
+    const { error } = await supabase.functions.invoke("send-notification-email", {
+      body: {
+        ...emailPayload,
+        retry_notification_id: notificationId,
+      },
+    });
+    return !error;
+  } catch {
+    return false;
+  }
+}
