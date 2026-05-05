@@ -163,6 +163,7 @@ export type Database = {
       notifications: {
         Row: {
           created_at: string
+          email_payload: Json | null
           email_status: string
           id: string
           message: string
@@ -174,6 +175,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          email_payload?: Json | null
           email_status?: string
           id?: string
           message: string
@@ -185,6 +187,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          email_payload?: Json | null
           email_status?: string
           id?: string
           message?: string
