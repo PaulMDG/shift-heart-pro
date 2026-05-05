@@ -1,6 +1,10 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, Repeat, AlertCircle, Mail, MailX, CheckCheck } from "lucide-react";
+import { ArrowLeft, Bell, Repeat, AlertCircle, Mail, MailX, CheckCheck, RefreshCw } from "lucide-react";
 import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/hooks/useNotifications";
+import { retryNotificationEmail } from "@/lib/notifyEmail";
+import { toast } from "@/components/ui/sonner";
+import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +21,23 @@ const NotificationsPage = () => {
   const { data: notifications = [], isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllRead();
+  const queryClient = useQueryClient();
+  const [retrying, setRetrying] = useState<string | null>(null);
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+
+  const handleRetryEmail = async (e: React.MouseEvent, notificationId: string, payload: any) => {
+    e.stopPropagation();
+    setRetrying(notificationId);
+    const success = await retryNotificationEmail(notificationId, payload);
+    if (success) {
+      toast.success("Email resent successfully");
+    } else {
+      toast.error("Email retry failed");
+    }
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    setRetrying(null);
+  };
 
   const emailStatusBadge = (status: string) => {
     switch (status) {
@@ -30,7 +49,7 @@ const NotificationsPage = () => {
         );
       case "failed":
         return (
-          <Badge variant="outline" className="text-[10px] gap-1 border-destructive/30 text-destructive bg-destructive/5">
+          <Badge variant="outline" className="text-[10px] gap-1 border-destructive/30 text-destructive bg-destructive/5 cursor-default">
             <MailX className="w-3 h-3" /> Email failed
           </Badge>
         );
@@ -92,6 +111,16 @@ const NotificationsPage = () => {
                     <div className="flex items-center gap-2 mt-1.5">
                       <p className="text-[10px] text-muted-foreground/60">{timeAgo}</p>
                       {emailStatusBadge((n as any).email_status)}
+                      {(n as any).email_status === "failed" && (n as any).email_payload && (
+                        <button
+                          onClick={(e) => handleRetryEmail(e, n.id, (n as any).email_payload)}
+                          disabled={retrying === n.id}
+                          className="inline-flex items-center gap-1 text-[10px] text-primary hover:text-primary/80 font-medium transition-colors disabled:opacity-50"
+                        >
+                          <RefreshCw className={`w-3 h-3 ${retrying === n.id ? "animate-spin" : ""}`} />
+                          Retry
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
