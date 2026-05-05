@@ -54,16 +54,16 @@ const AuthPage = () => {
         });
         if (error) throw error;
 
-        // Update profile with biodata
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          await supabase.from("profiles").update({
+        // Profile biodata (address, ssn) will be saved after email confirmation
+        // when the user is redirected back and has an active session.
+        // Store in sessionStorage so we can apply after confirmation redirect.
+        if (address || ssnLast4) {
+          sessionStorage.setItem("pending_profile_update", JSON.stringify({
             address: address || null,
             ssn_last4: ssnLast4 || null,
-          }).eq("id", user.id);
+          }));
         }
 
-        // Welcome email is handled by Supabase's confirmation email flow
         toast.success("Account created! Check your email to confirm your account.");
       }
     } catch (error: any) {
