@@ -16,7 +16,6 @@ export async function initOneSignal(): Promise<void> {
     await OneSignal.init({
       appId: ONESIGNAL_APP_ID,
       allowLocalhostAsSecureOrigin: true,
-      notifyButton: { enable: false },
     });
     initialized = true;
     console.log("[OneSignal] Initialized");
