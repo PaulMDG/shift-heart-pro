@@ -17,6 +17,8 @@ const corsHeaders = {
 
 const GATEWAY_URL = 'https://connector-gateway.lovable.dev/resend';
 const FROM = 'ComfortLink <noreply@comfortlink.app>';
+const FROM_EMAIL = 'noreply@comfortlink.app';
+const FROM_NAME = 'ComfortLink';
 
 interface Payload {
   to: string | string[];
@@ -66,6 +68,48 @@ async function sendPushNotification(userId: string, title: string, message: stri
     }
   } catch (e) {
     console.warn('[OneSignal] push error:', e);
+  }
+}
+
+/** Send email via OneSignal Email API (fallback when Resend fails) */
+async function sendEmailViaOneSignal(
+  recipients: string[],
+  subject: string,
+  htmlBody: string,
+): Promise<{ ok: boolean; error?: string }> {
+  const appId = Deno.env.get('ONESIGNAL_APP_ID');
+  const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
+  if (!appId || !apiKey) {
+    return { ok: false, error: 'OneSignal credentials not configured' };
+  }
+
+  try {
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Basic ${apiKey}`,
+      },
+      body: JSON.stringify({
+        app_id: appId,
+        include_email_tokens: recipients,
+        email_subject: subject,
+        email_body: htmlBody,
+        email_from_name: FROM_NAME,
+        email_from_address: FROM_EMAIL,
+        channel_for_external_user_ids: 'email',
+      }),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error('[OneSignal Email] failed:', res.status, errText);
+      return { ok: false, error: errText };
+    }
+    console.log('[OneSignal Email] sent successfully to', recipients);
+    return { ok: true };
+  } catch (e) {
+    console.error('[OneSignal Email] error:', e);
+    return { ok: false, error: String(e) };
   }
 }
 
@@ -152,8 +196,20 @@ Deno.serve(async (req) => {
     });
 
     const data = await response.json();
-    const emailSuccess = response.ok;
+    let emailSuccess = response.ok;
     const emailPayload = { to: validRecipients, subject: body.subject, html: body.html, caregiver_id: body.caregiver_id };
+
+    // Fallback: if Resend failed, try OneSignal email
+    if (!emailSuccess) {
+      console.warn('[Email] Resend failed, trying OneSignal fallback…', data);
+      const osResult = await sendEmailViaOneSignal(validRecipients, body.subject, body.html);
+      if (osResult.ok) {
+        emailSuccess = true;
+        console.log('[Email] OneSignal fallback succeeded');
+      } else {
+        console.error('[Email] OneSignal fallback also failed:', osResult.error);
+      }
+    }
 
     // Handle retry: update existing notification
     if (body.retry_notification_id && adminClient) {
@@ -183,11 +239,14 @@ Deno.serve(async (req) => {
     }
 
     if (!response.ok) {
-      console.error('Resend API error', response.status, data);
-      return new Response(JSON.stringify({ error: 'Email send failed', details: data }), {
-        status: 502,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-      });
+      // Only return error if both Resend AND OneSignal fallback failed
+      if (!emailSuccess) {
+        console.error('Both Resend and OneSignal email failed', response.status, data);
+        return new Response(JSON.stringify({ error: 'Email send failed', details: data }), {
+          status: 502,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
     }
 
     return new Response(JSON.stringify({ success: true, id: data.id }), {
