@@ -1,8 +1,8 @@
 import OneSignal from "react-onesignal";
 
 // OneSignal App ID — public/publishable key, safe in client code.
-// Replace with your actual App ID from OneSignal dashboard.
-const ONESIGNAL_APP_ID = "YOUR_ONESIGNAL_APP_ID";
+// Reads from VITE env var; falls back to empty string (init will be skipped).
+const ONESIGNAL_APP_ID = import.meta.env.VITE_ONESIGNAL_APP_ID || "";
 
 let initialized = false;
 
