@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
-import { Heart, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import comfortlinkLogo from "@/assets/comfortlink-logo.gif";
 
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -77,9 +78,7 @@ const AuthPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-sm">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Heart className="h-6 w-6 text-primary" />
-          </div>
+          <img src={comfortlinkLogo} alt="ComfortLink" className="mx-auto h-16 w-16 rounded-xl" />
           <CardTitle className="text-2xl">ComfortLink</CardTitle>
           <CardDescription>
             {isLogin ? "Sign in to your account" : "Create a new account"}
