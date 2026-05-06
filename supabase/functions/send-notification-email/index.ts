@@ -40,6 +40,35 @@ function isValidEmail(e: string) {
   return typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
+/** Send a push notification via OneSignal REST API (best-effort) */
+async function sendPushNotification(userId: string, title: string, message: string): Promise<void> {
+  const appId = Deno.env.get('ONESIGNAL_APP_ID');
+  const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
+  if (!appId || !apiKey) return;
+
+  try {
+    const res = await fetch('https://onesignal.com/api/v1/notifications', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Basic ${apiKey}`,
+      },
+      body: JSON.stringify({
+        app_id: appId,
+        include_external_user_ids: [userId],
+        headings: { en: title },
+        contents: { en: message },
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.text();
+      console.warn('[OneSignal] push failed:', res.status, err);
+    }
+  } catch (e) {
+    console.warn('[OneSignal] push error:', e);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
@@ -144,6 +173,13 @@ Deno.serve(async (req) => {
         related_shift_id: body.create_notification.related_shift_id || null,
         email_payload: emailSuccess ? null : emailPayload,
       });
+
+      // Send push notification via OneSignal (best-effort, fire-and-forget)
+      sendPushNotification(
+        body.create_notification.user_id,
+        body.create_notification.title,
+        body.create_notification.message,
+      );
     }
 
     if (!response.ok) {
