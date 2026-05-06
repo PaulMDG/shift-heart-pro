@@ -8,7 +8,7 @@ let initialized = false;
 
 export async function initOneSignal(): Promise<void> {
   if (initialized || typeof window === "undefined") return;
-  if (ONESIGNAL_APP_ID === "YOUR_ONESIGNAL_APP_ID") {
+  if (!ONESIGNAL_APP_ID || ONESIGNAL_APP_ID === "YOUR_ONESIGNAL_APP_ID") {
     console.warn("[OneSignal] App ID not configured — skipping init");
     return;
   }
