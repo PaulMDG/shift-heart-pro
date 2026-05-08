@@ -18,37 +18,89 @@ export async function sendNotificationEmail(args: {
   };
 }): Promise<void> {
   try {
+    // Confirm session is active before invoking — a missing token causes a
+    // silent 401 that never reaches the edge function (empty logs).
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn("[notifyEmail] no active session — skipping notification");
+      return;
+    }
+
     const { error } = await supabase.functions.invoke("send-notification-email", {
       body: args,
     });
-    if (error) console.error("[notifyEmail] invoke error:", error);
+
+    if (error) {
+      console.error("[notifyEmail] invoke error:", {
+        message: error.message,
+        // FunctionsHttpError surfaces the HTTP status; log it for diagnostics
+        context: (error as any).context ?? null,
+      });
+    }
   } catch (e) {
     console.error("[notifyEmail] unexpected error:", e);
   }
 }
 
-/** Fetch admin emails (users with admin role) for system alerts. */
+/**
+ * Fetch admin email addresses from the profiles table.
+ *
+ * Requires a `profiles` table with an `email` column (or equivalent view)
+ * joined through `user_roles`. Falls back to the configured admin alias
+ * if the query fails or returns nothing.
+ *
+ * NOTE: auth.users is not readable client-side. Email must be stored in
+ * `profiles` or a similar public table at sign-up time.
+ */
 export async function getAdminEmails(): Promise<string[]> {
+  const FALLBACK = ["care@comfortlink.app"];
+
   try {
+    // Step 1: get admin user IDs from user_roles
     const { data: roles, error: rolesErr } = await supabase
       .from("user_roles")
       .select("user_id")
       .eq("role", "admin");
-    if (rolesErr || !roles?.length) return [];
-    // Try to get emails via auth.admin… not available client-side.
-    // Fall back to a single configured admin alias on the org domain.
-    return ["care@comfortlink.app"];
-  } catch {
-    return ["noreply@comfortlink.app"];
-  }
-}
 
-/** Get the email address of a specific user via their profile/auth (best-effort). */
-export async function getUserEmail(userId: string): Promise<string | null> {
-  // We can't read auth.users from the client. The recipient email must be
-  // surfaced through a server side mechanism if needed. For caregivers we
-  // pass the email at call time when available (e.g. from the auth session).
-  return null;
+    if (rolesErr) {
+      console.warn("[getAdminEmails] user_roles query failed:", rolesErr.message);
+      return FALLBACK;
+    }
+    if (!roles?.length) {
+      console.warn("[getAdminEmails] no admin roles found — using fallback");
+      return FALLBACK;
+    }
+
+    const adminIds = roles.map((r) => r.user_id);
+
+    // Step 2: fetch emails from profiles table for those user IDs.
+    // Your profiles table must expose an `email` column (populated at sign-up).
+    const { data: profiles, error: profilesErr } = await supabase
+      .from("profiles")
+      .select("email")
+      .in("id", adminIds);
+
+    if (profilesErr) {
+      console.warn("[getAdminEmails] profiles query failed:", profilesErr.message);
+      return FALLBACK;
+    }
+
+    const emails = (profiles ?? [])
+      .map((p) => p.email as string | null)
+      .filter((e): e is string => !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
+
+    if (!emails.length) {
+      console.warn("[getAdminEmails] profiles returned no valid emails — using fallback");
+      return FALLBACK;
+    }
+
+    console.log(`[getAdminEmails] resolved ${emails.length} admin email(s)`);
+    return emails;
+
+  } catch (e) {
+    console.error("[getAdminEmails] unexpected error:", e);
+    return FALLBACK;
+  }
 }
 
 export const emailTemplate = (title: string, bodyHtml: string) => `
@@ -67,21 +119,33 @@ export const emailTemplate = (title: string, bodyHtml: string) => `
  * Retry a failed email notification using the stored payload on the notification row.
  * Returns true on success.
  */
-export async function retryNotificationEmail(notificationId: string, emailPayload: {
-  to: string[];
-  subject: string;
-  html: string;
-  caregiver_id?: string;
-}): Promise<boolean> {
+export async function retryNotificationEmail(
+  notificationId: string,
+  emailPayload: {
+    to: string[];
+    subject: string;
+    html: string;
+    caregiver_id?: string;
+  }
+): Promise<boolean> {
   try {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      console.warn("[retryNotificationEmail] no active session");
+      return false;
+    }
+
     const { error } = await supabase.functions.invoke("send-notification-email", {
       body: {
         ...emailPayload,
         retry_notification_id: notificationId,
       },
     });
+
+    if (error) console.error("[retryNotificationEmail] invoke error:", error);
     return !error;
-  } catch {
+  } catch (e) {
+    console.error("[retryNotificationEmail] unexpected error:", e);
     return false;
   }
 }
