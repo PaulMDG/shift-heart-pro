@@ -1,4 +1,4 @@
-// Sends notification emails via Resend connector gateway with retry support.
+// Sends notification emails directly via Resend API (no gateway dependency).
 // Triggered from client code on shift events (clock-in/out, swap, assignment, accept/decline).
 // Supports looking up caregiver email from auth.users when caregiver_id is provided.
 // Stores email payload on notification rows for retry on failure.
@@ -6,7 +6,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.1';
 
 function safeErrorMessage(msg: string): string {
   if (msg === 'Unauthorized' || msg === 'Requires admin role') return msg;
-  if (msg.includes('LOVABLE_API_KEY') || msg.includes('RESEND_API_KEY')) return 'Email service not configured';
+  if (msg.includes('RESEND_API_KEY')) return 'Email service not configured';
   return 'An internal error occurred. Please try again.';
 }
 
@@ -15,10 +15,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const GATEWAY_URL = 'https://connector-gateway.lovable.dev/resend';
+// Direct Resend API — no Lovable gateway needed
+const RESEND_API_URL = 'https://api.resend.com/emails';
 const FROM = 'ComfortLink <noreply@comfortlink.app>';
-const FROM_EMAIL = 'noreply@comfortlink.app';
-const FROM_NAME = 'ComfortLink';
 
 interface Payload {
   to: string | string[];
@@ -42,7 +41,7 @@ function isValidEmail(e: string) {
   return typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
-/** Send a push notification via OneSignal REST API (best-effort) */
+/** Send a push notification via OneSignal REST API (best-effort, fire-and-forget) */
 async function sendPushNotification(userId: string, title: string, message: string): Promise<void> {
   const appId = Deno.env.get('ONESIGNAL_APP_ID');
   const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
@@ -63,53 +62,10 @@ async function sendPushNotification(userId: string, title: string, message: stri
       }),
     });
     if (!res.ok) {
-      const err = await res.text();
-      console.warn('[OneSignal] push failed:', res.status, err);
+      console.warn('[OneSignal] push failed:', res.status, await res.text());
     }
   } catch (e) {
     console.warn('[OneSignal] push error:', e);
-  }
-}
-
-/** Send email via OneSignal Email API (fallback when Resend fails) */
-async function sendEmailViaOneSignal(
-  recipients: string[],
-  subject: string,
-  htmlBody: string,
-): Promise<{ ok: boolean; error?: string }> {
-  const appId = Deno.env.get('ONESIGNAL_APP_ID');
-  const apiKey = Deno.env.get('ONESIGNAL_REST_API_KEY');
-  if (!appId || !apiKey) {
-    return { ok: false, error: 'OneSignal credentials not configured' };
-  }
-
-  try {
-    const res = await fetch('https://onesignal.com/api/v1/notifications', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Basic ${apiKey}`,
-      },
-      body: JSON.stringify({
-        app_id: appId,
-        include_email_tokens: recipients,
-        email_subject: subject,
-        email_body: htmlBody,
-        email_from_name: FROM_NAME,
-        email_from_address: FROM_EMAIL,
-        channel_for_external_user_ids: 'email',
-      }),
-    });
-    if (!res.ok) {
-      const errText = await res.text();
-      console.error('[OneSignal Email] failed:', res.status, errText);
-      return { ok: false, error: errText };
-    }
-    console.log('[OneSignal Email] sent successfully to', recipients);
-    return { ok: true };
-  } catch (e) {
-    console.error('[OneSignal Email] error:', e);
-    return { ok: false, error: String(e) };
   }
 }
 
@@ -117,7 +73,7 @@ Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: corsHeaders });
 
   try {
-    // Authenticate the caller
+    // ── 1. Authenticate caller ──────────────────────────────────────────────
     const authHeader = req.headers.get('Authorization');
     if (!authHeader?.startsWith('Bearer ')) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
@@ -126,53 +82,65 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: authHeader } } }
-    );
+    const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
+    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+
+    const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+
     const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
     if (userError || !user) {
+      console.error('[Auth] getUser failed:', userError?.message);
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    // ── 2. Verify Resend is configured ─────────────────────────────────────
     const RESEND_API_KEY = Deno.env.get('RESEND_API_KEY');
-    if (!LOVABLE_API_KEY) throw new Error('LOVABLE_API_KEY not configured');
-    if (!RESEND_API_KEY) throw new Error('RESEND_API_KEY not configured');
+    if (!RESEND_API_KEY) {
+      console.error('[Config] RESEND_API_KEY is not set in Supabase secrets');
+      throw new Error('RESEND_API_KEY not configured');
+    }
 
-    const body = (await req.json()) as Payload;
-    let recipients = Array.isArray(body.to) ? body.to : body.to ? [body.to] : [];
-
-    // Build admin client early — needed for caregiver lookup, notification ops
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-    const adminClient = (SUPABASE_URL && SERVICE_ROLE_KEY)
+    // ── 3. Build admin client (needed for caregiver lookup & notification ops)
+    if (!SERVICE_ROLE_KEY) {
+      console.warn('[Config] SUPABASE_SERVICE_ROLE_KEY not set — caregiver lookup and notifications disabled');
+    }
+    const adminClient = SERVICE_ROLE_KEY
       ? createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
       : null;
 
-    // If caregiver_id is provided, look up their email server-side
+    // ── 4. Resolve recipients ───────────────────────────────────────────────
+    const body = (await req.json()) as Payload;
+    let recipients: string[] = Array.isArray(body.to) ? body.to : body.to ? [body.to] : [];
+
     if (body.caregiver_id) {
       if (adminClient) {
         const { data: userData, error: userErr } = await adminClient.auth.admin.getUserById(body.caregiver_id);
         if (!userErr && userData?.user?.email) {
+          console.log('[Recipients] resolved caregiver email via auth.users');
           recipients = [...recipients, userData.user.email];
         } else {
-          console.warn('Could not look up caregiver email:', userErr?.message);
+          console.warn('[Recipients] caregiver email lookup failed:', userErr?.message);
         }
+      } else {
+        console.warn('[Recipients] adminClient unavailable — skipping caregiver email lookup');
       }
     }
 
     const validRecipients = recipients.filter(isValidEmail);
     if (validRecipients.length === 0) {
+      console.error('[Recipients] no valid email addresses after filtering. Raw input:', recipients);
       return new Response(JSON.stringify({ error: 'No valid recipients' }), {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }
+
     if (!body.subject || !body.html) {
       return new Response(JSON.stringify({ error: 'subject and html are required' }), {
         status: 400,
@@ -180,47 +148,68 @@ Deno.serve(async (req) => {
       });
     }
 
-    const response = await fetch(`${GATEWAY_URL}/emails`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        'X-Connection-Api-Key': RESEND_API_KEY,
-      },
-      body: JSON.stringify({
-        from: FROM,
-        to: validRecipients,
-        subject: body.subject,
-        html: body.html,
-      }),
-    });
+    console.log(`[Email] Sending to: ${validRecipients.join(', ')} | Subject: "${body.subject}"`);
 
-    const data = await response.json();
-    let emailSuccess = response.ok;
-    const emailPayload = { to: validRecipients, subject: body.subject, html: body.html, caregiver_id: body.caregiver_id };
+    // ── 5. Send via Resend directly ─────────────────────────────────────────
+    let resendResponseData: any = null;
+    let emailSuccess = false;
 
-    // Fallback: if Resend failed, try OneSignal email
-    if (!emailSuccess) {
-      console.warn('[Email] Resend failed, trying OneSignal fallback…', data);
-      const osResult = await sendEmailViaOneSignal(validRecipients, body.subject, body.html);
-      if (osResult.ok) {
-        emailSuccess = true;
-        console.log('[Email] OneSignal fallback succeeded');
+    try {
+      const resendRes = await fetch(RESEND_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${RESEND_API_KEY}`,
+        },
+        body: JSON.stringify({
+          from: FROM,
+          to: validRecipients,
+          subject: body.subject,
+          html: body.html,
+        }),
+      });
+
+      // Guard against non-JSON responses (e.g. gateway 502 HTML pages)
+      const contentType = resendRes.headers.get('content-type') ?? '';
+      if (contentType.includes('application/json')) {
+        resendResponseData = await resendRes.json();
       } else {
-        console.error('[Email] OneSignal fallback also failed:', osResult.error);
+        const raw = await resendRes.text();
+        console.error('[Resend] non-JSON response:', resendRes.status, raw);
+        resendResponseData = { error: raw };
       }
+
+      if (resendRes.ok) {
+        emailSuccess = true;
+        console.log('[Resend] email sent. id:', resendResponseData?.id);
+      } else {
+        console.error('[Resend] send failed:', resendRes.status, resendResponseData);
+      }
+    } catch (fetchErr) {
+      console.error('[Resend] fetch threw:', fetchErr);
+      resendResponseData = { error: String(fetchErr) };
     }
 
-    // Handle retry: update existing notification
+    // ── 6. Persist notification / retry record ──────────────────────────────
+    const emailPayload = {
+      to: validRecipients,
+      subject: body.subject,
+      html: body.html,
+      caregiver_id: body.caregiver_id,
+    };
+
     if (body.retry_notification_id && adminClient) {
-      await adminClient.from('notifications').update({
-        email_status: emailSuccess ? 'sent' : 'failed',
-        email_payload: emailSuccess ? null : emailPayload,
-      }).eq('id', body.retry_notification_id);
-    }
-    // Create in-app notification if requested (new notification)
-    else if (body.create_notification && adminClient) {
-      await adminClient.from('notifications').insert({
+      const { error: updateErr } = await adminClient
+        .from('notifications')
+        .update({
+          email_status: emailSuccess ? 'sent' : 'failed',
+          email_payload: emailSuccess ? null : emailPayload,
+        })
+        .eq('id', body.retry_notification_id);
+      if (updateErr) console.error('[Notifications] retry update failed:', updateErr.message);
+
+    } else if (body.create_notification && adminClient) {
+      const { error: insertErr } = await adminClient.from('notifications').insert({
         user_id: body.create_notification.user_id,
         title: body.create_notification.title,
         message: body.create_notification.message,
@@ -229,8 +218,9 @@ Deno.serve(async (req) => {
         related_shift_id: body.create_notification.related_shift_id || null,
         email_payload: emailSuccess ? null : emailPayload,
       });
+      if (insertErr) console.error('[Notifications] insert failed:', insertErr.message);
 
-      // Send push notification via OneSignal (best-effort, fire-and-forget)
+      // Push notification is fire-and-forget — do NOT await
       sendPushNotification(
         body.create_notification.user_id,
         body.create_notification.title,
@@ -238,24 +228,28 @@ Deno.serve(async (req) => {
       );
     }
 
-    if (!response.ok) {
-      // Only return error if both Resend AND OneSignal fallback failed
-      if (!emailSuccess) {
-        console.error('Both Resend and OneSignal email failed', response.status, data);
-        return new Response(JSON.stringify({ error: 'Email send failed', details: data }), {
+    // ── 7. Return result ────────────────────────────────────────────────────
+    if (!emailSuccess) {
+      return new Response(
+        JSON.stringify({ error: 'Email send failed', details: resendResponseData }),
+        {
           status: 502,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+        }
+      );
     }
 
-    return new Response(JSON.stringify({ success: true, id: data.id }), {
-      status: 200,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    return new Response(
+      JSON.stringify({ success: true, id: resendResponseData?.id }),
+      {
+        status: 200,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      }
+    );
+
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Unknown error';
-    console.error('send-notification-email error:', message);
+    console.error('[send-notification-email] unhandled error:', message);
     return new Response(JSON.stringify({ error: safeErrorMessage(message) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
