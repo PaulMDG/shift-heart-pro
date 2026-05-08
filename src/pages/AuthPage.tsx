@@ -9,11 +9,6 @@ import { toast } from "@/components/ui/sonner";
 import { Loader2 } from "lucide-react";
 import comfortlinkLogo from "@/assets/comfortlink-logo.gif";
 
-import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
-
-const [showPassword, setShowPassword] = useState(false);
-
 const AuthPage = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
