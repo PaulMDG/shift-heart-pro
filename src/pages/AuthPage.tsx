@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -6,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
-import { Loader2 } from "lucide-react";
+
 import comfortlinkLogo from "@/assets/comfortlink-logo.gif";
 
 const AuthPage = () => {
@@ -17,6 +18,7 @@ const AuthPage = () => {
   const [address, setAddress] = useState("");
   const [ssnLast4, setSsnLast4] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
