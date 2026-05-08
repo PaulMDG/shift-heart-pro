@@ -41,6 +41,37 @@ function isValidEmail(e: string) {
   return typeof e === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 }
 
+/**
+ * Supabase deprecated the individual SUPABASE_ANON_KEY and
+ * SUPABASE_SERVICE_ROLE_KEY env vars in favour of two JSON dictionaries:
+ *   SUPABASE_PUBLISHABLE_KEYS  →  { anon: "..." }
+ *   SUPABASE_SECRET_KEYS       →  { service_role: "..." }
+ *
+ * This helper tries the legacy var first (still populated on older projects)
+ * then falls back to the new dictionaries so the function works on both.
+ */
+function resolveSupabaseKeys(): { anonKey: string; serviceRoleKey: string } {
+  // ── anon key ──────────────────────────────────────────────────────────────
+  let anonKey = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+  if (!anonKey) {
+    try {
+      const pub = Deno.env.get('SUPABASE_PUBLISHABLE_KEYS');
+      if (pub) anonKey = JSON.parse(pub)['anon'] ?? '';
+    } catch { /* ignore parse errors */ }
+  }
+
+  // ── service role key ──────────────────────────────────────────────────────
+  let serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+  if (!serviceRoleKey) {
+    try {
+      const sec = Deno.env.get('SUPABASE_SECRET_KEYS');
+      if (sec) serviceRoleKey = JSON.parse(sec)['service_role'] ?? '';
+    } catch { /* ignore parse errors */ }
+  }
+
+  return { anonKey, serviceRoleKey };
+}
+
 /** Send a push notification via OneSignal REST API (best-effort, fire-and-forget) */
 async function sendPushNotification(userId: string, title: string, message: string): Promise<void> {
   const appId = Deno.env.get('ONESIGNAL_APP_ID');
@@ -83,8 +114,10 @@ Deno.serve(async (req) => {
     }
 
     const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-    const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
-    const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
+    const { anonKey: SUPABASE_ANON_KEY, serviceRoleKey: SERVICE_ROLE_KEY } = resolveSupabaseKeys();
+
+    if (!SUPABASE_ANON_KEY) console.warn('[Config] Could not resolve Supabase anon key');
+    if (!SERVICE_ROLE_KEY) console.warn('[Config] Could not resolve Supabase service role key — caregiver lookup and notification writes will be skipped');
 
     const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
       global: { headers: { Authorization: authHeader } },
@@ -107,9 +140,6 @@ Deno.serve(async (req) => {
     }
 
     // ── 3. Build admin client (needed for caregiver lookup & notification ops)
-    if (!SERVICE_ROLE_KEY) {
-      console.warn('[Config] SUPABASE_SERVICE_ROLE_KEY not set — caregiver lookup and notifications disabled');
-    }
     const adminClient = SERVICE_ROLE_KEY
       ? createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
       : null;
