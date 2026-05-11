@@ -1,7 +1,7 @@
 import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
-import comfortlinkLogo from "@/assets/comfortlink-logo.gif";
+/* import comfortlinkLogo from "@/assets/comfortlink-logo.gif"; */
 
 const AppHeader = () => {
   const navigate = useNavigate();
