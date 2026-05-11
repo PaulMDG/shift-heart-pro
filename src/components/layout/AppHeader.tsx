@@ -1,7 +1,7 @@
 import { Bell } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
-/* import comfortlinkLogo from "@/assets/comfortlink-logo.gif"; */
+import comfortlinkLogo from "@/assets/comfortlink-logo.gif";
 
 const AppHeader = () => {
   const navigate = useNavigate();
@@ -13,6 +13,7 @@ const AppHeader = () => {
       <div className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
         <div>
           <div className="flex items-center gap-2">
+            <img src={comfortlinkLogo} alt="ComfortLink" className="mx-auto h-16 w-16 rounded-xl" />
             <h1 className="text-lg font-bold text-primary-foreground tracking-tight">
               ComfortLink Pro
             </h1>
