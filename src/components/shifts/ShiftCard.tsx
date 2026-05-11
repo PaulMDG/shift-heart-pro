@@ -11,6 +11,10 @@ const statusConfig: Record<string, { label: string; className: string }> = {
 
 const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
   const navigate = useNavigate();
+
+  // Guard: skip rendering if client data is missing (orphaned shift record)
+  if (!shift.client) return null;
+
   const status = statusConfig[shift.status] ?? statusConfig.not_started;
 
   return (
