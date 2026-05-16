@@ -9,11 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatTime, formatDateTime } from "@/lib/format";
+import LiveLocationStatus from "@/components/LiveLocationStatus";
+import { useAgencySettings } from "@/hooks/useAgencySettings";
 
 const ShiftDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: shift, isLoading } = useShift(id);
+  const { data: settings } = useAgencySettings();
   const updateStatus = useUpdateShiftStatus();
   const updateAssignment = useUpdateAssignmentStatus();
   const [showClockOut, setShowClockOut] = useState(false);
@@ -56,6 +59,13 @@ const ShiftDetail = () => {
     setVerifyingLocation(true);
     try {
       const pos = await getCurrentPosition();
+      const accuracyThreshold = settings?.accuracy_threshold_m ?? 100;
+      if (pos.accuracy != null && pos.accuracy > accuracyThreshold) {
+        setLocationError(
+          `GPS accuracy is too low (±${Math.round(pos.accuracy)} m). Agency requires ±${accuracyThreshold} m or better. Move outdoors or wait a few seconds, then try again.`
+        );
+        return;
+      }
       const distance = getDistanceMeters(pos, {
         lat: shift.client.lat!,
         lng: shift.client.lng!,
@@ -155,10 +165,14 @@ const ShiftDetail = () => {
           Back
         </button>
         <span className="text-lg font-bold text-foreground">CareLink Pro</span>
+        <div className="ml-auto"><LiveLocationStatus compact /></div>
       </div>
 
       <div className="px-5 py-6 space-y-6 pb-36">
-        <h2 className="text-2xl font-bold text-foreground">Shift Details</h2>
+        <div className="flex items-center justify-between gap-3">
+          <h2 className="text-2xl font-bold text-foreground">Shift Details</h2>
+          <LiveLocationStatus />
+        </div>
 
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shrink-0">
