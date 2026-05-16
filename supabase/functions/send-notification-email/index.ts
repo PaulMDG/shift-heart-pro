@@ -163,7 +163,8 @@ Deno.serve(async (req) => {
     }
 
     const validRecipients = recipients.filter(isValidEmail);
-    if (validRecipients.length === 0) {
+    // Allow zero recipients when caller only wants to create an in-app notification.
+    if (validRecipients.length === 0 && !body.create_notification) {
       console.error('[Recipients] no valid email addresses after filtering. Raw input:', recipients);
       return new Response(JSON.stringify({ error: 'No valid recipients' }), {
         status: 400,
@@ -178,13 +179,14 @@ Deno.serve(async (req) => {
       });
     }
 
-    console.log(`[Email] Sending to: ${validRecipients.join(', ')} | Subject: "${body.subject}"`);
+    console.log(`[Email] Sending to: ${validRecipients.join(', ') || '(none — notification only)'} | Subject: "${body.subject}"`);
 
     // ── 5. Send via Resend directly ─────────────────────────────────────────
     let resendResponseData: any = null;
     let emailSuccess = false;
+    const emailSkipped = validRecipients.length === 0;
 
-    try {
+    if (!emailSkipped) try {
       const resendRes = await fetch(RESEND_API_URL, {
         method: 'POST',
         headers: {
@@ -244,9 +246,9 @@ Deno.serve(async (req) => {
         title: body.create_notification.title,
         message: body.create_notification.message,
         type: body.create_notification.type || 'shift',
-        email_status: emailSuccess ? 'sent' : 'failed',
+        email_status: emailSkipped ? 'none' : emailSuccess ? 'sent' : 'failed',
         related_shift_id: body.create_notification.related_shift_id || null,
-        email_payload: emailSuccess ? null : emailPayload,
+        email_payload: emailSkipped || emailSuccess ? null : emailPayload,
       });
       if (insertErr) console.error('[Notifications] insert failed:', insertErr.message);
 
@@ -259,7 +261,7 @@ Deno.serve(async (req) => {
     }
 
     // ── 7. Return result ────────────────────────────────────────────────────
-    if (!emailSuccess) {
+    if (!emailSuccess && !emailSkipped) {
       return new Response(
         JSON.stringify({ error: 'Email send failed', details: resendResponseData }),
         {
@@ -270,7 +272,7 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, id: resendResponseData?.id }),
+      JSON.stringify({ success: true, id: resendResponseData?.id, email_skipped: emailSkipped }),
       {
         status: 200,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

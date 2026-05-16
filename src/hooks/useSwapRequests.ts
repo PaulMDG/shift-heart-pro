@@ -1,6 +1,33 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { notifyAdmins, emailTemplate } from "@/lib/notifyEmail";
+
+async function logSwapEvent(swapId: string, action: "accepted" | "declined" | "cancelled") {
+  try {
+    const { data: swap } = await supabase
+      .from("shift_swap_requests")
+      .select("shift_id, requester_id, target_id")
+      .eq("id", swapId)
+      .maybeSingle();
+    const { data: { user } } = await supabase.auth.getUser();
+    const name = user?.user_metadata?.full_name || user?.email || "A caregiver";
+    const when = new Date().toLocaleString();
+    await notifyAdmins({
+      title: `Swap request ${action}`,
+      message: `${name} ${action} swap request ${swapId.slice(0, 8)} at ${when}.`,
+      type: "swap",
+      related_shift_id: swap?.shift_id ?? undefined,
+      subject: `Swap ${action}`,
+      html: emailTemplate(
+        `Shift swap ${action}`,
+        `<p><strong>${name}</strong> ${action} a swap request.</p><p>Timestamp: ${when}</p>`
+      ),
+    });
+  } catch (e) {
+    console.warn("[logSwapEvent] notify failed", e);
+  }
+}
 
 export interface SwapRequestWithDetails {
   id: string;
@@ -98,6 +125,7 @@ export function useAcceptSwapRequest() {
     mutationFn: async (swapId: string) => {
       const { error } = await (supabase.rpc as any)("accept_swap_request", { swap_id: swapId });
       if (error) throw error;
+      await logSwapEvent(swapId, "accepted");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
@@ -115,6 +143,7 @@ export function useDeclineSwapRequest() {
         .update({ status: "rejected" })
         .eq("id", swapId);
       if (error) throw error;
+      await logSwapEvent(swapId, "declined");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swap-requests"] });
@@ -131,6 +160,7 @@ export function useCancelSwapRequest() {
         .update({ status: "cancelled" })
         .eq("id", swapId);
       if (error) throw error;
+      await logSwapEvent(swapId, "cancelled");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["swap-requests"] });

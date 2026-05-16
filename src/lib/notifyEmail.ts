@@ -103,6 +103,72 @@ export async function getAdminEmails(): Promise<string[]> {
   }
 }
 
+/**
+ * Fetch admin user IDs (and emails) so we can create per-admin in-app
+ * notifications + send a single email blast.
+ */
+export async function getAdmins(): Promise<{ id: string; email: string | null }[]> {
+  try {
+    const { data: roles } = await supabase
+      .from("user_roles")
+      .select("user_id")
+      .eq("role", "admin");
+    const ids = (roles ?? []).map((r: any) => r.user_id);
+    if (!ids.length) return [];
+    const { data: profiles } = await (supabase.from("profiles") as any)
+      .select("id, email")
+      .in("id", ids);
+    const emailMap = new Map<string, string | null>(
+      ((profiles ?? []) as any[]).map((p) => [p.id, p.email ?? null]),
+    );
+    return ids.map((id) => ({ id, email: emailMap.get(id) ?? null }));
+  } catch (e) {
+    console.error("[getAdmins] unexpected error:", e);
+    return [];
+  }
+}
+
+/**
+ * Log an event to every admin: creates an in-app notification row per admin
+ * (visible in the admin notifications feed) and sends a single email blast.
+ * Best-effort — never throws.
+ */
+export async function notifyAdmins(args: {
+  title: string;
+  message: string;
+  subject: string;
+  html: string;
+  type?: string;
+  related_shift_id?: string;
+}): Promise<void> {
+  try {
+    const admins = await getAdmins();
+    if (!admins.length) {
+      console.warn("[notifyAdmins] no admins to notify");
+      return;
+    }
+    // Fire one invoke per admin so each gets their own notification row.
+    await Promise.all(
+      admins.map((a) =>
+        sendNotificationEmail({
+          to: a.email ? [a.email] : [],
+          subject: args.subject,
+          html: args.html,
+          create_notification: {
+            user_id: a.id,
+            title: args.title,
+            message: args.message,
+            type: args.type ?? "shift",
+            related_shift_id: args.related_shift_id,
+          },
+        }),
+      ),
+    );
+  } catch (e) {
+    console.error("[notifyAdmins] unexpected error:", e);
+  }
+}
+
 export const emailTemplate = (title: string, bodyHtml: string) => `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#ffffff;color:#0f172a;">
   <div style="border-bottom:2px solid #ea580c;padding-bottom:12px;margin-bottom:20px;">
