@@ -75,8 +75,8 @@ export async function getAdminEmails(): Promise<string[]> {
 
     // Step 2: fetch emails from profiles table for those user IDs.
     // Your profiles table must expose an `email` column (populated at sign-up).
-    const { data: profiles, error: profilesErr } = await supabase
-      .from("profiles")
+    const { data: profiles, error: profilesErr } = await (supabase
+      .from("profiles") as any)
       .select("email")
       .in("id", adminIds);
 
@@ -85,7 +85,7 @@ export async function getAdminEmails(): Promise<string[]> {
       return FALLBACK;
     }
 
-    const emails = (profiles ?? [])
+    const emails = ((profiles ?? []) as any[])
       .map((p) => p.email as string | null)
       .filter((e): e is string => !!e && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e));
 
