@@ -17,6 +17,8 @@ import {
   evaluateShiftSuspicion,
   type SuspicionResult,
 } from "@/lib/suspiciousShift";
+import { useAgencySettings } from "@/hooks/useAgencySettings";
+import { formatDate, formatTime } from "@/lib/format";
 
 const tabs = ["Overview", "Swaps", "Shifts", "Suspicious", "Clients", "Caregivers"] as const;
 
@@ -28,6 +30,7 @@ const AdminDashboard = () => {
   const { data: clients = [], isLoading: clientsLoading } = useAllClients();
   const { data: caregivers = [] } = useAllCaregivers();
   const { data: swapRequests = [] } = useAllSwapRequests();
+  const { data: settings } = useAgencySettings();
   const approveSwap = useAdminApproveSwap();
   const declineSwap = useAdminDeclineSwap();
   const updateRole = useUpdateUserRole();
@@ -41,7 +44,21 @@ const AdminDashboard = () => {
   const activeShifts = shifts.filter((s) => s.status === "in_progress");
   const completedShifts = shifts.filter((s) => s.status === "completed");
 
-  const failureCountsAll = useMemo(() => buildCaregiverFailureCounts(shifts as any), [shifts]);
+  const thresholds = useMemo(
+    () =>
+      settings
+        ? {
+            geofence_radius_m: settings.geofence_radius_m,
+            accuracy_threshold_m: settings.accuracy_threshold_m,
+            repeat_failure_threshold: settings.repeat_failure_threshold,
+          }
+        : undefined,
+    [settings],
+  );
+  const failureCountsAll = useMemo(
+    () => buildCaregiverFailureCounts(shifts as any, thresholds),
+    [shifts, thresholds],
+  );
   const suspiciousShifts = useMemo(
     () =>
       shifts
@@ -50,6 +67,7 @@ const AdminDashboard = () => {
           suspicion: evaluateShiftSuspicion(
             s,
             s.caregiver_id ? failureCountsAll.get(s.caregiver_id) ?? 0 : 0,
+            thresholds,
           ),
         }))
         .filter((e) => e.suspicion.suspicious)
@@ -59,7 +77,7 @@ const AdminDashboard = () => {
           if (d !== 0) return d;
           return (b.shift.date || "").localeCompare(a.shift.date || "");
         }),
-    [shifts, failureCountsAll],
+    [shifts, failureCountsAll, thresholds],
   );
 
   const handleApprove = async (id: string) => {
@@ -169,7 +187,7 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === "Shifts" && (
-          <ShiftsTab shifts={shifts} shiftsLoading={shiftsLoading} navigate={navigate} />
+          <ShiftsTab shifts={shifts} shiftsLoading={shiftsLoading} navigate={navigate} thresholds={thresholds} />
         )}
 
         {activeTab === "Suspicious" && (
@@ -253,7 +271,7 @@ function ShiftRow({ shift, suspicion }: { shift: any; suspicion?: SuspicionResul
         </h4>
         <span className={`text-[10px] px-2 py-0.5 rounded-full ${st.className}`}>{st.label}</span>
       </div>
-      <p className="text-xs text-muted-foreground">{shift.date} · {shift.start_time} – {shift.end_time}</p>
+      <p className="text-xs text-muted-foreground">{formatDate(shift.date)} · {formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
       {shift.caregiver && (
         <p className="text-xs text-muted-foreground mt-1">👤 {shift.caregiver.full_name}</p>
       )}
@@ -324,7 +342,7 @@ function SwapRow({ req, onApprove, onDecline, loading }: { req: any; onApprove: 
       <div className="flex items-start justify-between">
         <div>
           <h4 className="font-semibold text-card-foreground text-sm">{req.shift?.client?.name || "Unknown"}</h4>
-          <p className="text-xs text-muted-foreground">{req.shift?.date} · {req.shift?.start_time} – {req.shift?.end_time}</p>
+          <p className="text-xs text-muted-foreground">{formatDate(req.shift?.date)} · {formatTime(req.shift?.start_time)} – {formatTime(req.shift?.end_time)}</p>
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${st.className}`}>{st.label}</span>
       </div>
@@ -433,11 +451,11 @@ function SwapsTab({ swapRequests, handleApprove, handleDecline, loading }: any) 
   );
 }
 
-function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
+function ShiftsTab({ shifts, shiftsLoading, navigate, thresholds }: any) {
   const [search, setSearch] = useState("");
   const [suspiciousOnly, setSuspiciousOnly] = useState(false);
 
-  const failureCounts = useMemo(() => buildCaregiverFailureCounts(shifts), [shifts]);
+  const failureCounts = useMemo(() => buildCaregiverFailureCounts(shifts, thresholds), [shifts, thresholds]);
 
   const enriched = useMemo(
     () =>
@@ -446,9 +464,10 @@ function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
         suspicion: evaluateShiftSuspicion(
           s,
           s.caregiver_id ? failureCounts.get(s.caregiver_id) ?? 0 : 0,
+          thresholds,
         ),
       })),
-    [shifts, failureCounts],
+    [shifts, failureCounts, thresholds],
   );
 
   const suspiciousCount = useMemo(

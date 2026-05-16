@@ -1,10 +1,20 @@
 import { getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
 
-/** Accuracy worse than this (meters) is treated as unreliable GPS. */
+/** Default thresholds. Admin can override per-agency via agency_settings. */
 export const ACCURACY_THRESHOLD_METERS = 100;
-
-/** Threshold for repeated geofence failures per caregiver. */
 export const REPEAT_FAILURE_THRESHOLD = 2;
+
+export interface SuspicionThresholds {
+  geofence_radius_m: number;
+  accuracy_threshold_m: number;
+  repeat_failure_threshold: number;
+}
+
+export const DEFAULT_THRESHOLDS: SuspicionThresholds = {
+  geofence_radius_m: MAX_DISTANCE_METERS,
+  accuracy_threshold_m: ACCURACY_THRESHOLD_METERS,
+  repeat_failure_threshold: REPEAT_FAILURE_THRESHOLD,
+};
 
 export interface SuspicionResult {
   suspicious: boolean;
@@ -39,7 +49,10 @@ function farFromClient(
  * Build a map of caregiver_id -> count of shifts with at least one
  * out-of-radius clock-in or clock-out event.
  */
-export function buildCaregiverFailureCounts(shifts: ShiftLike[]): Map<string, number> {
+export function buildCaregiverFailureCounts(
+  shifts: ShiftLike[],
+  thresholds: SuspicionThresholds = DEFAULT_THRESHOLDS,
+): Map<string, number> {
   const counts = new Map<string, number>();
   for (const s of shifts) {
     if (!s.caregiver_id) continue;
@@ -52,8 +65,8 @@ export function buildCaregiverFailureCounts(shifts: ShiftLike[]): Map<string, nu
       s.client ?? null,
     );
     const failed =
-      (inDist != null && inDist > MAX_DISTANCE_METERS) ||
-      (outDist != null && outDist > MAX_DISTANCE_METERS);
+      (inDist != null && inDist > thresholds.geofence_radius_m) ||
+      (outDist != null && outDist > thresholds.geofence_radius_m);
     if (failed) counts.set(s.caregiver_id, (counts.get(s.caregiver_id) ?? 0) + 1);
   }
   return counts;
@@ -62,6 +75,7 @@ export function buildCaregiverFailureCounts(shifts: ShiftLike[]): Map<string, nu
 export function evaluateShiftSuspicion(
   shift: ShiftLike,
   caregiverFailureCount = 0,
+  thresholds: SuspicionThresholds = DEFAULT_THRESHOLDS,
 ): SuspicionResult {
   const reasons: string[] = [];
   let severity: SuspicionResult["severity"] = "none";
@@ -75,25 +89,25 @@ export function evaluateShiftSuspicion(
     shift.client ?? null,
   );
 
-  if (inDist != null && inDist > MAX_DISTANCE_METERS) {
-    reasons.push(`Clock-in ${Math.round(inDist)} m from client (max ${MAX_DISTANCE_METERS} m)`);
+  if (inDist != null && inDist > thresholds.geofence_radius_m) {
+    reasons.push(`Clock-in ${Math.round(inDist)} m from client (max ${thresholds.geofence_radius_m} m)`);
     severity = "high";
   }
-  if (outDist != null && outDist > MAX_DISTANCE_METERS) {
-    reasons.push(`Clock-out ${Math.round(outDist)} m from client (max ${MAX_DISTANCE_METERS} m)`);
+  if (outDist != null && outDist > thresholds.geofence_radius_m) {
+    reasons.push(`Clock-out ${Math.round(outDist)} m from client (max ${thresholds.geofence_radius_m} m)`);
     severity = "high";
   }
 
-  if (shift.clock_in_accuracy != null && shift.clock_in_accuracy > ACCURACY_THRESHOLD_METERS) {
+  if (shift.clock_in_accuracy != null && shift.clock_in_accuracy > thresholds.accuracy_threshold_m) {
     reasons.push(`Low GPS accuracy at clock-in (±${Math.round(shift.clock_in_accuracy)} m)`);
     if (severity === "none") severity = "warn";
   }
-  if (shift.clock_out_accuracy != null && shift.clock_out_accuracy > ACCURACY_THRESHOLD_METERS) {
+  if (shift.clock_out_accuracy != null && shift.clock_out_accuracy > thresholds.accuracy_threshold_m) {
     reasons.push(`Low GPS accuracy at clock-out (±${Math.round(shift.clock_out_accuracy)} m)`);
     if (severity === "none") severity = "warn";
   }
 
-  if (caregiverFailureCount >= REPEAT_FAILURE_THRESHOLD) {
+  if (caregiverFailureCount >= thresholds.repeat_failure_threshold) {
     reasons.push(`Caregiver has ${caregiverFailureCount} geofence failures recently`);
     severity = "high";
   }

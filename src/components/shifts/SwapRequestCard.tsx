@@ -1,5 +1,6 @@
 import { ArrowRightLeft, Check, X, Loader2 } from "lucide-react";
 import type { SwapRequestWithDetails } from "@/hooks/useSwapRequests";
+import { formatDate, formatTime } from "@/lib/format";
 
 interface SwapRequestCardProps {
   request: SwapRequestWithDetails;
@@ -31,7 +32,7 @@ const SwapRequestCard = ({ request, variant, onAccept, onDecline, onCancel, isLo
           <div>
             <h4 className="font-semibold text-card-foreground text-sm">{shift?.client?.name}</h4>
             <p className="text-xs text-muted-foreground">
-              {shift?.date} · {shift?.start_time} – {shift?.end_time}
+              {formatDate(shift?.date)} · {formatTime(shift?.start_time)} – {formatTime(shift?.end_time)}
             </p>
           </div>
         </div>

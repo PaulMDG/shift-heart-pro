@@ -5,6 +5,7 @@ import { useShift } from "@/hooks/useShifts";
 import { useCreateSwapRequest, useMySwapRequests } from "@/hooks/useSwapRequests";
 import { toast } from "@/components/ui/sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatDate, formatTime } from "@/lib/format";
 
 const ShiftSwapPage = () => {
   const { id } = useParams();
@@ -73,8 +74,8 @@ const ShiftSwapPage = () => {
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Your shift</p>
           <h3 className="text-lg font-bold text-card-foreground">{shift.client.name}</h3>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
-            <span>{shift.date}</span>
-            <span>{shift.start_time} – {shift.end_time}</span>
+            <span>{formatDate(shift.date)}</span>
+            <span>{formatTime(shift.start_time)} – {formatTime(shift.end_time)}</span>
           </div>
           <p className="text-sm text-muted-foreground">{shift.client.address}</p>
           <span className="inline-block text-xs px-2.5 py-1 rounded-full bg-accent text-accent-foreground font-medium">

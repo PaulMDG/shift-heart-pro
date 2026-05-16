@@ -8,6 +8,7 @@ import SelfieCapture from "@/components/shifts/SelfieCapture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { formatTime, formatDateTime } from "@/lib/format";
 
 const ShiftDetail = () => {
   const { id } = useParams();
@@ -174,7 +175,7 @@ const ShiftDetail = () => {
         <div className="flex gap-8">
           <span className="text-base font-semibold text-foreground w-24 shrink-0">Scheduled</span>
           <div>
-            <p className="text-lg font-bold text-foreground">{shift.start_time} – {shift.end_time}</p>
+            <p className="text-lg font-bold text-foreground">{formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
             <p className="text-sm text-muted-foreground">{shift.client.care_type}</p>
           </div>
         </div>
@@ -234,7 +235,7 @@ const ShiftDetail = () => {
             {shift.clock_in_time && (
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-foreground">Clock In</p>
-                <p className="text-xs text-muted-foreground">Timestamp: {new Date(shift.clock_in_time).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Timestamp: {formatDateTime(shift.clock_in_time)}</p>
                 {shift.clock_in_lat != null && shift.clock_in_lng != null && shift.client.lat != null && shift.client.lng != null && (
                   <>
                     <p className="text-xs text-muted-foreground">
@@ -259,7 +260,7 @@ const ShiftDetail = () => {
             {shift.clock_out_time && (
               <div className="space-y-1 border-t border-border pt-2">
                 <p className="text-xs font-semibold text-foreground">Clock Out</p>
-                <p className="text-xs text-muted-foreground">Timestamp: {new Date(shift.clock_out_time).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Timestamp: {formatDateTime(shift.clock_out_time)}</p>
                 {shift.clock_out_lat != null && shift.clock_out_lng != null && shift.client.lat != null && shift.client.lng != null && (
                   <>
                     <p className="text-xs text-muted-foreground">

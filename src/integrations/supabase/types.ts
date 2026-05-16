@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      agency_settings: {
+        Row: {
+          accuracy_threshold_m: number
+          geofence_radius_m: number
+          id: string
+          is_global: boolean
+          repeat_failure_threshold: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          accuracy_threshold_m?: number
+          geofence_radius_m?: number
+          id?: string
+          is_global?: boolean
+          repeat_failure_threshold?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          accuracy_threshold_m?: number
+          geofence_radius_m?: number
+          id?: string
+          is_global?: boolean
+          repeat_failure_threshold?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       billing_rates: {
         Row: {
           client_id: string | null

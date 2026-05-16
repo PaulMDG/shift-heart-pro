@@ -2,6 +2,7 @@ import { Clock, MapPin, ChevronRight, Check, X } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { type ShiftWithClient, useUpdateAssignmentStatus } from "@/hooks/useShifts";
 import { toast } from "@/components/ui/sonner";
+import { formatTime } from "@/lib/format";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   not_started: {
@@ -109,7 +110,7 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
         <div className="flex items-center gap-1.5">
           <Clock className="w-3.5 h-3.5" />
           <span className="text-xs">
-            {shift.start_time} – {shift.end_time}
+            {formatTime(shift.start_time)} – {formatTime(shift.end_time)}
           </span>
         </div>
 
