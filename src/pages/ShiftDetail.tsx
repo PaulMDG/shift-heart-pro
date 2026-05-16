@@ -228,34 +228,56 @@ const ShiftDetail = () => {
         {/* Verification Details */}
         {(shift.clock_in_time || shift.clock_out_time) && (
           <div className="bg-card rounded-2xl p-4 border border-border space-y-3">
-            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider">Verification Details</h3>
+            <h3 className="text-sm font-bold text-foreground uppercase tracking-wider flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-success" /> GPS Verification Summary
+            </h3>
             {shift.clock_in_time && (
               <div className="space-y-1">
                 <p className="text-xs font-semibold text-foreground">Clock In</p>
-                <p className="text-xs text-muted-foreground">Time: {new Date(shift.clock_in_time).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Timestamp: {new Date(shift.clock_in_time).toLocaleString()}</p>
                 {shift.clock_in_lat != null && shift.clock_in_lng != null && shift.client.lat != null && shift.client.lng != null && (
-                  <p className="text-xs text-muted-foreground">
-                    Distance: {Math.round(metersToFeet(getDistanceMeters({ lat: shift.clock_in_lat, lng: shift.clock_in_lng }, { lat: shift.client.lat, lng: shift.client.lng })))} ft
-                  </p>
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      Distance from client: {Math.round(getDistanceMeters({ lat: shift.clock_in_lat, lng: shift.clock_in_lng }, { lat: shift.client.lat, lng: shift.client.lng }))} m
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&origin=${shift.clock_in_lat},${shift.clock_in_lng}&destination=${shift.client.lat},${shift.client.lng}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-primary inline-flex items-center gap-1 hover:underline"
+                    >
+                      View on map <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </>
                 )}
-                <p className="text-xs text-muted-foreground">Geofence: 100 ft + 150 ft buffer = 250 ft max</p>
+                <p className="text-xs text-muted-foreground">Geofence radius: {MAX_DISTANCE_METERS} m</p>
                 {(shift as any).clock_in_accuracy != null && (
-                  <p className="text-xs text-muted-foreground">GPS Accuracy: ±{Math.round(metersToFeet((shift as any).clock_in_accuracy))} ft ({Math.round((shift as any).clock_in_accuracy)}m)</p>
+                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round((shift as any).clock_in_accuracy)} m</p>
                 )}
               </div>
             )}
             {shift.clock_out_time && (
               <div className="space-y-1 border-t border-border pt-2">
                 <p className="text-xs font-semibold text-foreground">Clock Out</p>
-                <p className="text-xs text-muted-foreground">Time: {new Date(shift.clock_out_time).toLocaleString()}</p>
+                <p className="text-xs text-muted-foreground">Timestamp: {new Date(shift.clock_out_time).toLocaleString()}</p>
                 {shift.clock_out_lat != null && shift.clock_out_lng != null && shift.client.lat != null && shift.client.lng != null && (
-                  <p className="text-xs text-muted-foreground">
-                    Distance: {Math.round(metersToFeet(getDistanceMeters({ lat: shift.clock_out_lat, lng: shift.clock_out_lng }, { lat: shift.client.lat, lng: shift.client.lng })))} ft
-                  </p>
+                  <>
+                    <p className="text-xs text-muted-foreground">
+                      Distance from client: {Math.round(getDistanceMeters({ lat: shift.clock_out_lat, lng: shift.clock_out_lng }, { lat: shift.client.lat, lng: shift.client.lng }))} m
+                    </p>
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&origin=${shift.clock_out_lat},${shift.clock_out_lng}&destination=${shift.client.lat},${shift.client.lng}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-primary inline-flex items-center gap-1 hover:underline"
+                    >
+                      View on map <ExternalLink className="w-3 h-3" />
+                    </a>
+                  </>
                 )}
-                <p className="text-xs text-muted-foreground">Geofence: 100 ft + 150 ft buffer = 250 ft max</p>
+                <p className="text-xs text-muted-foreground">Geofence radius: {MAX_DISTANCE_METERS} m</p>
                 {(shift as any).clock_out_accuracy != null && (
-                  <p className="text-xs text-muted-foreground">GPS Accuracy: ±{Math.round(metersToFeet((shift as any).clock_out_accuracy))} ft ({Math.round((shift as any).clock_out_accuracy)}m)</p>
+                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round((shift as any).clock_out_accuracy)} m</p>
                 )}
               </div>
             )}
