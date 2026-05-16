@@ -271,7 +271,7 @@ function ShiftRow({ shift, suspicion }: { shift: any; suspicion?: SuspicionResul
         </h4>
         <span className={`text-[10px] px-2 py-0.5 rounded-full ${st.className}`}>{st.label}</span>
       </div>
-      <p className="text-xs text-muted-foreground">{shift.date} · {shift.start_time} – {shift.end_time}</p>
+      <p className="text-xs text-muted-foreground">{formatDate(shift.date)} · {formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
       {shift.caregiver && (
         <p className="text-xs text-muted-foreground mt-1">👤 {shift.caregiver.full_name}</p>
       )}
@@ -342,7 +342,7 @@ function SwapRow({ req, onApprove, onDecline, loading }: { req: any; onApprove: 
       <div className="flex items-start justify-between">
         <div>
           <h4 className="font-semibold text-card-foreground text-sm">{req.shift?.client?.name || "Unknown"}</h4>
-          <p className="text-xs text-muted-foreground">{req.shift?.date} · {req.shift?.start_time} – {req.shift?.end_time}</p>
+          <p className="text-xs text-muted-foreground">{formatDate(req.shift?.date)} · {formatTime(req.shift?.start_time)} – {formatTime(req.shift?.end_time)}</p>
         </div>
         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${st.className}`}>{st.label}</span>
       </div>
@@ -451,11 +451,11 @@ function SwapsTab({ swapRequests, handleApprove, handleDecline, loading }: any) 
   );
 }
 
-function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
+function ShiftsTab({ shifts, shiftsLoading, navigate, thresholds }: any) {
   const [search, setSearch] = useState("");
   const [suspiciousOnly, setSuspiciousOnly] = useState(false);
 
-  const failureCounts = useMemo(() => buildCaregiverFailureCounts(shifts), [shifts]);
+  const failureCounts = useMemo(() => buildCaregiverFailureCounts(shifts, thresholds), [shifts, thresholds]);
 
   const enriched = useMemo(
     () =>
@@ -464,9 +464,10 @@ function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
         suspicion: evaluateShiftSuspicion(
           s,
           s.caregiver_id ? failureCounts.get(s.caregiver_id) ?? 0 : 0,
+          thresholds,
         ),
       })),
-    [shifts, failureCounts],
+    [shifts, failureCounts, thresholds],
   );
 
   const suspiciousCount = useMemo(
