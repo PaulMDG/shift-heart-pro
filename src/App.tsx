@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import AdminThemeProvider from "@/components/AdminThemeProvider";
+import LocationPermissionGate from "@/components/LocationPermissionGate";
 import Index from "./pages/Index";
 import ShiftsPage from "./pages/ShiftsPage";
 import ShiftDetail from "./pages/ShiftDetail";
@@ -47,6 +48,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AdminThemeProvider />
+          <LocationPermissionGate />
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/admin/login" element={<AdminLoginPage />} />
