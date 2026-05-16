@@ -165,6 +165,7 @@ const AdminShiftDetail = () => {
   const st = statusStyles[shift.status] ?? statusStyles.not_started;
 
   const suspicion = evaluateShiftSuspicion(shift as any, failureHistory?.count ?? 0);
+  const sAny = shift as any;
 
   return (
     <MobileLayout>
@@ -206,11 +207,11 @@ const AdminShiftDetail = () => {
               {clockOutDistance != null && (
                 <p><strong className="text-card-foreground">Clock-out distance:</strong> {Math.round(clockOutDistance)} m{clockOutDistance > MAX_DISTANCE_METERS ? " (outside)" : ""}</p>
               )}
-              {shift.clock_in_accuracy != null && (
-                <p><strong className="text-card-foreground">Clock-in GPS accuracy:</strong> ±{Math.round(shift.clock_in_accuracy)} m{shift.clock_in_accuracy > ACCURACY_THRESHOLD_METERS ? " (low)" : ""}</p>
+              {sAny.clock_in_accuracy != null && (
+                <p><strong className="text-card-foreground">Clock-in GPS accuracy:</strong> ±{Math.round(sAny.clock_in_accuracy)} m{sAny.clock_in_accuracy > ACCURACY_THRESHOLD_METERS ? " (low)" : ""}</p>
               )}
-              {shift.clock_out_accuracy != null && (
-                <p><strong className="text-card-foreground">Clock-out GPS accuracy:</strong> ±{Math.round(shift.clock_out_accuracy)} m{shift.clock_out_accuracy > ACCURACY_THRESHOLD_METERS ? " (low)" : ""}</p>
+              {sAny.clock_out_accuracy != null && (
+                <p><strong className="text-card-foreground">Clock-out GPS accuracy:</strong> ±{Math.round(sAny.clock_out_accuracy)} m{sAny.clock_out_accuracy > ACCURACY_THRESHOLD_METERS ? " (low)" : ""}</p>
               )}
             </div>
             {failureHistory && (
