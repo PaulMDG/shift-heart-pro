@@ -257,7 +257,7 @@ const AdminShiftDetail = () => {
             <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${st.className}`}>{st.label}</span>
           </div>
           <div className="text-xs text-muted-foreground space-y-1">
-            <p>📅 {shift.date} · {shift.start_time} – {shift.end_time}</p>
+            <p>📅 {formatDate(shift.date)} · {formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
             <p>🏥 {shift.client.care_type}</p>
             {shift.admin_notes && <p>📝 {shift.admin_notes}</p>}
           </div>
@@ -299,7 +299,7 @@ const AdminShiftDetail = () => {
                 {shift.clock_in_time && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>{new Date(shift.clock_in_time).toLocaleString()}</span>
+                    <span>{formatDateTime(shift.clock_in_time)}</span>
                   </div>
                 )}
                 {renderMapEmbed(shift.clock_in_lat!, shift.clock_in_lng!, "Clock-in location")}
@@ -327,7 +327,7 @@ const AdminShiftDetail = () => {
                 {shift.clock_out_time && (
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <Clock className="w-3.5 h-3.5" />
-                    <span>{new Date(shift.clock_out_time).toLocaleString()}</span>
+                    <span>{formatDateTime(shift.clock_out_time)}</span>
                   </div>
                 )}
                 {renderMapEmbed(shift.clock_out_lat!, shift.clock_out_lng!, "Clock-out location")}
