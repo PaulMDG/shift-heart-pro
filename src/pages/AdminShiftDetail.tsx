@@ -6,6 +6,35 @@ import { getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
 import { useSignedSelfieUrl } from "@/hooks/useSignedSelfieUrl";
 import { Skeleton } from "@/components/ui/skeleton";
 import MobileLayout from "@/components/layout/MobileLayout";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  evaluateShiftSuspicion,
+  buildCaregiverFailureCounts,
+  ACCURACY_THRESHOLD_METERS,
+} from "@/lib/suspiciousShift";
+
+function useCaregiverFailureHistory(caregiverId: string | null | undefined) {
+  return useQuery({
+    queryKey: ["caregiver-failure-history", caregiverId],
+    enabled: !!caregiverId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("shifts")
+        .select("id, date, start_time, clock_in_lat, clock_in_lng, clock_out_lat, clock_out_lng, clock_in_accuracy, clock_out_accuracy, caregiver_id, client:clients(id, name, lat, lng)")
+        .eq("caregiver_id", caregiverId!)
+        .order("date", { ascending: false })
+        .limit(50);
+      if (error) throw error;
+      const counts = buildCaregiverFailureCounts((data ?? []) as any);
+      const failed = ((data ?? []) as any[]).filter((s) => {
+        const r = evaluateShiftSuspicion(s, counts.get(s.caregiver_id) ?? 0);
+        return r.suspicious;
+      });
+      return { count: counts.get(caregiverId!) ?? 0, failed };
+    },
+  });
+}
 
 function formatDistance(meters: number) {
   return meters >= 1000 ? `${(meters / 1000).toFixed(1)} km` : `${Math.round(meters)} m`;
@@ -72,6 +101,7 @@ const AdminShiftDetail = () => {
     isError: isClientError,
     error: clientError,
   } = useAdminClient(shift?.client_id, shift?.id);
+  const { data: failureHistory } = useCaregiverFailureHistory(shift?.caregiver_id ?? null);
 
   if (isLoading) {
     return (
@@ -134,6 +164,8 @@ const AdminShiftDetail = () => {
 
   const st = statusStyles[shift.status] ?? statusStyles.not_started;
 
+  const suspicion = evaluateShiftSuspicion(shift as any, failureHistory?.count ?? 0);
+
   return (
     <MobileLayout>
       <div className="px-5 py-5 space-y-5">
@@ -153,6 +185,48 @@ const AdminShiftDetail = () => {
             CSV
           </button>
         </div>
+
+        {suspicion.suspicious && (
+          <aside className={`rounded-2xl border-2 p-4 space-y-3 ${suspicion.severity === "high" ? "border-destructive/40 bg-destructive/5" : "border-warning/40 bg-warning/5"}`}>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className={`w-5 h-5 ${suspicion.severity === "high" ? "text-destructive" : "text-warning"}`} />
+              <h3 className="text-sm font-bold text-card-foreground">Why this visit is flagged</h3>
+              <span className={`ml-auto text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${suspicion.severity === "high" ? "bg-destructive/15 text-destructive" : "bg-warning/15 text-warning"}`}>
+                {suspicion.severity}
+              </span>
+            </div>
+            <ul className="text-xs text-card-foreground list-disc list-inside space-y-1">
+              {suspicion.reasons.map((r) => <li key={r}>{r}</li>)}
+            </ul>
+            <div className="text-xs text-muted-foreground border-t border-border pt-2 space-y-1">
+              <p><strong className="text-card-foreground">Geofence radius:</strong> {MAX_DISTANCE_METERS} m</p>
+              {clockInDistance != null && (
+                <p><strong className="text-card-foreground">Clock-in distance:</strong> {Math.round(clockInDistance)} m{clockInDistance > MAX_DISTANCE_METERS ? " (outside)" : ""}</p>
+              )}
+              {clockOutDistance != null && (
+                <p><strong className="text-card-foreground">Clock-out distance:</strong> {Math.round(clockOutDistance)} m{clockOutDistance > MAX_DISTANCE_METERS ? " (outside)" : ""}</p>
+              )}
+              {shift.clock_in_accuracy != null && (
+                <p><strong className="text-card-foreground">Clock-in GPS accuracy:</strong> ±{Math.round(shift.clock_in_accuracy)} m{shift.clock_in_accuracy > ACCURACY_THRESHOLD_METERS ? " (low)" : ""}</p>
+              )}
+              {shift.clock_out_accuracy != null && (
+                <p><strong className="text-card-foreground">Clock-out GPS accuracy:</strong> ±{Math.round(shift.clock_out_accuracy)} m{shift.clock_out_accuracy > ACCURACY_THRESHOLD_METERS ? " (low)" : ""}</p>
+              )}
+            </div>
+            {failureHistory && (
+              <div className="text-xs border-t border-border pt-2 space-y-1">
+                <p className="text-card-foreground font-semibold">
+                  Caregiver geofence failure history: {failureHistory.count} flagged shift{failureHistory.count === 1 ? "" : "s"} (last 50)
+                </p>
+                {failureHistory.failed.slice(0, 5).map((f: any) => (
+                  <p key={f.id} className="text-muted-foreground">
+                    • {f.date} {f.start_time} — {f.client?.name ?? "Unknown client"}
+                  </p>
+                ))}
+              </div>
+            )}
+          </aside>
+        )}
 
         {/* Shift Info */}
         <div className="bg-card rounded-2xl p-4 border border-border space-y-3">
