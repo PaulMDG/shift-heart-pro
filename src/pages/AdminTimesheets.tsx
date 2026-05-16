@@ -9,6 +9,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { format, differenceInMinutes } from "date-fns";
 import { toast } from "@/components/ui/sonner";
+import { formatDate } from "@/lib/format";
 
 const filters = ["pending", "approved", "rejected"] as const;
 
@@ -155,7 +156,7 @@ const AdminTimesheets = () => {
                     </div>
                   </div>
                   <p className="text-xs text-muted-foreground mb-2">
-                    {s.date} · {hrs}h @ ${rate}/hr
+                    {formatDate(s.date)} · {hrs}h @ ${rate}/hr
                   </p>
                   <p className="text-xs text-muted-foreground mb-3">
                     {format(new Date(s.clock_in_time!), "h:mm a")} – {format(new Date(s.clock_out_time!), "h:mm a")}
