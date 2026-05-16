@@ -5,6 +5,7 @@ import { CalendarDays, Clock, TrendingUp } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useProfile } from "@/hooks/useProfile";
 import { useNavigate } from "react-router-dom";
+import LiveLocationStatus from "@/components/LiveLocationStatus";
 
 const Dashboard = () => {
   const { data: shifts = [], isLoading } = useShifts();
@@ -52,15 +53,17 @@ const Dashboard = () => {
     <MobileLayout>
       <div className="px-5 py-5 space-y-6">
         {/* Greeting */}
-        <div>
-          <h2 className="text-2xl font-bold text-foreground">
-            Good morning, {firstName} 👋
-          </h2>
-
-          <p className="text-sm text-muted-foreground mt-1">
-            You have {todayShifts.length} shift
-            {todayShifts.length !== 1 ? "s" : ""} today
-          </p>
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-bold text-foreground">
+              Good morning, {firstName} 👋
+            </h2>
+            <p className="text-sm text-muted-foreground mt-1">
+              You have {todayShifts.length} shift
+              {todayShifts.length !== 1 ? "s" : ""} today
+            </p>
+          </div>
+          <LiveLocationStatus />
         </div>
 
         {/* Stats */}
