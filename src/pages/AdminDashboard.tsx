@@ -221,6 +221,14 @@ const statusStyles: Record<string, { label: string; className: string }> = {
 function ShiftRow({ shift, suspicion }: { shift: any; suspicion?: SuspicionResult }) {
   const navigate = useNavigate();
   const st = statusStyles[shift.status] ?? statusStyles.not_started;
+  const previewCoords =
+    shift.clock_in_lat != null && shift.clock_in_lng != null
+      ? { lat: shift.clock_in_lat, lng: shift.clock_in_lng, label: "Clock-in" }
+      : shift.clock_out_lat != null && shift.clock_out_lng != null
+      ? { lat: shift.clock_out_lat, lng: shift.clock_out_lng, label: "Clock-out" }
+      : shift.client?.lat != null && shift.client?.lng != null
+      ? { lat: shift.client.lat, lng: shift.client.lng, label: "Client" }
+      : null;
   return (
     <div
       onClick={() => navigate(`/admin/shifts/${shift.id}`)}
@@ -253,6 +261,50 @@ function ShiftRow({ shift, suspicion }: { shift: any; suspicion?: SuspicionResul
         <ul className="mt-2 text-[10px] text-muted-foreground list-disc list-inside space-y-0.5">
           {suspicion.reasons.map((r) => <li key={r}>{r}</li>)}
         </ul>
+      )}
+      {suspicion?.suspicious && previewCoords && (
+        <div className="mt-3 space-y-1.5" onClick={(e) => e.stopPropagation()}>
+          <iframe
+            title={`Map preview ${shift.id}`}
+            width="100%"
+            height="110"
+            loading="lazy"
+            style={{ border: 0, borderRadius: 12 }}
+            src={`https://www.openstreetmap.org/export/embed.html?bbox=${previewCoords.lng - 0.004},${previewCoords.lat - 0.0025},${previewCoords.lng + 0.004},${previewCoords.lat + 0.0025}&layer=mapnik&marker=${previewCoords.lat},${previewCoords.lng}`}
+          />
+          <div className="flex flex-wrap gap-x-3 gap-y-1 text-[10px]">
+            {shift.clock_in_lat != null && shift.clock_in_lng != null && (
+              <a
+                href={`https://www.google.com/maps?q=${shift.clock_in_lat},${shift.clock_in_lng}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline"
+              >
+                Clock-in coords
+              </a>
+            )}
+            {shift.clock_out_lat != null && shift.clock_out_lng != null && (
+              <a
+                href={`https://www.google.com/maps?q=${shift.clock_out_lat},${shift.clock_out_lng}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline"
+              >
+                Clock-out coords
+              </a>
+            )}
+            {shift.client?.address && (
+              <a
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(shift.client.address)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="text-primary hover:underline"
+              >
+                Client address
+              </a>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
