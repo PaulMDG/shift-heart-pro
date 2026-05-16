@@ -13,10 +13,15 @@ import {
   buildCaregiverFailureCounts,
   ACCURACY_THRESHOLD_METERS,
 } from "@/lib/suspiciousShift";
+import { useAgencySettings } from "@/hooks/useAgencySettings";
+import { formatDate, formatTime, formatDateTime } from "@/lib/format";
 
-function useCaregiverFailureHistory(caregiverId: string | null | undefined) {
+function useCaregiverFailureHistory(
+  caregiverId: string | null | undefined,
+  thresholds?: { geofence_radius_m: number; accuracy_threshold_m: number; repeat_failure_threshold: number },
+) {
   return useQuery({
-    queryKey: ["caregiver-failure-history", caregiverId],
+    queryKey: ["caregiver-failure-history", caregiverId, thresholds],
     enabled: !!caregiverId,
     queryFn: async () => {
       const { data, error } = await supabase
@@ -26,9 +31,9 @@ function useCaregiverFailureHistory(caregiverId: string | null | undefined) {
         .order("date", { ascending: false })
         .limit(50);
       if (error) throw error;
-      const counts = buildCaregiverFailureCounts((data ?? []) as any);
+      const counts = buildCaregiverFailureCounts((data ?? []) as any, thresholds);
       const failed = ((data ?? []) as any[]).filter((s) => {
-        const r = evaluateShiftSuspicion(s, counts.get(s.caregiver_id) ?? 0);
+        const r = evaluateShiftSuspicion(s, counts.get(s.caregiver_id) ?? 0, thresholds);
         return r.suspicious;
       });
       return { count: counts.get(caregiverId!) ?? 0, failed };
@@ -101,7 +106,15 @@ const AdminShiftDetail = () => {
     isError: isClientError,
     error: clientError,
   } = useAdminClient(shift?.client_id, shift?.id);
-  const { data: failureHistory } = useCaregiverFailureHistory(shift?.caregiver_id ?? null);
+  const { data: settings } = useAgencySettings();
+  const thresholds = settings
+    ? {
+        geofence_radius_m: settings.geofence_radius_m,
+        accuracy_threshold_m: settings.accuracy_threshold_m,
+        repeat_failure_threshold: settings.repeat_failure_threshold,
+      }
+    : undefined;
+  const { data: failureHistory } = useCaregiverFailureHistory(shift?.caregiver_id ?? null, thresholds);
 
   if (isLoading) {
     return (
@@ -164,7 +177,7 @@ const AdminShiftDetail = () => {
 
   const st = statusStyles[shift.status] ?? statusStyles.not_started;
 
-  const suspicion = evaluateShiftSuspicion(shift as any, failureHistory?.count ?? 0);
+  const suspicion = evaluateShiftSuspicion(shift as any, failureHistory?.count ?? 0, thresholds);
   const sAny = shift as any;
 
   return (
@@ -200,18 +213,18 @@ const AdminShiftDetail = () => {
               {suspicion.reasons.map((r) => <li key={r}>{r}</li>)}
             </ul>
             <div className="text-xs text-muted-foreground border-t border-border pt-2 space-y-1">
-              <p><strong className="text-card-foreground">Geofence radius:</strong> {MAX_DISTANCE_METERS} m</p>
+              <p><strong className="text-card-foreground">Geofence radius:</strong> {thresholds?.geofence_radius_m ?? MAX_DISTANCE_METERS} m</p>
               {clockInDistance != null && (
-                <p><strong className="text-card-foreground">Clock-in distance:</strong> {Math.round(clockInDistance)} m{clockInDistance > MAX_DISTANCE_METERS ? " (outside)" : ""}</p>
+                <p><strong className="text-card-foreground">Clock-in distance:</strong> {Math.round(clockInDistance)} m{clockInDistance > (thresholds?.geofence_radius_m ?? MAX_DISTANCE_METERS) ? " (outside)" : ""}</p>
               )}
               {clockOutDistance != null && (
-                <p><strong className="text-card-foreground">Clock-out distance:</strong> {Math.round(clockOutDistance)} m{clockOutDistance > MAX_DISTANCE_METERS ? " (outside)" : ""}</p>
+                <p><strong className="text-card-foreground">Clock-out distance:</strong> {Math.round(clockOutDistance)} m{clockOutDistance > (thresholds?.geofence_radius_m ?? MAX_DISTANCE_METERS) ? " (outside)" : ""}</p>
               )}
               {sAny.clock_in_accuracy != null && (
-                <p><strong className="text-card-foreground">Clock-in GPS accuracy:</strong> ±{Math.round(sAny.clock_in_accuracy)} m{sAny.clock_in_accuracy > ACCURACY_THRESHOLD_METERS ? " (low)" : ""}</p>
+                <p><strong className="text-card-foreground">Clock-in GPS accuracy:</strong> ±{Math.round(sAny.clock_in_accuracy)} m{sAny.clock_in_accuracy > (thresholds?.accuracy_threshold_m ?? ACCURACY_THRESHOLD_METERS) ? " (low)" : ""}</p>
               )}
               {sAny.clock_out_accuracy != null && (
-                <p><strong className="text-card-foreground">Clock-out GPS accuracy:</strong> ±{Math.round(sAny.clock_out_accuracy)} m{sAny.clock_out_accuracy > ACCURACY_THRESHOLD_METERS ? " (low)" : ""}</p>
+                <p><strong className="text-card-foreground">Clock-out GPS accuracy:</strong> ±{Math.round(sAny.clock_out_accuracy)} m{sAny.clock_out_accuracy > (thresholds?.accuracy_threshold_m ?? ACCURACY_THRESHOLD_METERS) ? " (low)" : ""}</p>
               )}
             </div>
             {failureHistory && (
@@ -221,7 +234,7 @@ const AdminShiftDetail = () => {
                 </p>
                 {failureHistory.failed.slice(0, 5).map((f: any) => (
                   <p key={f.id} className="text-muted-foreground">
-                    • {f.date} {f.start_time} — {f.client?.name ?? "Unknown client"}
+                    • {formatDate(f.date)} {formatTime(f.start_time)} — {f.client?.name ?? "Unknown client"}
                   </p>
                 ))}
               </div>
