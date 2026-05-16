@@ -17,6 +17,8 @@ import {
   evaluateShiftSuspicion,
   type SuspicionResult,
 } from "@/lib/suspiciousShift";
+import { useAgencySettings } from "@/hooks/useAgencySettings";
+import { formatDate, formatTime } from "@/lib/format";
 
 const tabs = ["Overview", "Swaps", "Shifts", "Suspicious", "Clients", "Caregivers"] as const;
 
@@ -28,6 +30,7 @@ const AdminDashboard = () => {
   const { data: clients = [], isLoading: clientsLoading } = useAllClients();
   const { data: caregivers = [] } = useAllCaregivers();
   const { data: swapRequests = [] } = useAllSwapRequests();
+  const { data: settings } = useAgencySettings();
   const approveSwap = useAdminApproveSwap();
   const declineSwap = useAdminDeclineSwap();
   const updateRole = useUpdateUserRole();
@@ -41,7 +44,21 @@ const AdminDashboard = () => {
   const activeShifts = shifts.filter((s) => s.status === "in_progress");
   const completedShifts = shifts.filter((s) => s.status === "completed");
 
-  const failureCountsAll = useMemo(() => buildCaregiverFailureCounts(shifts as any), [shifts]);
+  const thresholds = useMemo(
+    () =>
+      settings
+        ? {
+            geofence_radius_m: settings.geofence_radius_m,
+            accuracy_threshold_m: settings.accuracy_threshold_m,
+            repeat_failure_threshold: settings.repeat_failure_threshold,
+          }
+        : undefined,
+    [settings],
+  );
+  const failureCountsAll = useMemo(
+    () => buildCaregiverFailureCounts(shifts as any, thresholds),
+    [shifts, thresholds],
+  );
   const suspiciousShifts = useMemo(
     () =>
       shifts
@@ -50,6 +67,7 @@ const AdminDashboard = () => {
           suspicion: evaluateShiftSuspicion(
             s,
             s.caregiver_id ? failureCountsAll.get(s.caregiver_id) ?? 0 : 0,
+            thresholds,
           ),
         }))
         .filter((e) => e.suspicion.suspicious)
@@ -59,7 +77,7 @@ const AdminDashboard = () => {
           if (d !== 0) return d;
           return (b.shift.date || "").localeCompare(a.shift.date || "");
         }),
-    [shifts, failureCountsAll],
+    [shifts, failureCountsAll, thresholds],
   );
 
   const handleApprove = async (id: string) => {
@@ -169,7 +187,7 @@ const AdminDashboard = () => {
         )}
 
         {activeTab === "Shifts" && (
-          <ShiftsTab shifts={shifts} shiftsLoading={shiftsLoading} navigate={navigate} />
+          <ShiftsTab shifts={shifts} shiftsLoading={shiftsLoading} navigate={navigate} thresholds={thresholds} />
         )}
 
         {activeTab === "Suspicious" && (
