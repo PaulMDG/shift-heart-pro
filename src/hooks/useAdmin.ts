@@ -1,6 +1,42 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { notifyAdmins, emailTemplate } from "@/lib/notifyEmail";
+import { notifyAdmins, sendNotificationEmail, emailTemplate } from "@/lib/notifyEmail";
+
+/** Notify the swap requester (caregiver) that their request was decided. */
+async function notifyRequesterOfDecision(swapId: string, decision: "approved" | "rejected") {
+  try {
+    const { data: swap } = await supabase
+      .from("shift_swap_requests")
+      .select("requester_id, shift_id, shift:shifts(date, start_time, end_time, client:clients(name))")
+      .eq("id", swapId)
+      .maybeSingle();
+    if (!swap?.requester_id) return;
+    const s: any = (swap as any).shift;
+    const when = s ? `${s.date} · ${s.start_time}–${s.end_time}${s.client?.name ? ` (${s.client.name})` : ""}` : "your shift";
+    // Fetch requester email
+    const { data: profile } = await (supabase.from("profiles") as any)
+      .select("email")
+      .eq("id", swap.requester_id)
+      .maybeSingle();
+    const email = (profile as any)?.email as string | undefined;
+    const title = decision === "approved" ? "Swap request approved" : "Swap request rejected";
+    const message = `Your swap request for ${when} was ${decision} by an admin.`;
+    await sendNotificationEmail({
+      to: email ? [email] : [],
+      subject: title,
+      html: emailTemplate(title, `<p>${message}</p>`),
+      create_notification: {
+        user_id: swap.requester_id,
+        title,
+        message,
+        type: "swap",
+        related_shift_id: (swap as any).shift_id ?? undefined,
+      },
+    });
+  } catch (e) {
+    console.warn("[notifyRequesterOfDecision] failed", e);
+  }
+}
 
 async function logAdminSwapDecision(swapId: string, decision: "approved" | "rejected") {
   try {
@@ -158,6 +194,7 @@ export function useAdminApproveSwap() {
         .eq("id", swapId);
       if (error) throw error;
       await logAdminSwapDecision(swapId, "approved");
+      await notifyRequesterOfDecision(swapId, "approved");
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-swap-requests"] });
@@ -176,6 +213,7 @@ export function useAdminDeclineSwap() {
         .eq("id", swapId);
       if (error) throw error;
       await logAdminSwapDecision(swapId, "rejected");
+      await notifyRequesterOfDecision(swapId, "rejected");
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-swap-requests"] });
