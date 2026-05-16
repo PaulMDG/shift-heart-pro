@@ -642,11 +642,18 @@ function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick }: a
       </button>
       {filtered.length > 0 ? (
         filtered.map((cg: any) => (
-          <div key={cg.id} className="bg-card rounded-2xl p-4 border border-border flex items-center gap-3 cursor-pointer hover:border-primary/30 transition-colors">
-            <div onClick={() => onCaregiverClick(cg)}>
-              <CaregiverAvatar caregiver={cg} />
-            </div>
-            <div className="flex-1 min-w-0" onClick={() => onCaregiverClick(cg)}>
+          <div
+            key={cg.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => onCaregiverClick(cg)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") onCaregiverClick(cg);
+            }}
+            className="bg-card rounded-2xl p-4 border border-border flex items-center gap-3 cursor-pointer hover:border-primary/30 hover:shadow-sm active:scale-[0.99] transition-all"
+          >
+            <CaregiverAvatar caregiver={cg} />
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h4 className="font-semibold text-card-foreground text-sm">{cg.full_name || "Unnamed"}</h4>
                 {cg.role && (
@@ -668,7 +675,11 @@ function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick }: a
                 }
               }}
             >
-              <SelectTrigger className="w-[110px] h-8 text-xs shrink-0" onClick={(e) => e.stopPropagation()}>
+              <SelectTrigger
+                className="w-[110px] h-8 text-xs shrink-0"
+                onClick={(e) => e.stopPropagation()}
+                onKeyDown={(e) => e.stopPropagation()}
+              >
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

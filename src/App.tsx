@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import AdminRoute from "@/components/AdminRoute";
 import AdminThemeProvider from "@/components/AdminThemeProvider";
 import LocationPermissionGate from "@/components/LocationPermissionGate";
+import { LiveLocationProvider } from "@/hooks/useLiveLocation";
 import Index from "./pages/Index";
 import ShiftsPage from "./pages/ShiftsPage";
 import ShiftDetail from "./pages/ShiftDetail";
@@ -48,6 +49,7 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <AdminThemeProvider />
+          <LiveLocationProvider>
           <LocationPermissionGate />
           <Routes>
             <Route path="/auth" element={<AuthPage />} />
@@ -80,6 +82,7 @@ const App = () => (
             <Route path="/admin/geofence-test" element={<AdminRoute><AdminGeofenceTest /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </LiveLocationProvider>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
