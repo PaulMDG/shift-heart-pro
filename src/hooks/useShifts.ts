@@ -34,12 +34,34 @@ export function useShifts() {
   return useQuery({
     queryKey: ["shifts"],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: shifts, error } = await supabase
         .from("shifts")
-        .select("*, client:clients_caregiver_safe(id, name, address, care_type, lat, lng)")
+        .select("*")
         .order("date", { ascending: true });
       if (error) throw error;
-      return data as unknown as ShiftWithClient[];
+      const clientIds = Array.from(
+        new Set((shifts ?? []).map((s: any) => s.client_id).filter(Boolean))
+      );
+      let clientsById = new Map<string, any>();
+      if (clientIds.length) {
+        const { data: clients, error: cErr } = await supabase
+          .from("clients_caregiver_safe" as any)
+          .select("id, name, address, care_type, lat, lng")
+          .in("id", clientIds);
+        if (cErr) console.warn("[useShifts] clients fetch failed", cErr);
+        (clients ?? []).forEach((c: any) => clientsById.set(c.id, c));
+      }
+      return (shifts ?? []).map((s: any) => ({
+        ...s,
+        client: clientsById.get(s.client_id) ?? {
+          id: s.client_id,
+          name: "Assigned Client",
+          address: "",
+          care_type: "",
+          lat: null,
+          lng: null,
+        },
+      })) as unknown as ShiftWithClient[];
     },
   });
 }
@@ -49,13 +71,30 @@ export function useShift(id: string | undefined) {
     queryKey: ["shifts", id],
     enabled: !!id,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data: shift, error } = await supabase
         .from("shifts")
-        .select("*, client:clients_caregiver_safe(id, name, address, care_type, lat, lng)")
+        .select("*")
         .eq("id", id!)
         .maybeSingle();
       if (error) throw error;
-      return data as unknown as ShiftWithClient | null;
+      if (!shift) return null;
+      const { data: client, error: cErr } = await supabase
+        .from("clients_caregiver_safe" as any)
+        .select("id, name, address, care_type, lat, lng")
+        .eq("id", (shift as any).client_id)
+        .maybeSingle();
+      if (cErr) console.warn("[useShift] client fetch failed", cErr);
+      return {
+        ...(shift as any),
+        client: client ?? {
+          id: (shift as any).client_id,
+          name: "Assigned Client",
+          address: "",
+          care_type: "",
+          lat: null,
+          lng: null,
+        },
+      } as unknown as ShiftWithClient;
     },
   });
 }
