@@ -1,5 +1,32 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { notifyAdmins, emailTemplate } from "@/lib/notifyEmail";
+
+async function logAdminSwapDecision(swapId: string, decision: "approved" | "rejected") {
+  try {
+    const { data: swap } = await supabase
+      .from("shift_swap_requests")
+      .select("shift_id")
+      .eq("id", swapId)
+      .maybeSingle();
+    const { data: { user } } = await supabase.auth.getUser();
+    const admin = user?.user_metadata?.full_name || user?.email || "An admin";
+    const when = new Date().toLocaleString();
+    await notifyAdmins({
+      title: `Swap ${decision} by admin`,
+      message: `${admin} ${decision} swap request ${swapId.slice(0, 8)} at ${when}.`,
+      type: "swap",
+      related_shift_id: swap?.shift_id ?? undefined,
+      subject: `Swap ${decision} by admin`,
+      html: emailTemplate(
+        `Swap ${decision}`,
+        `<p><strong>${admin}</strong> ${decision} a swap request.</p><p>Timestamp: ${when}</p>`
+      ),
+    });
+  } catch (e) {
+    console.warn("[logAdminSwapDecision] notify failed", e);
+  }
+}
 
 export interface AdminShift {
   id: string;
