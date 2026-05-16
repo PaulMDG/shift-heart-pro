@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Check, X, Loader2 } from "lucide-react";
+import { ArrowRightLeft, Check, X, Loader2, MapPin } from "lucide-react";
 import type { SwapRequestWithDetails } from "@/hooks/useSwapRequests";
 import { formatDate, formatTime } from "@/lib/format";
 
@@ -34,6 +34,12 @@ const SwapRequestCard = ({ request, variant, onAccept, onDecline, onCancel, isLo
             <p className="text-xs text-muted-foreground">
               {formatDate(shift?.date)} · {formatTime(shift?.start_time)} – {formatTime(shift?.end_time)}
             </p>
+            {shift?.client?.address && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                <MapPin className="w-3 h-3 shrink-0" />
+                <span className="truncate">{shift.client.address}</span>
+              </p>
+            )}
           </div>
         </div>
         <span className={`text-[11px] px-2.5 py-1 rounded-full font-medium ${status.className}`}>
