@@ -68,10 +68,14 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
   };
 
   return (
-    <button
-      type="button"
+    <div
+      role="button"
+      tabIndex={0}
       onClick={() => navigate(`/shifts/${shift.id}`)}
-      className="w-full bg-card rounded-2xl p-4 border border-border hover:border-primary/30 hover:shadow-sm active:scale-[0.99] transition-all text-left"
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") navigate(`/shifts/${shift.id}`);
+      }}
+      className="w-full bg-card rounded-2xl p-4 border border-border hover:border-primary/30 hover:shadow-sm active:scale-[0.99] transition-all text-left cursor-pointer"
     >
       <div className="flex items-start justify-between mb-3 gap-3">
         <div className="flex-1 min-w-0">
@@ -137,7 +141,7 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
           </button>
         </div>
       )}
-    </button>
+    </div>
   );
 };
 
