@@ -517,6 +517,34 @@ function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
 }
 
 function ClientsTab({ clients, clientsLoading, navigate, onClientClick }: any) {
+  return ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick });
+}
+
+function SuspiciousTab({ items, loading }: { items: { shift: any; suspicion: SuspicionResult }[]; loading: boolean }) {
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <AlertTriangle className="w-4 h-4 text-destructive" />
+        <span>
+          {items.length} flagged shift{items.length === 1 ? "" : "s"} · sorted by severity, newest first
+        </span>
+      </div>
+      {loading ? (
+        Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl" />)
+      ) : items.length > 0 ? (
+        items.map(({ shift: s, suspicion }) => (
+          <ShiftRow key={s.id} shift={s} suspicion={suspicion} />
+        ))
+      ) : (
+        <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">
+          No suspicious shifts detected
+        </p>
+      )}
+    </div>
+  );
+}
+
+function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: any) {
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
     if (!search.trim()) return clients;
