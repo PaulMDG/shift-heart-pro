@@ -517,7 +517,7 @@ function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
 }
 
 function ClientsTab({ clients, clientsLoading, navigate, onClientClick }: any) {
-  return ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick });
+  return <ClientsTabImpl clients={clients} clientsLoading={clientsLoading} navigate={navigate} onClientClick={onClientClick} />;
 }
 
 function SuspiciousTab({ items, loading }: { items: { shift: any; suspicion: SuspicionResult }[]; loading: boolean }) {
