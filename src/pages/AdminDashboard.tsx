@@ -12,6 +12,11 @@ import { toast } from "@/components/ui/sonner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import CaregiverDetailSheet from "@/components/admin/CaregiverDetailSheet";
 import ClientDetailSheet from "@/components/admin/ClientDetailSheet";
+import {
+  buildCaregiverFailureCounts,
+  evaluateShiftSuspicion,
+  type SuspicionResult,
+} from "@/lib/suspiciousShift";
 
 const tabs = ["Overview", "Swaps", "Shifts", "Clients", "Caregivers"] as const;
 
@@ -188,7 +193,7 @@ const statusStyles: Record<string, { label: string; className: string }> = {
   missed: { label: "Missed", className: "bg-destructive/15 text-destructive" },
 };
 
-function ShiftRow({ shift }: { shift: any }) {
+function ShiftRow({ shift, suspicion }: { shift: any; suspicion?: SuspicionResult }) {
   const navigate = useNavigate();
   const st = statusStyles[shift.status] ?? statusStyles.not_started;
   return (
@@ -197,12 +202,32 @@ function ShiftRow({ shift }: { shift: any }) {
       className="bg-card rounded-2xl p-4 border border-border cursor-pointer hover:border-primary/30 transition-colors"
     >
       <div className="flex items-start justify-between mb-1">
-        <h4 className="font-semibold text-card-foreground text-sm">{shift.client?.name}</h4>
+        <h4 className="font-semibold text-card-foreground text-sm flex items-center gap-1.5">
+          {shift.client?.name}
+          {suspicion?.suspicious && (
+            <span
+              title={suspicion.reasons.join(" • ")}
+              className={`inline-flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${
+                suspicion.severity === "high"
+                  ? "bg-destructive/15 text-destructive"
+                  : "bg-warning/15 text-warning"
+              }`}
+            >
+              <AlertTriangle className="w-3 h-3" />
+              Suspicious
+            </span>
+          )}
+        </h4>
         <span className={`text-[10px] px-2 py-0.5 rounded-full ${st.className}`}>{st.label}</span>
       </div>
       <p className="text-xs text-muted-foreground">{shift.date} · {shift.start_time} – {shift.end_time}</p>
       {shift.caregiver && (
         <p className="text-xs text-muted-foreground mt-1">👤 {shift.caregiver.full_name}</p>
+      )}
+      {suspicion?.suspicious && (
+        <ul className="mt-2 text-[10px] text-muted-foreground list-disc list-inside space-y-0.5">
+          {suspicion.reasons.map((r) => <li key={r}>{r}</li>)}
+        </ul>
       )}
     </div>
   );
@@ -333,16 +358,41 @@ function SwapsTab({ swapRequests, handleApprove, handleDecline, loading }: any) 
 
 function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
   const [search, setSearch] = useState("");
+  const [suspiciousOnly, setSuspiciousOnly] = useState(false);
+
+  const failureCounts = useMemo(() => buildCaregiverFailureCounts(shifts), [shifts]);
+
+  const enriched = useMemo(
+    () =>
+      shifts.map((s: any) => ({
+        shift: s,
+        suspicion: evaluateShiftSuspicion(
+          s,
+          s.caregiver_id ? failureCounts.get(s.caregiver_id) ?? 0 : 0,
+        ),
+      })),
+    [shifts, failureCounts],
+  );
+
+  const suspiciousCount = useMemo(
+    () => enriched.filter((e: any) => e.suspicion.suspicious).length,
+    [enriched],
+  );
+
   const filtered = useMemo(() => {
-    if (!search.trim()) return shifts;
-    const q = search.toLowerCase();
-    return shifts.filter((s: any) =>
-      s.client?.name?.toLowerCase().includes(q) ||
-      s.date?.includes(q) ||
-      s.status?.toLowerCase().includes(q) ||
-      s.caregiver?.full_name?.toLowerCase().includes(q)
-    );
-  }, [shifts, search]);
+    let list = enriched;
+    if (suspiciousOnly) list = list.filter((e: any) => e.suspicion.suspicious);
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter(({ shift: s }: any) =>
+        s.client?.name?.toLowerCase().includes(q) ||
+        s.date?.includes(q) ||
+        s.status?.toLowerCase().includes(q) ||
+        s.caregiver?.full_name?.toLowerCase().includes(q)
+      );
+    }
+    return list;
+  }, [enriched, search, suspiciousOnly]);
 
   return (
     <div className="space-y-3">
@@ -355,16 +405,34 @@ function ShiftsTab({ shifts, shiftsLoading, navigate }: any) {
           className="pl-9 h-10 rounded-xl text-sm"
         />
       </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={() => setSuspiciousOnly((v) => !v)}
+          className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-colors ${
+            suspiciousOnly
+              ? "bg-destructive/15 text-destructive border border-destructive/30"
+              : "bg-muted text-muted-foreground border border-transparent"
+          }`}
+        >
+          <AlertTriangle className="w-3.5 h-3.5" />
+          Suspicious only
+          <span className="ml-1 inline-flex items-center justify-center min-w-[18px] h-[18px] px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold">
+            {suspiciousCount}
+          </span>
+        </button>
+      </div>
       <button onClick={() => navigate("/admin/shifts/new")} className="w-full py-3 rounded-2xl gradient-primary text-primary-foreground text-sm font-bold">
         + Create New Shift
       </button>
       {shiftsLoading ? (
         Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
       ) : filtered.length > 0 ? (
-        filtered.map((s: any) => <ShiftRow key={s.id} shift={s} />)
+        filtered.map(({ shift: s, suspicion }: any) => (
+          <ShiftRow key={s.id} shift={s} suspicion={suspicion} />
+        ))
       ) : (
         <p className="text-sm text-muted-foreground bg-card rounded-2xl p-8 text-center border border-border">
-          {search ? "No shifts match your search" : "No shifts"}
+          {suspiciousOnly ? "No suspicious shifts" : search ? "No shifts match your search" : "No shifts"}
         </p>
       )}
     </div>
