@@ -1,8 +1,10 @@
-import { Clock, MapPin, ChevronRight, Check, X } from "lucide-react";
+import { Clock, MapPin, ChevronRight, Check, X, Satellite, AlertTriangle, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { type ShiftWithClient, useUpdateAssignmentStatus } from "@/hooks/useShifts";
 import { toast } from "@/components/ui/sonner";
 import { formatTime } from "@/lib/format";
+import { useLiveLocation } from "@/hooks/useLiveLocation";
+import { useAgencySettings } from "@/hooks/useAgencySettings";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   not_started: {
@@ -41,6 +43,8 @@ const assignmentConfig: Record<string, { label: string; className: string }> = {
 const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
   const navigate = useNavigate();
   const updateAssignment = useUpdateAssignmentStatus();
+  const { permission, accuracy, lastFixAt } = useLiveLocation();
+  const { data: settings } = useAgencySettings();
 
   const status = statusConfig[shift.status] ?? statusConfig.not_started;
 
@@ -55,6 +59,27 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
 
   const showAcceptDecline =
     shift.assignment_status === "pending" && shift.status === "not_started";
+
+  const threshold = settings?.accuracy_threshold_m ?? 100;
+  const showGpsPill = shift.status !== "completed" && shift.status !== "missed";
+  let gpsTone = "bg-muted text-muted-foreground border-border";
+  let GpsIcon: any = Loader2;
+  let gpsIconClass = "w-3 h-3 animate-spin";
+  let gpsLabel = "Locating…";
+  if (permission === "denied" || permission === "unsupported") {
+    gpsTone = "bg-destructive/10 text-destructive border-destructive/30";
+    GpsIcon = AlertTriangle;
+    gpsIconClass = "w-3 h-3";
+    gpsLabel = permission === "unsupported" ? "GPS off" : "Blocked";
+  } else if (lastFixAt && accuracy != null) {
+    const ok = accuracy <= threshold;
+    gpsTone = ok
+      ? "bg-success/10 text-success border-success/30"
+      : "bg-warning/15 text-warning border-warning/30";
+    GpsIcon = Satellite;
+    gpsIconClass = "w-3 h-3";
+    gpsLabel = `±${Math.round(accuracy)}m${ok ? " · Ready" : " · Weak"}`;
+  }
 
   const handleAssignment = (e: React.MouseEvent, action: "accepted" | "declined") => {
     e.stopPropagation();
@@ -90,6 +115,15 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
         </div>
 
         <div className="flex flex-col items-end gap-1">
+          {showGpsPill && (
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${gpsTone}`}
+              title={`GPS accuracy threshold: ±${threshold}m`}
+            >
+              <GpsIcon className={gpsIconClass} />
+              {gpsLabel}
+            </span>
+          )}
           {assignmentStatus && (
             <span
               className={`text-[10px] px-2.5 py-1 rounded-full ${assignmentStatus.className}`}
