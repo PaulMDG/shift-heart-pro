@@ -1,5 +1,6 @@
 import { ArrowRightLeft, Check, X, Loader2 } from "lucide-react";
 import type { SwapRequestWithDetails } from "@/hooks/useSwapRequests";
+import { formatDate, formatTime } from "@/lib/format";
 
 interface SwapRequestCardProps {
   request: SwapRequestWithDetails;
