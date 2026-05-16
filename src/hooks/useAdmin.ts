@@ -130,6 +130,7 @@ export function useAdminApproveSwap() {
         .update({ status: "accepted" })
         .eq("id", swapId);
       if (error) throw error;
+      await logAdminSwapDecision(swapId, "approved");
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-swap-requests"] });
@@ -147,6 +148,7 @@ export function useAdminDeclineSwap() {
         .update({ status: "rejected" })
         .eq("id", swapId);
       if (error) throw error;
+      await logAdminSwapDecision(swapId, "rejected");
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["admin-swap-requests"] });
