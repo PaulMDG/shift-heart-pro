@@ -9,7 +9,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X, DollarSign, FileText, Settings, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
-import { useNavigate } from "react-router-dom";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import CaregiverDetailSheet from "@/components/admin/CaregiverDetailSheet";
 import ClientDetailSheet from "@/components/admin/ClientDetailSheet";
