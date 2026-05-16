@@ -1,0 +1,1 @@
+ALTER VIEW public.clients_caregiver_safe SET (security_invoker = true);
