@@ -50,7 +50,7 @@ export function useAllShifts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("shifts")
-        .select("*, client:clients(id, name, address, care_type)")
+        .select("*, client:clients(id, name, address, care_type, lat, lng)")
         .order("date", { ascending: false });
       if (error) throw error;
 
