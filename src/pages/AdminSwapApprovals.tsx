@@ -5,6 +5,7 @@ import { useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap } from "@/
 import { sendNotificationEmail, emailTemplate } from "@/lib/notifyEmail";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
+import { formatDate, formatTime } from "@/lib/format";
 
 const statusColor: Record<string, string> = {
   pending: "bg-amber-100 text-amber-800",
@@ -135,7 +136,7 @@ const AdminSwapApprovals = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <p className="text-sm font-bold text-card-foreground">{swap.shift?.client?.name ?? "Unknown Client"}</p>
-                  <p className="text-xs text-muted-foreground">{swap.shift?.date} · {swap.shift?.start_time} – {swap.shift?.end_time}</p>
+                  <p className="text-xs text-muted-foreground">{formatDate(swap.shift?.date)} · {formatTime(swap.shift?.start_time)} – {formatTime(swap.shift?.end_time)}</p>
                 </div>
                 <span className={`text-xs px-2.5 py-1 rounded-full font-medium capitalize ${statusColor[swap.status] || "bg-muted text-muted-foreground"}`}>
                   {swap.status}
