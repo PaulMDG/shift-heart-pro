@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { sendNotificationEmail, getAdminEmails, emailTemplate } from "@/lib/notifyEmail";
+import { notifyAdmins, emailTemplate } from "@/lib/notifyEmail";
 
 export interface ShiftWithClient {
   id: string;
@@ -139,16 +139,20 @@ export function useUpdateShiftStatus() {
             .eq("id", id)
             .maybeSingle();
           const { data: { user } } = await supabase.auth.getUser();
-          const adminEmails = await getAdminEmails();
           const action = status === "in_progress" ? "clocked in" : "clocked out of";
           const caregiverName = user?.user_metadata?.full_name || user?.email || "A caregiver";
-          await sendNotificationEmail({
-            to: adminEmails,
+          const when = new Date().toLocaleString();
+          await notifyAdmins({
+            title: `Caregiver ${action} a shift`,
+            message: `${caregiverName} ${action} their shift on ${shift?.date} (${shift?.start_time}–${shift?.end_time}) at ${when}.`,
+            type: "shift",
+            related_shift_id: id,
             subject: `Shift ${action} — ${shift?.date ?? ""}`,
             html: emailTemplate(
               `Caregiver ${action} a shift`,
               `<p><strong>${caregiverName}</strong> just ${action} their shift.</p>
-               <p>Date: ${shift?.date} &middot; ${shift?.start_time} – ${shift?.end_time}</p>`
+               <p>Date: ${shift?.date} &middot; ${shift?.start_time} – ${shift?.end_time}</p>
+               <p>Timestamp: ${when}</p>`
             ),
           });
         }
@@ -179,15 +183,19 @@ export function useUpdateAssignmentStatus() {
           .eq("id", id)
           .maybeSingle();
         const { data: { user } } = await supabase.auth.getUser();
-        const adminEmails = await getAdminEmails();
         const name = user?.user_metadata?.full_name || user?.email || "A caregiver";
-        await sendNotificationEmail({
-          to: adminEmails,
+        const when = new Date().toLocaleString();
+        await notifyAdmins({
+          title: `Shift ${assignment_status}`,
+          message: `${name} ${assignment_status} a shift on ${shift?.date} (${shift?.start_time}–${shift?.end_time}) at ${when}.`,
+          type: "shift",
+          related_shift_id: id,
           subject: `Shift ${assignment_status} — ${shift?.date ?? ""}`,
           html: emailTemplate(
             `Caregiver ${assignment_status} an assigned shift`,
             `<p><strong>${name}</strong> has <strong>${assignment_status}</strong> a shift.</p>
-             <p>Date: ${shift?.date} &middot; ${shift?.start_time} – ${shift?.end_time}</p>`
+             <p>Date: ${shift?.date} &middot; ${shift?.start_time} – ${shift?.end_time}</p>
+             <p>Timestamp: ${when}</p>`
           ),
         });
       } catch (e) {
