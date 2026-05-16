@@ -18,7 +18,7 @@ import {
   type SuspicionResult,
 } from "@/lib/suspiciousShift";
 
-const tabs = ["Overview", "Swaps", "Shifts", "Clients", "Caregivers"] as const;
+const tabs = ["Overview", "Swaps", "Shifts", "Suspicious", "Clients", "Caregivers"] as const;
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>("Overview");
@@ -40,6 +40,27 @@ const AdminDashboard = () => {
   const todayShifts = shifts.filter((s) => s.date === today);
   const activeShifts = shifts.filter((s) => s.status === "in_progress");
   const completedShifts = shifts.filter((s) => s.status === "completed");
+
+  const failureCountsAll = useMemo(() => buildCaregiverFailureCounts(shifts as any), [shifts]);
+  const suspiciousShifts = useMemo(
+    () =>
+      shifts
+        .map((s: any) => ({
+          shift: s,
+          suspicion: evaluateShiftSuspicion(
+            s,
+            s.caregiver_id ? failureCountsAll.get(s.caregiver_id) ?? 0 : 0,
+          ),
+        }))
+        .filter((e) => e.suspicion.suspicious)
+        .sort((a, b) => {
+          const sev = (x: string) => (x === "high" ? 2 : x === "warn" ? 1 : 0);
+          const d = sev(b.suspicion.severity) - sev(a.suspicion.severity);
+          if (d !== 0) return d;
+          return (b.shift.date || "").localeCompare(a.shift.date || "");
+        }),
+    [shifts, failureCountsAll],
+  );
 
   const handleApprove = async (id: string) => {
     try {
@@ -149,6 +170,10 @@ const AdminDashboard = () => {
 
         {activeTab === "Shifts" && (
           <ShiftsTab shifts={shifts} shiftsLoading={shiftsLoading} navigate={navigate} />
+        )}
+
+        {activeTab === "Suspicious" && (
+          <SuspiciousTab items={suspiciousShifts} loading={shiftsLoading} />
         )}
 
         {activeTab === "Clients" && (
