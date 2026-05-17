@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Loader2, MapPin, Search } from "lucide-react";
 import { useCreateClient } from "@/hooks/useAdmin";
@@ -12,8 +12,12 @@ const AdminCreateClient = () => {
   const navigate = useNavigate();
   const createClient = useCreateClient();
 
-  const [name, setName] = useState("");
-  const [address, setAddress] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [street, setStreet] = useState("");
+  const [city, setCity] = useState("");
+  const [stateProv, setStateProv] = useState("");
+  const [zip, setZip] = useState("");
   const [careType, setCareType] = useState("");
   const [carePlan, setCarePlan] = useState("");
   const [emergencyContact, setEmergencyContact] = useState("");
@@ -22,14 +26,28 @@ const AdminCreateClient = () => {
   const [lng, setLng] = useState<number | null>(null);
   const [geocoding, setGeocoding] = useState(false);
 
+  const fullAddress = useMemo(
+    () =>
+      [street, city, [stateProv, zip].filter(Boolean).join(" ")]
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .join(", "),
+    [street, city, stateProv, zip],
+  );
+
+  const resetCoords = () => {
+    setLat(null);
+    setLng(null);
+  };
+
   const handleGeocode = async () => {
-    if (!address.trim()) {
-      toast.error("Enter an address first");
+    if (!fullAddress) {
+      toast.error("Enter a residence address first");
       return;
     }
     setGeocoding(true);
     try {
-      const result = await geocodeAddress(address);
+      const result = await geocodeAddress(fullAddress);
       if (result) {
         setLat(result.lat);
         setLng(result.lng);
@@ -46,14 +64,18 @@ const AdminCreateClient = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firstName.trim() || !lastName.trim()) {
+      toast.error("Please enter the client's first and last name.");
+      return;
+    }
     if (!lat || !lng) {
       toast.error("Please look up the address coordinates before saving.");
       return;
     }
     try {
       await createClient.mutateAsync({
-        name,
-        address,
+        name: `${firstName.trim()} ${lastName.trim()}`,
+        address: fullAddress,
         care_type: careType,
         care_plan_summary: carePlan,
         emergency_contact: emergencyContact,
@@ -75,63 +97,93 @@ const AdminCreateClient = () => {
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
       </div>
-      <form onSubmit={handleSubmit} className="px-5 py-6 space-y-5">
+      <form onSubmit={handleSubmit} className="px-5 py-6 space-y-6">
         <h2 className="text-xl font-bold text-foreground">Add Client</h2>
 
-        <div className="space-y-2">
-          <Label>Full Name</Label>
-          <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Client name" required />
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Label htmlFor="firstName">First Name</Label>
+            <Input id="firstName" value={firstName} onChange={(e) => setFirstName(e.target.value)} required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="lastName">Last Name</Label>
+            <Input id="lastName" value={lastName} onChange={(e) => setLastName(e.target.value)} required />
+          </div>
         </div>
 
-        <div className="space-y-2">
-          <Label>Address</Label>
-          <div className="flex gap-2">
-            <Input
-              value={address}
-              onChange={(e) => { setAddress(e.target.value); setLat(null); setLng(null); }}
-              placeholder="Street address, city, country"
-              className="flex-1"
-            />
-            <button
-              type="button"
-              onClick={handleGeocode}
-              disabled={geocoding || !address.trim()}
-              className="shrink-0 px-3 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 flex items-center gap-1"
-            >
-              {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
-              Lookup
-            </button>
+        <section className="space-y-3">
+          <h3 className="text-base font-semibold text-foreground">Residence</h3>
+
+          <div className="space-y-2">
+            <Label htmlFor="street">Address</Label>
+            <div className="relative">
+              <MapPin className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-primary pointer-events-none" />
+              <Input
+                id="street"
+                value={street}
+                onChange={(e) => { setStreet(e.target.value); resetCoords(); }}
+                placeholder="Street address"
+                className="pl-9"
+              />
+            </div>
           </div>
+
+          <div className="grid grid-cols-3 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="city">City</Label>
+              <Input id="city" value={city} onChange={(e) => { setCity(e.target.value); resetCoords(); }} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="state">State / Province</Label>
+              <Input id="state" value={stateProv} onChange={(e) => { setStateProv(e.target.value); resetCoords(); }} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="zip">ZIP / Postal code</Label>
+              <Input id="zip" value={zip} onChange={(e) => { setZip(e.target.value); resetCoords(); }} />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGeocode}
+            disabled={geocoding || !fullAddress}
+            className="w-full py-2.5 rounded-md border border-border text-sm font-medium text-foreground disabled:opacity-50 flex items-center justify-center gap-2"
+          >
+            {geocoding ? <Loader2 className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+            Look up coordinates
+          </button>
           {lat !== null && lng !== null && (
-            <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1">
+            <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
               <MapPin className="w-3.5 h-3.5 text-primary" />
               <span>GPS: {lat.toFixed(5)}, {lng.toFixed(5)}</span>
             </div>
           )}
-        </div>
+        </section>
 
-        <div className="space-y-2">
-          <Label>Care Type</Label>
-          <Input value={careType} onChange={(e) => setCareType(e.target.value)} placeholder="e.g. Elderly Care, Dementia" />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Care Plan Summary</Label>
-          <Textarea value={carePlan} onChange={(e) => setCarePlan(e.target.value)} placeholder="Care plan details..." rows={3} />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Emergency Contact</Label>
-          <Input value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} placeholder="Contact name" />
-        </div>
-
-        <div className="space-y-2">
-          <Label>Emergency Phone</Label>
-          <Input value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} placeholder="+254 7XX XXX XXX" />
-        </div>
+        <section className="space-y-3">
+          <h3 className="text-base font-semibold text-foreground">Care Details</h3>
+          <div className="space-y-2">
+            <Label htmlFor="careType">Care Type</Label>
+            <Input id="careType" value={careType} onChange={(e) => setCareType(e.target.value)} placeholder="e.g. Elderly Care, Dementia" />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="carePlan">Care Plan Summary</Label>
+            <Textarea id="carePlan" value={carePlan} onChange={(e) => setCarePlan(e.target.value)} placeholder="Care plan details..." rows={3} />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-2">
+              <Label htmlFor="emName">Emergency Contact</Label>
+              <Input id="emName" value={emergencyContact} onChange={(e) => setEmergencyContact(e.target.value)} placeholder="Contact name" />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emPhone">Emergency Phone</Label>
+              <Input id="emPhone" value={emergencyPhone} onChange={(e) => setEmergencyPhone(e.target.value)} placeholder="+1 555 555 5555" />
+            </div>
+          </div>
+        </section>
 
         <button type="submit" disabled={createClient.isPending} className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-lg font-bold disabled:opacity-50">
-          {createClient.isPending ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Add Client"}
+          {createClient.isPending ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Submit"}
         </button>
       </form>
     </div>
