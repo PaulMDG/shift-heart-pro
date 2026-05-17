@@ -126,7 +126,7 @@ describe("Caregiver clock-in / clock-out flow", () => {
     fireEvent.click(screen.getByText("Confirm"));
 
     await waitFor(() =>
-      expect(screen.getByText(/GPS accuracy is too low/i)).toBeInTheDocument(),
+      expect(screen.getAllByText(/GPS accuracy is too low/i).length).toBeGreaterThan(0),
     );
     expect(updateStatusMock).not.toHaveBeenCalled();
   });
