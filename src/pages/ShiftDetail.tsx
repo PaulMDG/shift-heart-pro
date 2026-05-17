@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2, RefreshCw } from "lucide-react";
 import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
 import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
@@ -9,12 +9,14 @@ import { toast } from "@/components/ui/sonner";
 import { formatTime, formatDateTime } from "@/lib/format";
 import LiveLocationStatus from "@/components/LiveLocationStatus";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
+import { useLiveLocation } from "@/hooks/useLiveLocation";
 
 const ShiftDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: shift, isLoading } = useShift(id);
   const { data: settings } = useAgencySettings();
+  const liveLocation = useLiveLocation();
   const updateStatus = useUpdateShiftStatus();
   const updateAssignment = useUpdateAssignmentStatus();
   const [showClockOut, setShowClockOut] = useState(false);
@@ -181,6 +183,27 @@ const ShiftDetail = () => {
                 <p className="text-xs text-destructive/80 mt-1 leading-relaxed">{locationError}</p>
               </div>
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                liveLocation.refresh();
+                setLocationError(null);
+                if (status === "not_started") {
+                  confirmClockIn();
+                } else if (status === "in_progress") {
+                  verifyLocationAndProceed(() => setShowClockOut(true));
+                }
+              }}
+              disabled={verifyingLocation}
+              className="w-full mt-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl border border-destructive/30 bg-background text-destructive text-sm font-semibold hover:bg-destructive/5 active:scale-[0.98] transition disabled:opacity-50"
+            >
+              {verifyingLocation ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              {verifyingLocation ? "Retrying…" : "Refresh GPS & try again"}
+            </button>
           </div>
         )}
 
