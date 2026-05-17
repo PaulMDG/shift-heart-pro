@@ -45,7 +45,9 @@ const ShiftDetail = () => {
   const status = shift.status;
   const clientHasLocation = shift.client.lat != null && shift.client.lng != null;
 
-  const verifyLocationAndProceed = async (onSuccess: () => void) => {
+  const verifyLocationAndProceed = async (
+    onSuccess: (pos: { lat: number; lng: number; accuracy: number }) => void,
+  ) => {
     setLocationError(null);
 
     if (!clientHasLocation) {
@@ -72,7 +74,7 @@ const ShiftDetail = () => {
         toast.success(`Location verified (${formatDistanceMiles(distance)} from client)`);
         setLastVerifiedPosition(pos);
         setLastAccuracy(pos.accuracy);
-        onSuccess();
+        onSuccess(pos);
       } else {
         const distanceText = formatDistanceMiles(distance);
         setLocationError(
@@ -92,14 +94,15 @@ const ShiftDetail = () => {
   };
 
   const confirmClockIn = () => {
-    verifyLocationAndProceed(() => {
+    verifyLocationAndProceed((pos) => {
       setShowConfirm(false);
       updateStatus.mutate({
         id: shift.id,
         status: "in_progress",
         clock_in_time: new Date().toISOString(),
-        ...(lastVerifiedPosition && { clock_in_lat: lastVerifiedPosition.lat, clock_in_lng: lastVerifiedPosition.lng }),
-        ...(lastAccuracy != null && { clock_in_accuracy: lastAccuracy }),
+        clock_in_lat: pos.lat,
+        clock_in_lng: pos.lng,
+        clock_in_accuracy: pos.accuracy,
       });
     });
   };
