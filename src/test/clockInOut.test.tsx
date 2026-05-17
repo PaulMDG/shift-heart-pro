@@ -152,9 +152,11 @@ describe("Caregiver clock-in / clock-out flow", () => {
 
     fireEvent.click(screen.getByText("CLOCK OUT"));
 
-    await waitFor(() => expect(screen.getByText(/Clock Out/i)).toBeInTheDocument());
-    expect(screen.getByLabelText(/Care Notes/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/Mileage Driven/i)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByPlaceholderText(/Describe the visit/i)).toBeInTheDocument(),
+    );
+    expect(screen.getByText(/Care Notes/i)).toBeInTheDocument();
+    expect(screen.getByText(/Mileage Driven/i)).toBeInTheDocument();
   });
 });
 
