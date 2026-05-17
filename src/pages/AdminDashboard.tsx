@@ -12,6 +12,7 @@ import { toast } from "@/components/ui/sonner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import CaregiverDetailSheet from "@/components/admin/CaregiverDetailSheet";
 import ClientDetailSheet from "@/components/admin/ClientDetailSheet";
+import ClientMap from "@/components/admin/ClientMap";
 import {
   buildCaregiverFailureCounts,
   evaluateShiftSuspicion,
@@ -22,7 +23,7 @@ import { formatDate, formatTime } from "@/lib/format";
 import { useUpdateClient } from "@/hooks/useAdmin";
 import { geocodeAddress } from "@/lib/geocode";
 
-const tabs = ["Overview", "Swaps", "Shifts", "Suspicious", "Clients", "Caregivers"] as const;
+const tabs = ["Overview", "Swaps", "Shifts", "Suspicious", "Clients", "Map", "Caregivers"] as const;
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>("Overview");
@@ -202,6 +203,14 @@ const AdminDashboard = () => {
             clientsLoading={clientsLoading}
             navigate={navigate}
             onClientClick={setSelectedClient}
+          />
+        )}
+
+        {activeTab === "Map" && (
+          <ClientMap
+            clients={clients as any}
+            shifts={shifts as any}
+            radiusMeters={settings?.geofence_radius_m}
           />
         )}
 
