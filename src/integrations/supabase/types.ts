@@ -86,6 +86,33 @@ export type Database = {
           },
         ]
       }
+      care_note_audits: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_value: string | null
+          old_value: string | null
+          shift_id: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          shift_id: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_value?: string | null
+          old_value?: string | null
+          shift_id?: string
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           created_at: string
