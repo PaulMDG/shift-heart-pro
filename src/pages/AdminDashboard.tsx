@@ -570,6 +570,7 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: an
   const updateClient = useUpdateClient();
   const [bulkRunning, setBulkRunning] = useState(false);
   const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+  const [failedGeo, setFailedGeo] = useState<any[]>([]);
 
   const missingGeo = useMemo(
     () => (clients || []).filter((c: any) => c.lat == null || c.lng == null),
@@ -580,6 +581,7 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: an
     if (missingGeo.length === 0) return;
     setBulkRunning(true);
     setBulkProgress({ done: 0, total: missingGeo.length });
+    const failures: any[] = [];
     let success = 0;
     let failed = 0;
     for (let i = 0; i < missingGeo.length; i++) {
@@ -591,9 +593,11 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: an
           success++;
         } else {
           failed++;
+          failures.push({ ...c, _reason: c.address?.trim() ? "No match found" : "No address on file" });
         }
       } catch {
         failed++;
+        failures.push({ ...c, _reason: "Network or save error" });
       }
       setBulkProgress({ done: i + 1, total: missingGeo.length });
       // Respect Nominatim's 1 req/sec rate limit
@@ -601,9 +605,18 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: an
     }
     setBulkRunning(false);
     setBulkProgress(null);
+    setFailedGeo(failures);
     if (success > 0) toast.success(`Geocoded ${success} client${success === 1 ? "" : "s"}`);
     if (failed > 0) toast.error(`${failed} address${failed === 1 ? "" : "es"} could not be geocoded — edit manually`);
   };
+
+  // Drop any failed entries that have since been geocoded (e.g. via manual edit)
+  const visibleFailed = useMemo(() => {
+    const liveById = new Map((clients || []).map((c: any) => [c.id, c]));
+    return failedGeo
+      .map((f) => liveById.get(f.id) ? { ...liveById.get(f.id), _reason: f._reason } : null)
+      .filter((c: any) => c && (c.lat == null || c.lng == null));
+  }, [failedGeo, clients]);
 
   const filtered = useMemo(() => {
     if (!search.trim()) return clients;
@@ -655,6 +668,41 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: an
               </>
             )}
           </button>
+        </div>
+      )}
+      {visibleFailed.length > 0 && (
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-4 space-y-3">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+            <div className="text-xs text-foreground">
+              <p className="font-semibold mb-1">
+                {visibleFailed.length} address{visibleFailed.length === 1 ? "" : "es"} could not be geocoded
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Edit each client to refine the address or enter latitude/longitude manually.
+              </p>
+            </div>
+          </div>
+          <div className="space-y-2">
+            {visibleFailed.map((c: any) => (
+              <button
+                key={c.id}
+                onClick={() => onClientClick(c)}
+                className="w-full text-left bg-card rounded-xl p-3 border border-border hover:border-destructive/40 transition-colors"
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-semibold text-foreground truncate">{c.name}</span>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-destructive/10 text-destructive font-semibold shrink-0">
+                    {c._reason}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                  {c.address?.trim() || "— no address on file —"}
+                </p>
+                <p className="text-[11px] text-primary mt-1.5 font-semibold">Tap to edit coordinates →</p>
+              </button>
+            ))}
+          </div>
         </div>
       )}
       <div className="relative">
