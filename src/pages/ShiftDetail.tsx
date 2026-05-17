@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2 } from "lucide-react";
 import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
-import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
+import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
 import SelfieCapture from "@/components/shifts/SelfieCapture";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,7 +62,7 @@ const ShiftDetail = () => {
       const accuracyThreshold = settings?.accuracy_threshold_m ?? 100;
       if (pos.accuracy != null && pos.accuracy > accuracyThreshold) {
         setLocationError(
-          `GPS accuracy is too low (±${Math.round(pos.accuracy)} m). Agency requires ±${accuracyThreshold} m or better. Move outdoors or wait a few seconds, then try again.`
+          `GPS accuracy is too low (±${Math.round(metersToFeet(pos.accuracy))} ft). Agency requires ±${Math.round(metersToFeet(accuracyThreshold))} ft or better. Move outdoors or wait a few seconds, then try again.`
         );
         return;
       }
@@ -72,15 +72,14 @@ const ShiftDetail = () => {
       });
 
       if (distance <= MAX_DISTANCE_METERS) {
-        toast.success(`Location verified (${Math.round(distance)} m from client)`);
+        toast.success(`Location verified (${formatDistanceMiles(distance)} from client)`);
         setLastVerifiedPosition(pos);
         setLastAccuracy(pos.accuracy);
         onSuccess();
       } else {
-        const meters = Math.round(distance);
-        const distanceText = meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${meters} m`;
+        const distanceText = formatDistanceMiles(distance);
         setLocationError(
-          `You are ${distanceText} from ${shift.client.name}'s location. You must be within ${MAX_DISTANCE_METERS} m of the client address to clock in/out. Please travel to: ${shift.client.address}`
+          `You are ${distanceText} from ${shift.client.name}'s location. You must be within ${formatDistanceMiles(MAX_DISTANCE_METERS)} of the client address to clock in/out. Please travel to: ${shift.client.address}`
         );
       }
     } catch (err: any) {
@@ -253,7 +252,7 @@ const ShiftDetail = () => {
                 {shift.clock_in_lat != null && shift.clock_in_lng != null && shift.client.lat != null && shift.client.lng != null && (
                   <>
                     <p className="text-xs text-muted-foreground">
-                      Distance from client: {Math.round(getDistanceMeters({ lat: shift.clock_in_lat, lng: shift.clock_in_lng }, { lat: shift.client.lat, lng: shift.client.lng }))} m
+                      Distance from client: {formatDistanceMiles(getDistanceMeters({ lat: shift.clock_in_lat, lng: shift.clock_in_lng }, { lat: shift.client.lat, lng: shift.client.lng }))}
                     </p>
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&origin=${shift.clock_in_lat},${shift.clock_in_lng}&destination=${shift.client.lat},${shift.client.lng}`}
@@ -265,9 +264,9 @@ const ShiftDetail = () => {
                     </a>
                   </>
                 )}
-                <p className="text-xs text-muted-foreground">Geofence radius: {MAX_DISTANCE_METERS} m</p>
+                <p className="text-xs text-muted-foreground">Geofence radius: {formatDistanceMiles(MAX_DISTANCE_METERS)}</p>
                 {(shift as any).clock_in_accuracy != null && (
-                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round((shift as any).clock_in_accuracy)} m</p>
+                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round(metersToFeet((shift as any).clock_in_accuracy))} ft</p>
                 )}
               </div>
             )}
@@ -278,7 +277,7 @@ const ShiftDetail = () => {
                 {shift.clock_out_lat != null && shift.clock_out_lng != null && shift.client.lat != null && shift.client.lng != null && (
                   <>
                     <p className="text-xs text-muted-foreground">
-                      Distance from client: {Math.round(getDistanceMeters({ lat: shift.clock_out_lat, lng: shift.clock_out_lng }, { lat: shift.client.lat, lng: shift.client.lng }))} m
+                      Distance from client: {formatDistanceMiles(getDistanceMeters({ lat: shift.clock_out_lat, lng: shift.clock_out_lng }, { lat: shift.client.lat, lng: shift.client.lng }))}
                     </p>
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&origin=${shift.clock_out_lat},${shift.clock_out_lng}&destination=${shift.client.lat},${shift.client.lng}`}
@@ -290,9 +289,9 @@ const ShiftDetail = () => {
                     </a>
                   </>
                 )}
-                <p className="text-xs text-muted-foreground">Geofence radius: {MAX_DISTANCE_METERS} m</p>
+                <p className="text-xs text-muted-foreground">Geofence radius: {formatDistanceMiles(MAX_DISTANCE_METERS)}</p>
                 {(shift as any).clock_out_accuracy != null && (
-                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round((shift as any).clock_out_accuracy)} m</p>
+                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round(metersToFeet((shift as any).clock_out_accuracy))} ft</p>
                 )}
               </div>
             )}

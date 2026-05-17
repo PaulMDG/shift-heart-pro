@@ -1,4 +1,4 @@
-import { getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
+import { getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 
 /** Default thresholds. Admin can override per-agency via agency_settings. */
 export const ACCURACY_THRESHOLD_METERS = 100;
@@ -90,20 +90,20 @@ export function evaluateShiftSuspicion(
   );
 
   if (inDist != null && inDist > thresholds.geofence_radius_m) {
-    reasons.push(`Clock-in ${Math.round(inDist)} m from client (max ${thresholds.geofence_radius_m} m)`);
+    reasons.push(`Clock-in ${formatDistanceMiles(inDist)} from client (max ${formatDistanceMiles(thresholds.geofence_radius_m)})`);
     severity = "high";
   }
   if (outDist != null && outDist > thresholds.geofence_radius_m) {
-    reasons.push(`Clock-out ${Math.round(outDist)} m from client (max ${thresholds.geofence_radius_m} m)`);
+    reasons.push(`Clock-out ${formatDistanceMiles(outDist)} from client (max ${formatDistanceMiles(thresholds.geofence_radius_m)})`);
     severity = "high";
   }
 
   if (shift.clock_in_accuracy != null && shift.clock_in_accuracy > thresholds.accuracy_threshold_m) {
-    reasons.push(`Low GPS accuracy at clock-in (±${Math.round(shift.clock_in_accuracy)} m)`);
+    reasons.push(`Low GPS accuracy at clock-in (±${Math.round(metersToFeet(shift.clock_in_accuracy))} ft)`);
     if (severity === "none") severity = "warn";
   }
   if (shift.clock_out_accuracy != null && shift.clock_out_accuracy > thresholds.accuracy_threshold_m) {
-    reasons.push(`Low GPS accuracy at clock-out (±${Math.round(shift.clock_out_accuracy)} m)`);
+    reasons.push(`Low GPS accuracy at clock-out (±${Math.round(metersToFeet(shift.clock_out_accuracy))} ft)`);
     if (severity === "none") severity = "warn";
   }
 

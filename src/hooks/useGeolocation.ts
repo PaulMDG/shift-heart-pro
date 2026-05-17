@@ -52,3 +52,21 @@ export const MAX_DISTANCE_METERS = 200;
 export function metersToFeet(m: number): number {
   return m * 3.28084;
 }
+
+/** Convert meters to miles */
+export function metersToMiles(m: number): number {
+  return m / 1609.344;
+}
+
+/**
+ * Human-friendly distance string in miles. Uses feet for short distances
+ * (< 0.1 mi) so the user gets a sensible read-out at clock-in range.
+ */
+export function formatDistanceMiles(meters: number): string {
+  const miles = metersToMiles(meters);
+  if (miles < 0.1) {
+    return `${Math.round(metersToFeet(meters))} ft`;
+  }
+  if (miles < 10) return `${miles.toFixed(2)} mi`;
+  return `${miles.toFixed(1)} mi`;
+}
