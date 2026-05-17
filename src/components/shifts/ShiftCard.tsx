@@ -1,10 +1,11 @@
-import { Clock, MapPin, ChevronRight, Check, X, Satellite, AlertTriangle, Loader2 } from "lucide-react";
+import { Clock, MapPin, ChevronRight, Check, X, Satellite, AlertTriangle, Loader2, MapPinOff, MapPinned } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { type ShiftWithClient, useUpdateAssignmentStatus } from "@/hooks/useShifts";
 import { toast } from "@/components/ui/sonner";
 import { formatTime } from "@/lib/format";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
+import { metersToFeet } from "@/hooks/useGeolocation";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   not_started: {
@@ -78,8 +79,20 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
       : "bg-warning/15 text-warning border-warning/30";
     GpsIcon = Satellite;
     gpsIconClass = "w-3 h-3";
-    gpsLabel = `±${Math.round(accuracy)}m${ok ? " · Ready" : " · Weak"}`;
+    gpsLabel = `±${Math.round(metersToFeet(accuracy))}ft${ok ? " · Ready" : " · Weak"}`;
   }
+
+  // Client-coords readiness: independent of device GPS.
+  const clientHasCoords = shift.client?.lat != null && shift.client?.lng != null;
+  const showReadyPill = shift.status !== "completed" && shift.status !== "missed";
+  const readyTone = clientHasCoords
+    ? "bg-success/10 text-success border-success/30"
+    : "bg-destructive/10 text-destructive border-destructive/30";
+  const ReadyIcon = clientHasCoords ? MapPinned : MapPinOff;
+  const readyLabel = clientHasCoords ? "Ready for Clock-in" : "Missing Coordinates";
+  const readyTitle = clientHasCoords
+    ? "Client address has GPS coordinates — clock-in is enabled."
+    : "Client address has no GPS coordinates. Ask an admin to set them before clock-in.";
 
   const handleAssignment = (e: React.MouseEvent, action: "accepted" | "declined") => {
     e.stopPropagation();
@@ -115,6 +128,15 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
         </div>
 
         <div className="flex flex-col items-end gap-1">
+          {showReadyPill && (
+            <span
+              className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${readyTone}`}
+              title={readyTitle}
+            >
+              <ReadyIcon className="w-3 h-3" />
+              {readyLabel}
+            </span>
+          )}
           {showGpsPill && (
             <span
               className={`inline-flex items-center gap-1 text-[10px] px-2 py-0.5 rounded-full border ${gpsTone}`}
