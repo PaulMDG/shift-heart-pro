@@ -6,18 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/components/ui/sonner";
-
-async function geocodeAddress(address: string): Promise<{ lat: number; lng: number } | null> {
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?format=json&limit=1&q=${encodeURIComponent(address)}`,
-    { headers: { "User-Agent": "CareLink-Pro/1.0" } }
-  );
-  const data = await res.json();
-  if (data.length > 0) {
-    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
-  }
-  return null;
-}
+import { geocodeAddress } from "@/lib/geocode";
 
 const AdminCreateClient = () => {
   const navigate = useNavigate();
