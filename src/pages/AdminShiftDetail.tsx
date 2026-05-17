@@ -1,9 +1,8 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Camera, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download, ShieldAlert, Phone, FileText } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download, ShieldAlert, Phone, FileText } from "lucide-react";
 import { useShift } from "@/hooks/useShifts";
 import { useAdminClient } from "@/hooks/useAdminClient";
 import { getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
-import { useSignedSelfieUrl } from "@/hooks/useSignedSelfieUrl";
 import { Skeleton } from "@/components/ui/skeleton";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useQuery } from "@tanstack/react-query";
@@ -81,7 +80,6 @@ function exportShiftCSV(shift: any) {
     ["Clock-Out Lng", shift.clock_out_lng ?? "N/A"],
     ["Client Lat", shift.client.lat ?? "N/A"],
     ["Client Lng", shift.client.lng ?? "N/A"],
-    ["Selfie URL", shift.clock_in_selfie_url || "N/A"],
     ["Clock-Out Notes", shift.clock_out_notes || "N/A"],
     ["Admin Notes", shift.admin_notes || "N/A"],
   ];
@@ -99,7 +97,6 @@ const AdminShiftDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { data: shift, isLoading } = useShift(id);
-  const selfieUrl = useSignedSelfieUrl(shift?.clock_in_selfie_url);
   const {
     data: fullClient,
     isLoading: isLoadingClient,
@@ -141,7 +138,6 @@ const AdminShiftDetail = () => {
   const hasClockInGPS = shift.clock_in_lat != null && shift.clock_in_lng != null;
   const hasClockOutGPS = shift.clock_out_lat != null && shift.clock_out_lng != null;
   const hasClientGPS = shift.client.lat != null && shift.client.lng != null;
-  const hasSelfie = !!shift.clock_in_selfie_url;
 
   const clockInDistance = hasClockInGPS && hasClientGPS
     ? getDistanceMeters(
@@ -260,25 +256,6 @@ const AdminShiftDetail = () => {
             <p>📅 {formatDate(shift.date)} · {formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
             <p>🏥 {shift.client.care_type}</p>
             {shift.admin_notes && <p>📝 {shift.admin_notes}</p>}
-          </div>
-        </div>
-
-        {/* Verification Selfie */}
-        <div className="bg-card rounded-2xl border border-border overflow-hidden">
-          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-            <Camera className="w-4 h-4 text-primary" />
-            <h3 className="text-sm font-bold text-card-foreground">Verification Selfie</h3>
-          </div>
-          <div className="p-4">
-            {hasSelfie && selfieUrl ? (
-              <img
-                src={selfieUrl}
-                alt="Clock-in verification selfie"
-                className="w-full rounded-xl object-cover max-h-64"
-              />
-            ) : (
-              <p className="text-sm text-muted-foreground text-center py-8">No selfie captured for this shift</p>
-            )}
           </div>
         </div>
 

@@ -4,10 +4,8 @@ import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, External
 import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
 import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
-import SelfieCapture from "@/components/shifts/SelfieCapture";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { formatTime, formatDateTime } from "@/lib/format";
 import LiveLocationStatus from "@/components/LiveLocationStatus";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
@@ -21,7 +19,6 @@ const ShiftDetail = () => {
   const updateAssignment = useUpdateAssignmentStatus();
   const [showClockOut, setShowClockOut] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showSelfie, setShowSelfie] = useState(false);
   const [verifyingLocation, setVerifyingLocation] = useState(false);
   const [locationError, setLocationError] = useState<string | null>(null);
   const [lastVerifiedPosition, setLastVerifiedPosition] = useState<{lat: number; lng: number} | null>(null);
@@ -48,7 +45,9 @@ const ShiftDetail = () => {
   const status = shift.status;
   const clientHasLocation = shift.client.lat != null && shift.client.lng != null;
 
-  const verifyLocationAndProceed = async (onSuccess: () => void) => {
+  const verifyLocationAndProceed = async (
+    onSuccess: (pos: { lat: number; lng: number; accuracy: number }) => void,
+  ) => {
     setLocationError(null);
 
     if (!clientHasLocation) {
@@ -75,7 +74,7 @@ const ShiftDetail = () => {
         toast.success(`Location verified (${formatDistanceMiles(distance)} from client)`);
         setLastVerifiedPosition(pos);
         setLastAccuracy(pos.accuracy);
-        onSuccess();
+        onSuccess(pos);
       } else {
         const distanceText = formatDistanceMiles(distance);
         setLocationError(
@@ -95,46 +94,17 @@ const ShiftDetail = () => {
   };
 
   const confirmClockIn = () => {
-    verifyLocationAndProceed(() => {
+    verifyLocationAndProceed((pos) => {
       setShowConfirm(false);
-      setShowSelfie(true);
+      updateStatus.mutate({
+        id: shift.id,
+        status: "in_progress",
+        clock_in_time: new Date().toISOString(),
+        clock_in_lat: pos.lat,
+        clock_in_lng: pos.lng,
+        clock_in_accuracy: pos.accuracy,
+      });
     });
-  };
-
-  const uploadSelfieAndClockIn = async (blob: Blob) => {
-    const fileName = `${shift.id}_${Date.now()}.jpg`;
-    const { error: uploadError } = await supabase.storage
-      .from("verification-selfies")
-      .upload(fileName, blob, { contentType: "image/jpeg" });
-
-    let selfieUrl: string | undefined;
-    if (!uploadError) {
-      // Store the file path (not public URL) since bucket is private
-      selfieUrl = fileName;
-    } else {
-      toast.error("Selfie upload failed, clocking in without selfie.");
-    }
-
-    updateStatus.mutate({
-      id: shift.id,
-      status: "in_progress",
-      clock_in_time: new Date().toISOString(),
-      ...(lastVerifiedPosition && { clock_in_lat: lastVerifiedPosition.lat, clock_in_lng: lastVerifiedPosition.lng }),
-      ...(lastAccuracy != null && { clock_in_accuracy: lastAccuracy }),
-      ...(selfieUrl && { clock_in_selfie_url: selfieUrl }),
-    });
-    setShowSelfie(false);
-  };
-
-  const skipSelfieAndClockIn = () => {
-    updateStatus.mutate({
-      id: shift.id,
-      status: "in_progress",
-      clock_in_time: new Date().toISOString(),
-      ...(lastVerifiedPosition && { clock_in_lat: lastVerifiedPosition.lat, clock_in_lng: lastVerifiedPosition.lng }),
-      ...(lastAccuracy != null && { clock_in_accuracy: lastAccuracy }),
-    });
-    setShowSelfie(false);
   };
 
   const handleClockOut = () => {
@@ -364,7 +334,6 @@ const ShiftDetail = () => {
                 You are clocking in for <strong>{shift.client.name}</strong>
               </p>
               <p className="text-xs text-muted-foreground mt-1">📍 Your GPS location will be verified against the client's address</p>
-              <p className="text-xs text-muted-foreground mt-1">📸 You'll be asked to take a verification selfie</p>
               {locationError && (
                 <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-3 mt-3 text-left">
                   <p className="text-xs text-destructive leading-relaxed">{locationError}</p>
@@ -389,14 +358,6 @@ const ShiftDetail = () => {
             </div>
           </div>
         </div>
-      )}
-
-      {showSelfie && (
-        <SelfieCapture
-          onCapture={uploadSelfieAndClockIn}
-          onSkip={skipSelfieAndClockIn}
-          onCancel={() => setShowSelfie(false)}
-        />
       )}
 
       {showClockOut && (
