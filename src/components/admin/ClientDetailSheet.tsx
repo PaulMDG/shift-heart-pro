@@ -3,9 +3,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { MapPin, Phone, AlertTriangle, FileText, Pencil, Save, X, Loader2, Trash2 } from "lucide-react";
+import { MapPin, Phone, AlertTriangle, FileText, Pencil, Save, X, Loader2, Trash2, Search } from "lucide-react";
 import { useUpdateClient, useDeleteClient } from "@/hooks/useAdmin";
 import { toast } from "@/components/ui/sonner";
+import { geocodeAddress } from "@/lib/geocode";
 
 interface ClientDetailSheetProps {
   client: any;
@@ -15,8 +16,18 @@ interface ClientDetailSheetProps {
 
 const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) => {
   const [editing, setEditing] = useState(true);
-  const [form, setForm] = useState({ name: "", address: "", care_type: "", care_plan_summary: "", emergency_contact: "", emergency_phone: "" });
+  const [form, setForm] = useState({
+    name: "",
+    address: "",
+    care_type: "",
+    care_plan_summary: "",
+    emergency_contact: "",
+    emergency_phone: "",
+    lat: "" as string,
+    lng: "" as string,
+  });
   const [confirmDelete, setConfirmDelete] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
 
@@ -28,6 +39,8 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
       care_plan_summary: client?.care_plan_summary || "",
       emergency_contact: client?.emergency_contact || "",
       emergency_phone: client?.emergency_phone || "",
+      lat: client?.lat != null ? String(client.lat) : "",
+      lng: client?.lng != null ? String(client.lng) : "",
     });
   };
 
@@ -36,12 +49,62 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
       toast.error("Client name is required");
       return;
     }
+    // Build a partial update so unchanged fields (and fields not in this
+    // form like government IDs on other entities) are never overwritten.
+    const updates: Record<string, any> = { id: client.id };
+    const fields = ["name", "address", "care_type", "care_plan_summary", "emergency_contact", "emergency_phone"] as const;
+    for (const key of fields) {
+      const next = (form as any)[key] ?? "";
+      const prev = client?.[key] ?? "";
+      if (next !== prev) updates[key] = next;
+    }
+    // lat/lng — parse, validate, and only include if actually changed
+    const parseCoord = (v: string) => {
+      const t = v.trim();
+      if (t === "") return null;
+      const n = Number(t);
+      return Number.isFinite(n) ? n : undefined;
+    };
+    const nextLat = parseCoord(form.lat);
+    const nextLng = parseCoord(form.lng);
+    if (nextLat === undefined || nextLng === undefined) {
+      toast.error("Latitude and longitude must be valid numbers");
+      return;
+    }
+    if ((nextLat == null) !== (nextLng == null)) {
+      toast.error("Set both latitude and longitude, or clear both");
+      return;
+    }
+    if (nextLat !== (client?.lat ?? null)) updates.lat = nextLat;
+    if (nextLng !== (client?.lng ?? null)) updates.lng = nextLng;
+
     try {
-      await updateClient.mutateAsync({ id: client.id, ...form });
+      await updateClient.mutateAsync(updates as any);
       toast.success("Client profile updated");
       setEditing(false);
     } catch (e: any) {
       toast.error(e.message);
+    }
+  };
+
+  const handleGeocode = async () => {
+    if (!form.address.trim()) {
+      toast.error("Enter an address first");
+      return;
+    }
+    setGeocoding(true);
+    try {
+      const result = await geocodeAddress(form.address);
+      if (result) {
+        setForm((f) => ({ ...f, lat: String(result.lat), lng: String(result.lng) }));
+        toast.success(`Found: ${result.lat.toFixed(5)}, ${result.lng.toFixed(5)}`);
+      } else {
+        toast.error("No match — refine the address or enter coordinates manually");
+      }
+    } catch {
+      toast.error("Geocoding failed");
+    } finally {
+      setGeocoding(false);
     }
   };
 
@@ -92,6 +155,41 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
               <div>
                 <Label className="text-xs text-muted-foreground">Address</Label>
                 <Input value={form.address} onChange={(e) => set("address", e.target.value)} className="h-9 text-sm" />
+              </div>
+              <div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">GPS Coordinates</Label>
+                  <button
+                    type="button"
+                    onClick={handleGeocode}
+                    disabled={geocoding || !form.address.trim()}
+                    className="text-[11px] font-semibold text-primary flex items-center gap-1 disabled:opacity-50"
+                  >
+                    {geocoding ? <Loader2 className="w-3 h-3 animate-spin" /> : <Search className="w-3 h-3" />}
+                    Lookup from address
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-2 mt-1">
+                  <Input
+                    value={form.lat}
+                    onChange={(e) => set("lat", e.target.value)}
+                    placeholder="Latitude"
+                    inputMode="decimal"
+                    className="h-9 text-sm"
+                  />
+                  <Input
+                    value={form.lng}
+                    onChange={(e) => set("lng", e.target.value)}
+                    placeholder="Longitude"
+                    inputMode="decimal"
+                    className="h-9 text-sm"
+                  />
+                </div>
+                {(!form.lat || !form.lng) && (
+                  <p className="text-[11px] text-warning mt-1">
+                    Coordinates required — caregivers cannot clock in without them.
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-xs text-muted-foreground">Care Type</Label>
