@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2 } from "lucide-react";
 import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
-import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
+import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
 import SelfieCapture from "@/components/shifts/SelfieCapture";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -62,7 +62,7 @@ const ShiftDetail = () => {
       const accuracyThreshold = settings?.accuracy_threshold_m ?? 100;
       if (pos.accuracy != null && pos.accuracy > accuracyThreshold) {
         setLocationError(
-          `GPS accuracy is too low (±${Math.round(pos.accuracy)} m). Agency requires ±${accuracyThreshold} m or better. Move outdoors or wait a few seconds, then try again.`
+          `GPS accuracy is too low (±${Math.round(metersToFeet(pos.accuracy))} ft). Agency requires ±${Math.round(metersToFeet(accuracyThreshold))} ft or better. Move outdoors or wait a few seconds, then try again.`
         );
         return;
       }
@@ -72,15 +72,14 @@ const ShiftDetail = () => {
       });
 
       if (distance <= MAX_DISTANCE_METERS) {
-        toast.success(`Location verified (${Math.round(distance)} m from client)`);
+        toast.success(`Location verified (${formatDistanceMiles(distance)} from client)`);
         setLastVerifiedPosition(pos);
         setLastAccuracy(pos.accuracy);
         onSuccess();
       } else {
-        const meters = Math.round(distance);
-        const distanceText = meters >= 1000 ? `${(meters / 1000).toFixed(2)} km` : `${meters} m`;
+        const distanceText = formatDistanceMiles(distance);
         setLocationError(
-          `You are ${distanceText} from ${shift.client.name}'s location. You must be within ${MAX_DISTANCE_METERS} m of the client address to clock in/out. Please travel to: ${shift.client.address}`
+          `You are ${distanceText} from ${shift.client.name}'s location. You must be within ${formatDistanceMiles(MAX_DISTANCE_METERS)} of the client address to clock in/out. Please travel to: ${shift.client.address}`
         );
       }
     } catch (err: any) {
