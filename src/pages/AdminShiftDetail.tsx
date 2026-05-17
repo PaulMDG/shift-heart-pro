@@ -344,15 +344,22 @@ const AdminShiftDetail = () => {
         )}
 
         {/* Care Notes Audit Trail */}
-        {noteAudits && noteAudits.length > 0 && (
-          <div className="bg-card rounded-2xl border border-border overflow-hidden">
-            <div className="px-4 py-3 border-b border-border flex items-center gap-2">
-              <History className="w-4 h-4 text-muted-foreground" />
-              <h3 className="text-sm font-bold text-card-foreground">Care-Notes Edit History</h3>
-              <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
-                {noteAudits.length} {noteAudits.length === 1 ? "change" : "changes"}
-              </span>
+        <div className="bg-card rounded-2xl border border-border overflow-hidden">
+          <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+            <History className="w-4 h-4 text-muted-foreground" />
+            <h3 className="text-sm font-bold text-card-foreground">Care-Notes Edit History</h3>
+            <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+              {noteAudits?.length ?? 0} {(noteAudits?.length ?? 0) === 1 ? "change" : "changes"}
+            </span>
+          </div>
+          {!noteAudits || noteAudits.length === 0 ? (
+            <div className="p-6 text-center space-y-1">
+              <p className="text-sm font-medium text-card-foreground">No care-note edits yet</p>
+              <p className="text-xs text-muted-foreground">
+                Any changes to this shift's clock-out notes will appear here with the editor's name, timestamp, and full before/after values.
+              </p>
             </div>
+          ) : (
             <ol className="divide-y divide-border">
               {noteAudits.map((a) => (
                 <li key={a.id} className="p-4 space-y-2">
@@ -379,8 +386,8 @@ const AdminShiftDetail = () => {
                 </li>
               ))}
             </ol>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* Admin-only: Emergency Contact & Care Plan */}
         <div className="bg-card rounded-2xl border border-destructive/30 overflow-hidden">
