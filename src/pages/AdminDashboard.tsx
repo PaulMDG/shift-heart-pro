@@ -19,6 +19,8 @@ import {
 } from "@/lib/suspiciousShift";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { formatDate, formatTime } from "@/lib/format";
+import { useUpdateClient } from "@/hooks/useAdmin";
+import { geocodeAddress } from "@/lib/geocode";
 
 const tabs = ["Overview", "Swaps", "Shifts", "Suspicious", "Clients", "Caregivers"] as const;
 
@@ -565,6 +567,44 @@ function SuspiciousTab({ items, loading }: { items: { shift: any; suspicion: Sus
 
 function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: any) {
   const [search, setSearch] = useState("");
+  const updateClient = useUpdateClient();
+  const [bulkRunning, setBulkRunning] = useState(false);
+  const [bulkProgress, setBulkProgress] = useState<{ done: number; total: number } | null>(null);
+
+  const missingGeo = useMemo(
+    () => (clients || []).filter((c: any) => c.lat == null || c.lng == null),
+    [clients],
+  );
+
+  const handleBulkGeocode = async () => {
+    if (missingGeo.length === 0) return;
+    setBulkRunning(true);
+    setBulkProgress({ done: 0, total: missingGeo.length });
+    let success = 0;
+    let failed = 0;
+    for (let i = 0; i < missingGeo.length; i++) {
+      const c = missingGeo[i];
+      try {
+        const result = c.address?.trim() ? await geocodeAddress(c.address) : null;
+        if (result) {
+          await updateClient.mutateAsync({ id: c.id, lat: result.lat, lng: result.lng });
+          success++;
+        } else {
+          failed++;
+        }
+      } catch {
+        failed++;
+      }
+      setBulkProgress({ done: i + 1, total: missingGeo.length });
+      // Respect Nominatim's 1 req/sec rate limit
+      if (i < missingGeo.length - 1) await new Promise((r) => setTimeout(r, 1100));
+    }
+    setBulkRunning(false);
+    setBulkProgress(null);
+    if (success > 0) toast.success(`Geocoded ${success} client${success === 1 ? "" : "s"}`);
+    if (failed > 0) toast.error(`${failed} address${failed === 1 ? "" : "es"} could not be geocoded — edit manually`);
+  };
+
   const filtered = useMemo(() => {
     if (!search.trim()) return clients;
     const q = search.toLowerCase();
@@ -577,6 +617,46 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: an
 
   return (
     <div className="space-y-3">
+      {missingGeo.length > 0 && (
+        <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4 space-y-3">
+          <div className="flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+            <div className="text-xs text-foreground">
+              <p className="font-semibold mb-1">
+                {missingGeo.length} client{missingGeo.length === 1 ? "" : "s"} missing GPS coordinates
+              </p>
+              <p className="text-muted-foreground leading-relaxed">
+                Caregivers cannot clock in to shifts for these clients until their address is geocoded. Run bulk geocoding below or open each client to set coordinates manually.
+              </p>
+              <ul className="mt-2 space-y-0.5 text-muted-foreground">
+                {missingGeo.slice(0, 5).map((c: any) => (
+                  <li key={c.id} className="truncate">• {c.name}{c.address ? ` — ${c.address}` : " (no address)"}</li>
+                ))}
+                {missingGeo.length > 5 && (
+                  <li className="text-muted-foreground/80">…and {missingGeo.length - 5} more</li>
+                )}
+              </ul>
+            </div>
+          </div>
+          <button
+            onClick={handleBulkGeocode}
+            disabled={bulkRunning}
+            className="w-full py-2.5 rounded-xl bg-warning text-warning-foreground text-xs font-bold disabled:opacity-60 flex items-center justify-center gap-2"
+          >
+            {bulkRunning ? (
+              <>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Geocoding {bulkProgress?.done ?? 0} / {bulkProgress?.total ?? missingGeo.length}…
+              </>
+            ) : (
+              <>
+                <MapPin className="w-3.5 h-3.5" />
+                Bulk geocode missing addresses
+              </>
+            )}
+          </button>
+        </div>
+      )}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
