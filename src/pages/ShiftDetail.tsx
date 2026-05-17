@@ -252,7 +252,7 @@ const ShiftDetail = () => {
                 {shift.clock_in_lat != null && shift.clock_in_lng != null && shift.client.lat != null && shift.client.lng != null && (
                   <>
                     <p className="text-xs text-muted-foreground">
-                      Distance from client: {Math.round(getDistanceMeters({ lat: shift.clock_in_lat, lng: shift.clock_in_lng }, { lat: shift.client.lat, lng: shift.client.lng }))} m
+                      Distance from client: {formatDistanceMiles(getDistanceMeters({ lat: shift.clock_in_lat, lng: shift.clock_in_lng }, { lat: shift.client.lat, lng: shift.client.lng }))}
                     </p>
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&origin=${shift.clock_in_lat},${shift.clock_in_lng}&destination=${shift.client.lat},${shift.client.lng}`}
@@ -264,9 +264,9 @@ const ShiftDetail = () => {
                     </a>
                   </>
                 )}
-                <p className="text-xs text-muted-foreground">Geofence radius: {MAX_DISTANCE_METERS} m</p>
+                <p className="text-xs text-muted-foreground">Geofence radius: {formatDistanceMiles(MAX_DISTANCE_METERS)}</p>
                 {(shift as any).clock_in_accuracy != null && (
-                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round((shift as any).clock_in_accuracy)} m</p>
+                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round(metersToFeet((shift as any).clock_in_accuracy))} ft</p>
                 )}
               </div>
             )}
@@ -277,7 +277,7 @@ const ShiftDetail = () => {
                 {shift.clock_out_lat != null && shift.clock_out_lng != null && shift.client.lat != null && shift.client.lng != null && (
                   <>
                     <p className="text-xs text-muted-foreground">
-                      Distance from client: {Math.round(getDistanceMeters({ lat: shift.clock_out_lat, lng: shift.clock_out_lng }, { lat: shift.client.lat, lng: shift.client.lng }))} m
+                      Distance from client: {formatDistanceMiles(getDistanceMeters({ lat: shift.clock_out_lat, lng: shift.clock_out_lng }, { lat: shift.client.lat, lng: shift.client.lng }))}
                     </p>
                     <a
                       href={`https://www.google.com/maps/dir/?api=1&origin=${shift.clock_out_lat},${shift.clock_out_lng}&destination=${shift.client.lat},${shift.client.lng}`}
@@ -289,9 +289,9 @@ const ShiftDetail = () => {
                     </a>
                   </>
                 )}
-                <p className="text-xs text-muted-foreground">Geofence radius: {MAX_DISTANCE_METERS} m</p>
+                <p className="text-xs text-muted-foreground">Geofence radius: {formatDistanceMiles(MAX_DISTANCE_METERS)}</p>
                 {(shift as any).clock_out_accuracy != null && (
-                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round((shift as any).clock_out_accuracy)} m</p>
+                  <p className="text-xs text-muted-foreground">GPS accuracy: ±{Math.round(metersToFeet((shift as any).clock_out_accuracy))} ft</p>
                 )}
               </div>
             )}
