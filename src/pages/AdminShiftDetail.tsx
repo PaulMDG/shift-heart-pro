@@ -14,6 +14,8 @@ import {
 } from "@/lib/suspiciousShift";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { formatDate, formatTime, formatDateTime } from "@/lib/format";
+import { useCareNoteAudits } from "@/hooks/useCareNoteAudits";
+import { History } from "lucide-react";
 
 function useCaregiverFailureHistory(
   caregiverId: string | null | undefined,
@@ -112,6 +114,7 @@ const AdminShiftDetail = () => {
       }
     : undefined;
   const { data: failureHistory } = useCaregiverFailureHistory(shift?.caregiver_id ?? null, thresholds);
+  const { data: noteAudits } = useCareNoteAudits(shift?.id);
 
   if (isLoading) {
     return (
