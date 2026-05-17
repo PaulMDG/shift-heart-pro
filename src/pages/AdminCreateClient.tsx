@@ -47,7 +47,12 @@ const AdminCreateClient = () => {
     }
     setGeocoding(true);
     try {
-      const result = await geocodeAddress(fullAddress);
+      const result = await geocodeAddress({
+        street: street,
+        city: city,
+        state: stateProv,
+        postalcode: zip,
+      });
       if (result) {
         setLat(result.lat);
         setLng(result.lng);
