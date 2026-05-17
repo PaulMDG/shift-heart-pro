@@ -59,10 +59,12 @@ const ShiftDetail = () => {
     try {
       const pos = await getCurrentPosition();
       const accuracyThreshold = settings?.accuracy_threshold_m ?? 100;
-      if (pos.accuracy != null && pos.accuracy > accuracyThreshold) {
-        setLocationError(
-          `GPS accuracy is too low (±${Math.round(metersToFeet(pos.accuracy))} ft). Agency requires ±${Math.round(metersToFeet(accuracyThreshold))} ft or better. Move outdoors or wait a few seconds, then try again.`
-        );
+      if (pos.accuracy == null || pos.accuracy > accuracyThreshold) {
+        const msg = pos.accuracy == null
+          ? `Unable to read GPS accuracy from your device. Move outdoors with a clear view of the sky and try again.`
+          : `GPS accuracy is too low (±${Math.round(metersToFeet(pos.accuracy))} ft). Agency requires ±${Math.round(metersToFeet(accuracyThreshold))} ft or better. Move outdoors or wait a few seconds, then try again.`;
+        setLocationError(msg);
+        toast.error("GPS accuracy not met — cannot clock in");
         return;
       }
       const distance = getDistanceMeters(pos, {
