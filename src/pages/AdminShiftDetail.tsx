@@ -14,6 +14,8 @@ import {
 } from "@/lib/suspiciousShift";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { formatDate, formatTime, formatDateTime } from "@/lib/format";
+import { useCareNoteAudits } from "@/hooks/useCareNoteAudits";
+import { History } from "lucide-react";
 
 function useCaregiverFailureHistory(
   caregiverId: string | null | undefined,
@@ -112,6 +114,7 @@ const AdminShiftDetail = () => {
       }
     : undefined;
   const { data: failureHistory } = useCaregiverFailureHistory(shift?.caregiver_id ?? null, thresholds);
+  const { data: noteAudits } = useCareNoteAudits(shift?.id);
 
   if (isLoading) {
     return (
@@ -337,6 +340,45 @@ const AdminShiftDetail = () => {
           <div className="bg-card rounded-2xl p-4 border border-border">
             <h3 className="text-sm font-bold text-card-foreground mb-2">Clock-Out Notes</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">{shift.clock_out_notes}</p>
+          </div>
+        )}
+
+        {/* Care Notes Audit Trail */}
+        {noteAudits && noteAudits.length > 0 && (
+          <div className="bg-card rounded-2xl border border-border overflow-hidden">
+            <div className="px-4 py-3 border-b border-border flex items-center gap-2">
+              <History className="w-4 h-4 text-muted-foreground" />
+              <h3 className="text-sm font-bold text-card-foreground">Care-Notes Edit History</h3>
+              <span className="ml-auto text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground">
+                {noteAudits.length} {noteAudits.length === 1 ? "change" : "changes"}
+              </span>
+            </div>
+            <ol className="divide-y divide-border">
+              {noteAudits.map((a) => (
+                <li key={a.id} className="p-4 space-y-2">
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <span className="font-semibold text-card-foreground">
+                      {a.changer_name || (a.changed_by ? a.changed_by.slice(0, 8) : "System")}
+                    </span>
+                    <span>{formatDateTime(a.changed_at)}</span>
+                  </div>
+                  <div className="grid gap-2 text-xs">
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">Before</p>
+                      <p className="rounded-lg bg-destructive/5 border border-destructive/20 px-2.5 py-1.5 text-card-foreground whitespace-pre-wrap">
+                        {a.old_value?.trim() ? a.old_value : <em className="text-muted-foreground">(empty)</em>}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase tracking-wide text-muted-foreground mb-0.5">After</p>
+                      <p className="rounded-lg bg-success/5 border border-success/20 px-2.5 py-1.5 text-card-foreground whitespace-pre-wrap">
+                        {a.new_value?.trim() ? a.new_value : <em className="text-muted-foreground">(empty)</em>}
+                      </p>
+                    </div>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
         )}
 
