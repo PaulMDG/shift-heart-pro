@@ -612,10 +612,15 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: an
 
   // Drop any failed entries that have since been geocoded (e.g. via manual edit)
   const visibleFailed = useMemo(() => {
-    const liveById = new Map((clients || []).map((c: any) => [c.id, c]));
-    return failedGeo
-      .map((f) => liveById.get(f.id) ? { ...liveById.get(f.id), _reason: f._reason } : null)
-      .filter((c: any) => c && (c.lat == null || c.lng == null));
+    const liveById = new Map<string, any>((clients || []).map((c: any) => [c.id, c]));
+    const result: any[] = [];
+    for (const f of failedGeo) {
+      const live = liveById.get(f.id);
+      if (live && (live.lat == null || live.lng == null)) {
+        result.push({ ...live, _reason: f._reason });
+      }
+    }
+    return result;
   }, [failedGeo, clients]);
 
   const filtered = useMemo(() => {
