@@ -12,8 +12,7 @@ const AppHeader = () => {
     <header className="sticky top-0 z-40 gradient-header shadow-md">
       <div className="flex items-center justify-between px-5 py-4 max-w-lg mx-auto">
         <div>
-          <div className="flex items-center gap-2">
-            {/* <img src={comfortlinkLogo} alt="ComfortLink" className="mx-auto h-16 w-16 rounded-xl" /> */}
+         <div className="flex items-center gap-2">
             <h1 className="text-lg font-bold text-primary-foreground tracking-tight">
               ComfortLink Pro
             </h1>
