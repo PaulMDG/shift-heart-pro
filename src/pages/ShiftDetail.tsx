@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2, RefreshCw } from "lucide-react";
 import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
@@ -25,6 +25,37 @@ const ShiftDetail = () => {
   const [locationError, setLocationError] = useState<string | null>(null);
   const [lastVerifiedPosition, setLastVerifiedPosition] = useState<{lat: number; lng: number} | null>(null);
   const [lastAccuracy, setLastAccuracy] = useState<number | null>(null);
+  const [retryStartedAt, setRetryStartedAt] = useState<number | null>(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+
+  const RETRY_COUNTDOWN_MS = 10_000;
+  const retryElapsed = retryStartedAt ? nowTick - retryStartedAt : 0;
+  const retryRemainingMs = retryStartedAt ? Math.max(0, RETRY_COUNTDOWN_MS - retryElapsed) : 0;
+  const retryRemainingSec = Math.ceil(retryRemainingMs / 1000);
+  const hasFreshFix =
+    retryStartedAt != null &&
+    liveLocation.lastFixAt != null &&
+    liveLocation.lastFixAt.getTime() > retryStartedAt;
+  const retryReady = retryStartedAt != null && retryRemainingMs === 0 && hasFreshFix;
+  const retryPending = retryStartedAt != null && !retryReady;
+
+  useEffect(() => {
+    if (retryStartedAt == null) return;
+    const i = setInterval(() => setNowTick(Date.now()), 500);
+    return () => clearInterval(i);
+  }, [retryStartedAt]);
+
+  useEffect(() => {
+    if (!retryReady) return;
+    setRetryStartedAt(null);
+    setLocationError(null);
+    if (status === "not_started") {
+      confirmClockIn();
+    } else if (status === "in_progress") {
+      verifyLocationAndProceed(() => setShowClockOut(true));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [retryReady]);
 
   if (isLoading) {
     return (
@@ -187,22 +218,24 @@ const ShiftDetail = () => {
               type="button"
               onClick={() => {
                 liveLocation.refresh();
-                setLocationError(null);
-                if (status === "not_started") {
-                  confirmClockIn();
-                } else if (status === "in_progress") {
-                  verifyLocationAndProceed(() => setShowClockOut(true));
-                }
+                setRetryStartedAt(Date.now());
+                setNowTick(Date.now());
               }}
-              disabled={verifyingLocation}
+              disabled={verifyingLocation || retryPending}
               className="w-full mt-1 inline-flex items-center justify-center gap-2 py-2.5 rounded-xl border border-destructive/30 bg-background text-destructive text-sm font-semibold hover:bg-destructive/5 active:scale-[0.98] transition disabled:opacity-50"
             >
-              {verifyingLocation ? (
+              {verifyingLocation || retryPending ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
               ) : (
                 <RefreshCw className="w-4 h-4" />
               )}
-              {verifyingLocation ? "Retrying…" : "Refresh GPS & try again"}
+              {verifyingLocation
+                ? "Retrying…"
+                : retryPending
+                  ? retryRemainingMs > 0
+                    ? `Waiting for new GPS fix… ${retryRemainingSec}s`
+                    : "Waiting for new GPS fix…"
+                  : "Refresh GPS & try again"}
             </button>
           </div>
         )}
