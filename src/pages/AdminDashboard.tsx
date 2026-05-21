@@ -553,8 +553,8 @@ function ShiftsTab({ shifts, shiftsLoading, navigate, thresholds }: any) {
   );
 }
 
-function ClientsTab({ clients, clientsLoading, navigate, onClientClick }: any) {
-  return <ClientsTabImpl clients={clients} clientsLoading={clientsLoading} navigate={navigate} onClientClick={onClientClick} />;
+function ClientsTab({ clients, clientsLoading, navigate, onClientClick, docsByClient }: any) {
+  return <ClientsTabImpl clients={clients} clientsLoading={clientsLoading} navigate={navigate} onClientClick={onClientClick} docsByClient={docsByClient} />;
 }
 
 function SuspiciousTab({ items, loading }: { items: { shift: any; suspicion: SuspicionResult }[]; loading: boolean }) {
@@ -581,7 +581,7 @@ function SuspiciousTab({ items, loading }: { items: { shift: any; suspicion: Sus
   );
 }
 
-function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: any) {
+function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick, docsByClient }: any) {
   const [search, setSearch] = useState("");
   const updateClient = useUpdateClient();
   const [bulkRunning, setBulkRunning] = useState(false);
