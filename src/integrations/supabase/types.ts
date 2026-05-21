@@ -113,6 +113,45 @@ export type Database = {
         }
         Relationships: []
       }
+      caregiver_documents: {
+        Row: {
+          caregiver_id: string
+          doc_type: string
+          expiry_date: string | null
+          file_path: string | null
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          caregiver_id: string
+          doc_type: string
+          expiry_date?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          caregiver_id?: string
+          doc_type?: string
+          expiry_date?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       certifications: {
         Row: {
           created_at: string
@@ -140,42 +179,162 @@ export type Database = {
         }
         Relationships: []
       }
+      client_documents: {
+        Row: {
+          client_id: string
+          doc_type: string
+          expiry_date: string | null
+          file_path: string | null
+          id: string
+          notes: string | null
+          status: string
+          updated_at: string
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          client_id: string
+          doc_type: string
+          expiry_date?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          client_id?: string
+          doc_type?: string
+          expiry_date?: string | null
+          file_path?: string | null
+          id?: string
+          notes?: string | null
+          status?: string
+          updated_at?: string
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string
+          authorized_hours_per_week: number | null
+          backup_caregiver_id: string | null
+          billing_contact: string | null
+          care_needs: Json
           care_plan_summary: string
           care_type: string
+          compliance: Json
           created_at: string
+          date_of_birth: string | null
           emergency_contact: string
           emergency_phone: string
+          home_safety: Json
           id: string
           lat: number | null
           lng: number | null
           name: string
+          phone: string | null
+          primary_language: string | null
+          responsible_party: string | null
+          service_start_date: string | null
+          service_type: string | null
         }
         Insert: {
           address?: string
+          authorized_hours_per_week?: number | null
+          backup_caregiver_id?: string | null
+          billing_contact?: string | null
+          care_needs?: Json
           care_plan_summary?: string
           care_type?: string
+          compliance?: Json
           created_at?: string
+          date_of_birth?: string | null
           emergency_contact?: string
           emergency_phone?: string
+          home_safety?: Json
           id?: string
           lat?: number | null
           lng?: number | null
           name: string
+          phone?: string | null
+          primary_language?: string | null
+          responsible_party?: string | null
+          service_start_date?: string | null
+          service_type?: string | null
         }
         Update: {
           address?: string
+          authorized_hours_per_week?: number | null
+          backup_caregiver_id?: string | null
+          billing_contact?: string | null
+          care_needs?: Json
           care_plan_summary?: string
           care_type?: string
+          compliance?: Json
           created_at?: string
+          date_of_birth?: string | null
           emergency_contact?: string
           emergency_phone?: string
+          home_safety?: Json
           id?: string
           lat?: number | null
           lng?: number | null
           name?: string
+          phone?: string | null
+          primary_language?: string | null
+          responsible_party?: string | null
+          service_start_date?: string | null
+          service_type?: string | null
+        }
+        Relationships: []
+      }
+      incident_reports: {
+        Row: {
+          action_taken: string | null
+          caregiver_id: string | null
+          client_id: string | null
+          created_at: string
+          description: string
+          id: string
+          incident_type: string
+          occurred_at: string
+          reported_by: string
+          severity: string
+          shift_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          action_taken?: string | null
+          caregiver_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          description: string
+          id?: string
+          incident_type: string
+          occurred_at?: string
+          reported_by: string
+          severity?: string
+          shift_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          action_taken?: string | null
+          caregiver_id?: string | null
+          client_id?: string | null
+          created_at?: string
+          description?: string
+          id?: string
+          incident_type?: string
+          occurred_at?: string
+          reported_by?: string
+          severity?: string
+          shift_id?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -258,6 +417,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_status: boolean
           address: string | null
           availability_notes: string | null
           avatar_url: string | null
@@ -265,19 +425,29 @@ export type Database = {
           certifications: string | null
           created_at: string
           date_of_birth: string | null
+          direct_deposit_on_file: boolean
           drivers_license_number: string | null
           drivers_license_state: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
+          employment_type: string | null
           full_name: string
           government_id_number: string | null
           government_id_state: string | null
           id: string
+          pay_rate: number | null
+          payroll_method: string | null
           phone: string | null
+          position: string | null
+          preferred_name: string | null
+          skills_availability: Json
           ssn_last4: string | null
+          start_date: string | null
+          tax_form_status: string | null
           updated_at: string
         }
         Insert: {
+          active_status?: boolean
           address?: string | null
           availability_notes?: string | null
           avatar_url?: string | null
@@ -285,19 +455,29 @@ export type Database = {
           certifications?: string | null
           created_at?: string
           date_of_birth?: string | null
+          direct_deposit_on_file?: boolean
           drivers_license_number?: string | null
           drivers_license_state?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          employment_type?: string | null
           full_name?: string
           government_id_number?: string | null
           government_id_state?: string | null
           id: string
+          pay_rate?: number | null
+          payroll_method?: string | null
           phone?: string | null
+          position?: string | null
+          preferred_name?: string | null
+          skills_availability?: Json
           ssn_last4?: string | null
+          start_date?: string | null
+          tax_form_status?: string | null
           updated_at?: string
         }
         Update: {
+          active_status?: boolean
           address?: string | null
           availability_notes?: string | null
           avatar_url?: string | null
@@ -305,16 +485,25 @@ export type Database = {
           certifications?: string | null
           created_at?: string
           date_of_birth?: string | null
+          direct_deposit_on_file?: boolean
           drivers_license_number?: string | null
           drivers_license_state?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
+          employment_type?: string | null
           full_name?: string
           government_id_number?: string | null
           government_id_state?: string | null
           id?: string
+          pay_rate?: number | null
+          payroll_method?: string | null
           phone?: string | null
+          position?: string | null
+          preferred_name?: string | null
+          skills_availability?: Json
           ssn_last4?: string | null
+          start_date?: string | null
+          tax_form_status?: string | null
           updated_at?: string
         }
         Relationships: []
