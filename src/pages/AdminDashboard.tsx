@@ -13,6 +13,9 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import CaregiverDetailSheet from "@/components/admin/CaregiverDetailSheet";
 import ClientDetailSheet from "@/components/admin/ClientDetailSheet";
 import ClientMap from "@/components/admin/ClientMap";
+import CompletenessBadge from "@/components/admin/CompletenessBadge";
+import { useAllCaregiverDocuments, useAllClientDocuments } from "@/hooks/useComplianceDocuments";
+import { evaluateCaregiverCompleteness, evaluateClientCompleteness } from "@/lib/profileCompleteness";
 import {
   buildCaregiverFailureCounts,
   evaluateShiftSuspicion,
@@ -34,6 +37,8 @@ const AdminDashboard = () => {
   const { data: caregivers = [] } = useAllCaregivers();
   const { data: swapRequests = [] } = useAllSwapRequests();
   const { data: settings } = useAgencySettings();
+  const { data: caregiverDocsByUser } = useAllCaregiverDocuments();
+  const { data: clientDocsByClient } = useAllClientDocuments();
   const approveSwap = useAdminApproveSwap();
   const declineSwap = useAdminDeclineSwap();
   const updateRole = useUpdateUserRole();
@@ -203,6 +208,7 @@ const AdminDashboard = () => {
             clientsLoading={clientsLoading}
             navigate={navigate}
             onClientClick={setSelectedClient}
+            docsByClient={clientDocsByClient}
           />
         )}
 
@@ -220,6 +226,7 @@ const AdminDashboard = () => {
             updateRole={updateRole}
             navigate={navigate}
             onCaregiverClick={setSelectedCaregiver}
+            docsByCaregiver={caregiverDocsByUser}
           />
         )}
       </div>
