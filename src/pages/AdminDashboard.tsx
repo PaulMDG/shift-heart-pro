@@ -768,7 +768,7 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick, docs
   );
 }
 
-function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick }: any) {
+function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick, docsByCaregiver }: any) {
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
     if (!search.trim()) return caregivers;
@@ -815,6 +815,10 @@ function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick }: a
                     {cg.role}
                   </Badge>
                 )}
+                <CompletenessBadge
+                  result={evaluateCaregiverCompleteness(cg, docsByCaregiver?.get(cg.id) ?? [])}
+                  showLabel={false}
+                />
               </div>
               <p className="text-xs text-muted-foreground">{cg.phone || "No phone"}</p>
             </div>
