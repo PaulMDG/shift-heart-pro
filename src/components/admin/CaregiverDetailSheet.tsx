@@ -8,6 +8,9 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { useDeleteCaregiver } from "@/hooks/useAdmin";
+import CompletenessBadge from "@/components/admin/CompletenessBadge";
+import { useCaregiverDocuments } from "@/hooks/useComplianceDocuments";
+import { evaluateCaregiverCompleteness } from "@/lib/profileCompleteness";
 
 interface CaregiverDetailSheetProps {
   caregiver: any;
@@ -30,6 +33,10 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
   const fileInputRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
   const deleteCaregiver = useDeleteCaregiver();
+  const { data: docs } = useCaregiverDocuments(caregiver?.id);
+  const completeness = caregiver
+    ? evaluateCaregiverCompleteness(caregiver, docs ?? [])
+    : null;
 
   const updateProfile = useMutation({
     mutationFn: async (updates: Record<string, any>) => {
@@ -139,6 +146,9 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
         <SheetHeader className="pb-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg">Caregiver Profile</SheetTitle>
+            {completeness && (
+              <div className="ml-2"><CompletenessBadge result={completeness} size="md" /></div>
+            )}
             {!editing ? (
               <button onClick={() => { resetForm(); setEditing(true); }} className="p-2 rounded-xl bg-accent hover:bg-accent/80 transition-colors">
                 <Pencil className="w-4 h-4 text-accent-foreground" />

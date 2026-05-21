@@ -13,6 +13,9 @@ import { useRealtimeSync } from "@/hooks/useRealtimeSync";
 import CaregiverDetailSheet from "@/components/admin/CaregiverDetailSheet";
 import ClientDetailSheet from "@/components/admin/ClientDetailSheet";
 import ClientMap from "@/components/admin/ClientMap";
+import CompletenessBadge from "@/components/admin/CompletenessBadge";
+import { useAllCaregiverDocuments, useAllClientDocuments } from "@/hooks/useComplianceDocuments";
+import { evaluateCaregiverCompleteness, evaluateClientCompleteness } from "@/lib/profileCompleteness";
 import {
   buildCaregiverFailureCounts,
   evaluateShiftSuspicion,
@@ -34,6 +37,8 @@ const AdminDashboard = () => {
   const { data: caregivers = [] } = useAllCaregivers();
   const { data: swapRequests = [] } = useAllSwapRequests();
   const { data: settings } = useAgencySettings();
+  const { data: caregiverDocsByUser } = useAllCaregiverDocuments();
+  const { data: clientDocsByClient } = useAllClientDocuments();
   const approveSwap = useAdminApproveSwap();
   const declineSwap = useAdminDeclineSwap();
   const updateRole = useUpdateUserRole();
@@ -203,6 +208,7 @@ const AdminDashboard = () => {
             clientsLoading={clientsLoading}
             navigate={navigate}
             onClientClick={setSelectedClient}
+            docsByClient={clientDocsByClient}
           />
         )}
 
@@ -220,6 +226,7 @@ const AdminDashboard = () => {
             updateRole={updateRole}
             navigate={navigate}
             onCaregiverClick={setSelectedCaregiver}
+            docsByCaregiver={caregiverDocsByUser}
           />
         )}
       </div>
@@ -546,8 +553,8 @@ function ShiftsTab({ shifts, shiftsLoading, navigate, thresholds }: any) {
   );
 }
 
-function ClientsTab({ clients, clientsLoading, navigate, onClientClick }: any) {
-  return <ClientsTabImpl clients={clients} clientsLoading={clientsLoading} navigate={navigate} onClientClick={onClientClick} />;
+function ClientsTab({ clients, clientsLoading, navigate, onClientClick, docsByClient }: any) {
+  return <ClientsTabImpl clients={clients} clientsLoading={clientsLoading} navigate={navigate} onClientClick={onClientClick} docsByClient={docsByClient} />;
 }
 
 function SuspiciousTab({ items, loading }: { items: { shift: any; suspicion: SuspicionResult }[]; loading: boolean }) {
@@ -574,7 +581,7 @@ function SuspiciousTab({ items, loading }: { items: { shift: any; suspicion: Sus
   );
 }
 
-function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: any) {
+function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick, docsByClient }: any) {
   const [search, setSearch] = useState("");
   const updateClient = useUpdateClient();
   const [bulkRunning, setBulkRunning] = useState(false);
@@ -740,7 +747,12 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: an
             onClick={() => onClientClick(c)}
             className="bg-card rounded-2xl p-4 border border-border cursor-pointer hover:border-primary/30 transition-colors"
           >
-            <h4 className="font-semibold text-card-foreground text-sm">{c.name}</h4>
+            <div className="flex items-start justify-between gap-2">
+              <h4 className="font-semibold text-card-foreground text-sm">{c.name}</h4>
+              <CompletenessBadge
+                result={evaluateClientCompleteness(c, docsByClient?.get(c.id) ?? [])}
+              />
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">{c.address}</p>
             <div className="flex items-center gap-2 mt-2">
               <span className="text-xs px-2 py-0.5 rounded-full bg-accent text-accent-foreground">{c.care_type}</span>
@@ -756,7 +768,7 @@ function ClientsTabImpl({ clients, clientsLoading, navigate, onClientClick }: an
   );
 }
 
-function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick }: any) {
+function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick, docsByCaregiver }: any) {
   const [search, setSearch] = useState("");
   const filtered = useMemo(() => {
     if (!search.trim()) return caregivers;
@@ -803,6 +815,10 @@ function CaregiversTab({ caregivers, updateRole, navigate, onCaregiverClick }: a
                     {cg.role}
                   </Badge>
                 )}
+                <CompletenessBadge
+                  result={evaluateCaregiverCompleteness(cg, docsByCaregiver?.get(cg.id) ?? [])}
+                  showLabel={false}
+                />
               </div>
               <p className="text-xs text-muted-foreground">{cg.phone || "No phone"}</p>
             </div>

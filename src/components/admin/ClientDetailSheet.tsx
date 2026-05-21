@@ -7,6 +7,9 @@ import { MapPin, Phone, AlertTriangle, FileText, Pencil, Save, X, Loader2, Trash
 import { useUpdateClient, useDeleteClient } from "@/hooks/useAdmin";
 import { toast } from "@/components/ui/sonner";
 import { geocodeAddress } from "@/lib/geocode";
+import CompletenessBadge from "@/components/admin/CompletenessBadge";
+import { useClientDocuments } from "@/hooks/useComplianceDocuments";
+import { evaluateClientCompleteness } from "@/lib/profileCompleteness";
 
 interface ClientDetailSheetProps {
   client: any;
@@ -30,6 +33,8 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
   const [geocoding, setGeocoding] = useState(false);
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
+  const { data: docs } = useClientDocuments(client?.id);
+  const completeness = client ? evaluateClientCompleteness(client, docs ?? []) : null;
 
   const resetForm = () => {
     setForm({
@@ -128,6 +133,9 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
         <SheetHeader className="pb-4">
           <div className="flex items-center justify-between">
             <SheetTitle className="text-lg">Client Profile</SheetTitle>
+            {completeness && (
+              <div className="ml-2"><CompletenessBadge result={completeness} size="md" /></div>
+            )}
             {!editing ? (
               <button onClick={() => { resetForm(); setEditing(true); }} className="p-2 rounded-xl bg-accent hover:bg-accent/80 transition-colors">
                 <Pencil className="w-4 h-4 text-accent-foreground" />
