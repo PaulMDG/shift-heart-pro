@@ -3,6 +3,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MapPin, Phone, AlertTriangle, FileText, Pencil, Save, X, Loader2, Trash2, Search } from "lucide-react";
 import { useUpdateClient, useDeleteClient } from "@/hooks/useAdmin";
 import { toast } from "@/components/ui/sonner";
@@ -28,6 +35,16 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
     emergency_phone: "",
     lat: "" as string,
     lng: "" as string,
+    date_of_birth: "",
+    phone: "",
+    primary_language: "",
+    responsible_party: "",
+    billing_contact: "",
+    service_type: "",
+    service_start_date: "",
+    authorized_hours_per_week: "",
+    care_needs: "",
+    home_safety: "",
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
@@ -46,6 +63,17 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
       emergency_phone: client?.emergency_phone || "",
       lat: client?.lat != null ? String(client.lat) : "",
       lng: client?.lng != null ? String(client.lng) : "",
+      date_of_birth: client?.date_of_birth || "",
+      phone: client?.phone || "",
+      primary_language: client?.primary_language || "",
+      responsible_party: client?.responsible_party || "",
+      billing_contact: client?.billing_contact || "",
+      service_type: client?.service_type || "",
+      service_start_date: client?.service_start_date || "",
+      authorized_hours_per_week:
+        client?.authorized_hours_per_week != null ? String(client.authorized_hours_per_week) : "",
+      care_needs: client?.care_needs?.notes || "",
+      home_safety: client?.home_safety?.notes || "",
     });
   };
 
@@ -57,11 +85,44 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
     // Build a partial update so unchanged fields (and fields not in this
     // form like government IDs on other entities) are never overwritten.
     const updates: Record<string, any> = { id: client.id };
-    const fields = ["name", "address", "care_type", "care_plan_summary", "emergency_contact", "emergency_phone"] as const;
+    const fields = [
+      "name",
+      "address",
+      "care_type",
+      "care_plan_summary",
+      "emergency_contact",
+      "emergency_phone",
+      "date_of_birth",
+      "phone",
+      "primary_language",
+      "responsible_party",
+      "billing_contact",
+      "service_type",
+      "service_start_date",
+    ] as const;
     for (const key of fields) {
       const next = (form as any)[key] ?? "";
       const prev = client?.[key] ?? "";
       if (next !== prev) updates[key] = next;
+    }
+    // authorized_hours_per_week — numeric
+    const ahw = form.authorized_hours_per_week.trim();
+    const nextAhw = ahw === "" ? null : Number(ahw);
+    if (ahw !== "" && !Number.isFinite(nextAhw)) {
+      toast.error("Authorized hours must be a number");
+      return;
+    }
+    if (nextAhw !== (client?.authorized_hours_per_week ?? null)) {
+      updates.authorized_hours_per_week = nextAhw;
+    }
+    // jsonb fields
+    const prevCareNeeds = client?.care_needs?.notes || "";
+    if (form.care_needs !== prevCareNeeds) {
+      updates.care_needs = { ...(client?.care_needs || {}), notes: form.care_needs };
+    }
+    const prevHomeSafety = client?.home_safety?.notes || "";
+    if (form.home_safety !== prevHomeSafety) {
+      updates.home_safety = { ...(client?.home_safety || {}), notes: form.home_safety };
     }
     // lat/lng — parse, validate, and only include if actually changed
     const parseCoord = (v: string) => {
@@ -206,6 +267,63 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
               <div>
                 <Label className="text-xs text-muted-foreground">Care Plan Summary</Label>
                 <Textarea value={form.care_plan_summary} onChange={(e) => set("care_plan_summary", e.target.value)} className="text-sm min-h-[80px]" />
+              </div>
+            </div>
+            <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">
+              <h4 className="text-sm font-semibold text-foreground">Client Details</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Date of Birth</Label>
+                  <Input type="date" value={form.date_of_birth} onChange={(e) => set("date_of_birth", e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Phone</Label>
+                  <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Primary Language</Label>
+                  <Input value={form.primary_language} onChange={(e) => set("primary_language", e.target.value)} placeholder="English" className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Service Type</Label>
+                  <Select value={form.service_type || undefined} onValueChange={(v) => set("service_type", v)}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="private_pay">Private pay</SelectItem>
+                      <SelectItem value="medicaid">Medicaid</SelectItem>
+                      <SelectItem value="medicare">Medicare</SelectItem>
+                      <SelectItem value="ltc_insurance">LTC Insurance</SelectItem>
+                      <SelectItem value="va">VA</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Service Start</Label>
+                  <Input type="date" value={form.service_start_date} onChange={(e) => set("service_start_date", e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Authorized hrs/week</Label>
+                  <Input type="number" step="0.5" value={form.authorized_hours_per_week} onChange={(e) => set("authorized_hours_per_week", e.target.value)} className="h-9 text-sm" />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Responsible Party</Label>
+                <Input value={form.responsible_party} onChange={(e) => set("responsible_party", e.target.value)} placeholder="Name & relationship" className="h-9 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Billing Contact</Label>
+                <Input value={form.billing_contact} onChange={(e) => set("billing_contact", e.target.value)} placeholder="Name, phone, or email" className="h-9 text-sm" />
+              </div>
+            </div>
+            <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">
+              <h4 className="text-sm font-semibold text-foreground">Care Needs & Home Safety</h4>
+              <div>
+                <Label className="text-xs text-muted-foreground">Care Needs</Label>
+                <Textarea value={form.care_needs} onChange={(e) => set("care_needs", e.target.value)} placeholder="ADLs, mobility, diet, meds…" className="text-sm min-h-[70px]" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Home Safety Notes</Label>
+                <Textarea value={form.home_safety} onChange={(e) => set("home_safety", e.target.value)} placeholder="Stairs, pets, hazards, parking…" className="text-sm min-h-[70px]" />
               </div>
             </div>
             <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">

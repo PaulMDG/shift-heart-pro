@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { differenceInMinutes } from "date-fns";
 import { formatDate } from "@/lib/format";
+import jsPDF from "jspdf";
 
 function startOfWeek(d: Date) {
   const x = new Date(d);
@@ -92,6 +93,47 @@ const AdminPayroll = () => {
     URL.revokeObjectURL(url);
   };
 
+  const exportPdf = () => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Payroll Summary", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`Period: ${formatDate(from)} – ${formatDate(to)}`, 14, 26);
+    doc.text(
+      `Total: $${totals.pay.toFixed(2)}  ·  ${totals.hours.toFixed(1)} hrs  ·  ${totals.shifts} shifts`,
+      14,
+      32,
+    );
+
+    const headers = ["Caregiver", "Employment", "Rate", "Shifts", "Hours", "Gross"];
+    const colX = [14, 70, 105, 130, 150, 175];
+    let y = 44;
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    headers.forEach((h, i) => doc.text(h, colX[i], y));
+    doc.setFont("helvetica", "normal");
+    y += 6;
+
+    for (const r of rows as any[]) {
+      if (y > 280) {
+        doc.addPage();
+        y = 20;
+      }
+      const c = r.caregiver;
+      const cells = [
+        (c.full_name || "").slice(0, 28),
+        (c.employment_type || "—").slice(0, 14),
+        `$${r.rate.toFixed(2)}`,
+        String(r.shifts),
+        r.hours.toFixed(2),
+        `$${r.pay.toFixed(2)}`,
+      ];
+      cells.forEach((v, i) => doc.text(v, colX[i], y));
+      y += 6;
+    }
+    doc.save(`payroll_${from}_${to}.pdf`);
+  };
+
   return (
     <MobileLayout>
       <div className="px-5 py-4">
@@ -118,9 +160,14 @@ const AdminPayroll = () => {
             <p className="text-lg font-bold text-foreground">${totals.pay.toFixed(2)}</p>
             <p className="text-[11px] text-muted-foreground">{totals.hours.toFixed(1)} hrs · {totals.shifts} shifts</p>
           </div>
-          <button onClick={exportCsv} className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-border text-xs font-semibold">
-            <Download className="w-3 h-3" /> CSV
-          </button>
+          <div className="flex gap-2">
+            <button onClick={exportCsv} className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-border text-xs font-semibold">
+              <Download className="w-3 h-3" /> CSV
+            </button>
+            <button onClick={exportPdf} className="inline-flex items-center gap-1 px-3 py-2 rounded-xl border border-border text-xs font-semibold">
+              <Download className="w-3 h-3" /> PDF
+            </button>
+          </div>
         </div>
 
         <div className="space-y-2">

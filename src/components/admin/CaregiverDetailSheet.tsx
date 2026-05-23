@@ -3,6 +3,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { User, Phone, Mail, Pencil, Save, X, Loader2, Camera, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +37,18 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
   const [dlNumber, setDlNumber] = useState("");
   const [dlState, setDlState] = useState("");
   const [address, setAddress] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [emergencyContactName, setEmergencyContactName] = useState("");
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
+  const [employmentType, setEmploymentType] = useState("");
+  const [position, setPosition] = useState("");
+  const [payRate, setPayRate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [taxFormStatus, setTaxFormStatus] = useState("");
+  const [directDeposit, setDirectDeposit] = useState(false);
+  const [activeStatus, setActiveStatus] = useState(true);
+  const [skillsText, setSkillsText] = useState("");
+  const [availabilityNotes, setAvailabilityNotes] = useState("");
   const [uploading, setUploading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -109,6 +130,19 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
     setDlNumber(caregiver?.drivers_license_number || "");
     setDlState(caregiver?.drivers_license_state || "");
     setAddress(caregiver?.address || "");
+    setDateOfBirth(caregiver?.date_of_birth || "");
+    setEmergencyContactName(caregiver?.emergency_contact_name || "");
+    setEmergencyContactPhone(caregiver?.emergency_contact_phone || "");
+    setEmploymentType(caregiver?.employment_type || "");
+    setPosition(caregiver?.position || "");
+    setPayRate(caregiver?.pay_rate != null ? String(caregiver.pay_rate) : "");
+    setStartDate(caregiver?.start_date || "");
+    setTaxFormStatus(caregiver?.tax_form_status || "");
+    setDirectDeposit(Boolean(caregiver?.direct_deposit_on_file));
+    setActiveStatus(caregiver?.active_status !== false);
+    const sa = caregiver?.skills_availability || {};
+    setSkillsText(Array.isArray(sa.skills) ? sa.skills.join(", ") : (sa.skills || ""));
+    setAvailabilityNotes(sa.availability || caregiver?.availability_notes || "");
   };
 
   const handleSave = () => {
@@ -125,6 +159,24 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
       government_id_state: govIdState.trim() || null,
       drivers_license_number: dlNumber.trim() || null,
       drivers_license_state: dlState.trim() || null,
+      date_of_birth: dateOfBirth || null,
+      emergency_contact_name: emergencyContactName.trim() || null,
+      emergency_contact_phone: emergencyContactPhone.trim() || null,
+      employment_type: employmentType || null,
+      position: position.trim() || null,
+      pay_rate: payRate.trim() ? Number(payRate) : null,
+      start_date: startDate || null,
+      tax_form_status: taxFormStatus || null,
+      direct_deposit_on_file: directDeposit,
+      active_status: activeStatus,
+      availability_notes: availabilityNotes.trim() || null,
+      skills_availability: {
+        skills: skillsText
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        availability: availabilityNotes.trim() || null,
+      },
     });
   };
 
@@ -276,6 +328,10 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
                     <Input value={dlState} onChange={(e) => setDlState(e.target.value.toUpperCase().slice(0, 2))} placeholder="NY" maxLength={2} className="h-9 text-sm" />
                   </div>
                 </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Date of Birth</Label>
+                  <Input type="date" value={dateOfBirth} onChange={(e) => setDateOfBirth(e.target.value)} className="h-9 text-sm" />
+                </div>
               </>
             ) : (
               <>
@@ -289,6 +345,88 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
               </>
             )}
           </div>
+
+          {/* Emergency Contact */}
+          {editing && (
+            <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">
+              <h4 className="text-sm font-semibold text-foreground">Emergency Contact</h4>
+              <div>
+                <Label className="text-xs text-muted-foreground">Contact Name</Label>
+                <Input value={emergencyContactName} onChange={(e) => setEmergencyContactName(e.target.value)} className="h-9 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Contact Phone</Label>
+                <Input value={emergencyContactPhone} onChange={(e) => setEmergencyContactPhone(e.target.value)} className="h-9 text-sm" />
+              </div>
+            </div>
+          )}
+
+          {/* Employment & Payroll */}
+          {editing && (
+            <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">
+              <h4 className="text-sm font-semibold text-foreground">Employment & Payroll</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Employment Type</Label>
+                  <Select value={employmentType || undefined} onValueChange={setEmploymentType}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="w2">W-2 Employee</SelectItem>
+                      <SelectItem value="1099">1099 Contractor</SelectItem>
+                      <SelectItem value="part_time">Part-time</SelectItem>
+                      <SelectItem value="full_time">Full-time</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Position</Label>
+                  <Input value={position} onChange={(e) => setPosition(e.target.value)} placeholder="CNA, HHA…" className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Pay Rate ($/hr)</Label>
+                  <Input type="number" step="0.01" value={payRate} onChange={(e) => setPayRate(e.target.value)} placeholder="20.00" className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Start Date</Label>
+                  <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Tax Form Status</Label>
+                  <Select value={taxFormStatus || undefined} onValueChange={setTaxFormStatus}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="w4_on_file">W-4 on file</SelectItem>
+                      <SelectItem value="w9_on_file">W-9 on file</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex items-center gap-2 pt-6">
+                  <Checkbox id="dd" checked={directDeposit} onCheckedChange={(v) => setDirectDeposit(Boolean(v))} />
+                  <Label htmlFor="dd" className="text-xs">Direct deposit on file</Label>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox id="active" checked={activeStatus} onCheckedChange={(v) => setActiveStatus(Boolean(v))} />
+                <Label htmlFor="active" className="text-xs">Active (schedulable)</Label>
+              </div>
+            </div>
+          )}
+
+          {/* Skills & Availability */}
+          {editing && (
+            <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">
+              <h4 className="text-sm font-semibold text-foreground">Skills & Availability</h4>
+              <div>
+                <Label className="text-xs text-muted-foreground">Skills (comma separated)</Label>
+                <Input value={skillsText} onChange={(e) => setSkillsText(e.target.value)} placeholder="Dementia care, Hoyer lift, Medication mgmt" className="h-9 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Availability Notes</Label>
+                <Textarea value={availabilityNotes} onChange={(e) => setAvailabilityNotes(e.target.value)} placeholder="Weekday mornings, no weekends…" className="text-sm min-h-[60px]" />
+              </div>
+            </div>
+          )}
 
           {/* Delete Button */}
           {!confirmDelete ? (
