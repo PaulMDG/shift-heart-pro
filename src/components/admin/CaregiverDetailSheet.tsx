@@ -3,6 +3,15 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { User, Phone, Mail, Pencil, Save, X, Loader2, Camera, Trash2 } from "lucide-react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
@@ -28,6 +37,18 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
   const [dlNumber, setDlNumber] = useState("");
   const [dlState, setDlState] = useState("");
   const [address, setAddress] = useState("");
+  const [dateOfBirth, setDateOfBirth] = useState("");
+  const [emergencyContactName, setEmergencyContactName] = useState("");
+  const [emergencyContactPhone, setEmergencyContactPhone] = useState("");
+  const [employmentType, setEmploymentType] = useState("");
+  const [position, setPosition] = useState("");
+  const [payRate, setPayRate] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [taxFormStatus, setTaxFormStatus] = useState("");
+  const [directDeposit, setDirectDeposit] = useState(false);
+  const [activeStatus, setActiveStatus] = useState(true);
+  const [skillsText, setSkillsText] = useState("");
+  const [availabilityNotes, setAvailabilityNotes] = useState("");
   const [uploading, setUploading] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -109,6 +130,19 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
     setDlNumber(caregiver?.drivers_license_number || "");
     setDlState(caregiver?.drivers_license_state || "");
     setAddress(caregiver?.address || "");
+    setDateOfBirth(caregiver?.date_of_birth || "");
+    setEmergencyContactName(caregiver?.emergency_contact_name || "");
+    setEmergencyContactPhone(caregiver?.emergency_contact_phone || "");
+    setEmploymentType(caregiver?.employment_type || "");
+    setPosition(caregiver?.position || "");
+    setPayRate(caregiver?.pay_rate != null ? String(caregiver.pay_rate) : "");
+    setStartDate(caregiver?.start_date || "");
+    setTaxFormStatus(caregiver?.tax_form_status || "");
+    setDirectDeposit(Boolean(caregiver?.direct_deposit_on_file));
+    setActiveStatus(caregiver?.active_status !== false);
+    const sa = caregiver?.skills_availability || {};
+    setSkillsText(Array.isArray(sa.skills) ? sa.skills.join(", ") : (sa.skills || ""));
+    setAvailabilityNotes(sa.availability || caregiver?.availability_notes || "");
   };
 
   const handleSave = () => {
@@ -125,6 +159,24 @@ const CaregiverDetailSheet = ({ caregiver, open, onClose }: CaregiverDetailSheet
       government_id_state: govIdState.trim() || null,
       drivers_license_number: dlNumber.trim() || null,
       drivers_license_state: dlState.trim() || null,
+      date_of_birth: dateOfBirth || null,
+      emergency_contact_name: emergencyContactName.trim() || null,
+      emergency_contact_phone: emergencyContactPhone.trim() || null,
+      employment_type: employmentType || null,
+      position: position.trim() || null,
+      pay_rate: payRate.trim() ? Number(payRate) : null,
+      start_date: startDate || null,
+      tax_form_status: taxFormStatus || null,
+      direct_deposit_on_file: directDeposit,
+      active_status: activeStatus,
+      availability_notes: availabilityNotes.trim() || null,
+      skills_availability: {
+        skills: skillsText
+          .split(",")
+          .map((s) => s.trim())
+          .filter(Boolean),
+        availability: availabilityNotes.trim() || null,
+      },
     });
   };
 
