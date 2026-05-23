@@ -296,6 +296,7 @@ export type Database = {
       incident_reports: {
         Row: {
           action_taken: string | null
+          attachment_path: string | null
           caregiver_id: string | null
           client_id: string | null
           created_at: string
@@ -310,6 +311,7 @@ export type Database = {
         }
         Insert: {
           action_taken?: string | null
+          attachment_path?: string | null
           caregiver_id?: string | null
           client_id?: string | null
           created_at?: string
@@ -324,6 +326,7 @@ export type Database = {
         }
         Update: {
           action_taken?: string | null
+          attachment_path?: string | null
           caregiver_id?: string | null
           client_id?: string | null
           created_at?: string

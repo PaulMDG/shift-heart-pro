@@ -37,6 +37,10 @@ import AdminSecurity from "./pages/AdminSecurity";
 import AdminDataManagement from "./pages/AdminDataManagement";
 import AdminSwapApprovals from "./pages/AdminSwapApprovals";
 import AdminGeofenceTest from "./pages/AdminGeofenceTest";
+import AdminDocuments from "./pages/AdminDocuments";
+import AdminIncidents from "./pages/AdminIncidents";
+import AdminPayroll from "./pages/AdminPayroll";
+import AdminReports from "./pages/AdminReports";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -80,6 +84,10 @@ const App = () => (
             <Route path="/admin/settings/data" element={<AdminRoute><AdminDataManagement /></AdminRoute>} />
             <Route path="/admin/swaps" element={<AdminRoute><AdminSwapApprovals /></AdminRoute>} />
             <Route path="/admin/geofence-test" element={<AdminRoute><AdminGeofenceTest /></AdminRoute>} />
+            <Route path="/admin/documents" element={<AdminRoute><AdminDocuments /></AdminRoute>} />
+            <Route path="/admin/incidents" element={<AdminRoute><AdminIncidents /></AdminRoute>} />
+            <Route path="/admin/payroll" element={<AdminRoute><AdminPayroll /></AdminRoute>} />
+            <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </LiveLocationProvider>

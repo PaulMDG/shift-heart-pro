@@ -6,7 +6,7 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import { useAllShifts, useAllClients, useAllCaregivers, useAllSwapRequests, useAdminApproveSwap, useAdminDeclineSwap, useUpdateUserRole } from "@/hooks/useAdmin";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X, DollarSign, FileText, Settings, MapPin } from "lucide-react";
+import { CalendarDays, Users, UserCheck, ArrowRightLeft, Clock, CheckCircle2, AlertTriangle, Loader2, Check, X, DollarSign, FileText, Settings, MapPin, FolderOpen, Siren, BarChart3 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
 import { useRealtimeSync } from "@/hooks/useRealtimeSync";
@@ -128,18 +128,42 @@ const AdminDashboard = () => {
             <button
               onClick={() => navigate("/admin/timesheets")}
               className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+              title="Timesheets"
             >
               <FileText className="w-4 h-4 text-accent-foreground" />
             </button>
             <button
-              onClick={() => navigate("/admin/billing")}
+              onClick={() => navigate("/admin/payroll")}
               className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+              title="Payroll"
             >
               <DollarSign className="w-4 h-4 text-accent-foreground" />
             </button>
             <button
+              onClick={() => navigate("/admin/documents")}
+              className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+              title="Compliance Documents"
+            >
+              <FolderOpen className="w-4 h-4 text-accent-foreground" />
+            </button>
+            <button
+              onClick={() => navigate("/admin/incidents")}
+              className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+              title="Incident Reports"
+            >
+              <Siren className="w-4 h-4 text-accent-foreground" />
+            </button>
+            <button
+              onClick={() => navigate("/admin/reports")}
+              className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+              title="Reports"
+            >
+              <BarChart3 className="w-4 h-4 text-accent-foreground" />
+            </button>
+            <button
               onClick={() => navigate("/admin/settings")}
               className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center"
+              title="Settings"
             >
               <Settings className="w-4 h-4 text-accent-foreground" />
             </button>
