@@ -3,6 +3,13 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sh
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { MapPin, Phone, AlertTriangle, FileText, Pencil, Save, X, Loader2, Trash2, Search } from "lucide-react";
 import { useUpdateClient, useDeleteClient } from "@/hooks/useAdmin";
 import { toast } from "@/components/ui/sonner";
@@ -28,6 +35,16 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
     emergency_phone: "",
     lat: "" as string,
     lng: "" as string,
+    date_of_birth: "",
+    phone: "",
+    primary_language: "",
+    responsible_party: "",
+    billing_contact: "",
+    service_type: "",
+    service_start_date: "",
+    authorized_hours_per_week: "",
+    care_needs: "",
+    home_safety: "",
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
@@ -46,6 +63,17 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
       emergency_phone: client?.emergency_phone || "",
       lat: client?.lat != null ? String(client.lat) : "",
       lng: client?.lng != null ? String(client.lng) : "",
+      date_of_birth: client?.date_of_birth || "",
+      phone: client?.phone || "",
+      primary_language: client?.primary_language || "",
+      responsible_party: client?.responsible_party || "",
+      billing_contact: client?.billing_contact || "",
+      service_type: client?.service_type || "",
+      service_start_date: client?.service_start_date || "",
+      authorized_hours_per_week:
+        client?.authorized_hours_per_week != null ? String(client.authorized_hours_per_week) : "",
+      care_needs: client?.care_needs?.notes || "",
+      home_safety: client?.home_safety?.notes || "",
     });
   };
 
@@ -57,11 +85,44 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
     // Build a partial update so unchanged fields (and fields not in this
     // form like government IDs on other entities) are never overwritten.
     const updates: Record<string, any> = { id: client.id };
-    const fields = ["name", "address", "care_type", "care_plan_summary", "emergency_contact", "emergency_phone"] as const;
+    const fields = [
+      "name",
+      "address",
+      "care_type",
+      "care_plan_summary",
+      "emergency_contact",
+      "emergency_phone",
+      "date_of_birth",
+      "phone",
+      "primary_language",
+      "responsible_party",
+      "billing_contact",
+      "service_type",
+      "service_start_date",
+    ] as const;
     for (const key of fields) {
       const next = (form as any)[key] ?? "";
       const prev = client?.[key] ?? "";
       if (next !== prev) updates[key] = next;
+    }
+    // authorized_hours_per_week — numeric
+    const ahw = form.authorized_hours_per_week.trim();
+    const nextAhw = ahw === "" ? null : Number(ahw);
+    if (ahw !== "" && !Number.isFinite(nextAhw)) {
+      toast.error("Authorized hours must be a number");
+      return;
+    }
+    if (nextAhw !== (client?.authorized_hours_per_week ?? null)) {
+      updates.authorized_hours_per_week = nextAhw;
+    }
+    // jsonb fields
+    const prevCareNeeds = client?.care_needs?.notes || "";
+    if (form.care_needs !== prevCareNeeds) {
+      updates.care_needs = { ...(client?.care_needs || {}), notes: form.care_needs };
+    }
+    const prevHomeSafety = client?.home_safety?.notes || "";
+    if (form.home_safety !== prevHomeSafety) {
+      updates.home_safety = { ...(client?.home_safety || {}), notes: form.home_safety };
     }
     // lat/lng — parse, validate, and only include if actually changed
     const parseCoord = (v: string) => {
