@@ -270,6 +270,63 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
               </div>
             </div>
             <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">
+              <h4 className="text-sm font-semibold text-foreground">Client Details</h4>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <Label className="text-xs text-muted-foreground">Date of Birth</Label>
+                  <Input type="date" value={form.date_of_birth} onChange={(e) => set("date_of_birth", e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Phone</Label>
+                  <Input value={form.phone} onChange={(e) => set("phone", e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Primary Language</Label>
+                  <Input value={form.primary_language} onChange={(e) => set("primary_language", e.target.value)} placeholder="English" className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Service Type</Label>
+                  <Select value={form.service_type || undefined} onValueChange={(v) => set("service_type", v)}>
+                    <SelectTrigger className="h-9 text-sm"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="private_pay">Private pay</SelectItem>
+                      <SelectItem value="medicaid">Medicaid</SelectItem>
+                      <SelectItem value="medicare">Medicare</SelectItem>
+                      <SelectItem value="ltc_insurance">LTC Insurance</SelectItem>
+                      <SelectItem value="va">VA</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Service Start</Label>
+                  <Input type="date" value={form.service_start_date} onChange={(e) => set("service_start_date", e.target.value)} className="h-9 text-sm" />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Authorized hrs/week</Label>
+                  <Input type="number" step="0.5" value={form.authorized_hours_per_week} onChange={(e) => set("authorized_hours_per_week", e.target.value)} className="h-9 text-sm" />
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Responsible Party</Label>
+                <Input value={form.responsible_party} onChange={(e) => set("responsible_party", e.target.value)} placeholder="Name & relationship" className="h-9 text-sm" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Billing Contact</Label>
+                <Input value={form.billing_contact} onChange={(e) => set("billing_contact", e.target.value)} placeholder="Name, phone, or email" className="h-9 text-sm" />
+              </div>
+            </div>
+            <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">
+              <h4 className="text-sm font-semibold text-foreground">Care Needs & Home Safety</h4>
+              <div>
+                <Label className="text-xs text-muted-foreground">Care Needs</Label>
+                <Textarea value={form.care_needs} onChange={(e) => set("care_needs", e.target.value)} placeholder="ADLs, mobility, diet, meds…" className="text-sm min-h-[70px]" />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">Home Safety Notes</Label>
+                <Textarea value={form.home_safety} onChange={(e) => set("home_safety", e.target.value)} placeholder="Stairs, pets, hazards, parking…" className="text-sm min-h-[70px]" />
+              </div>
+            </div>
+            <div className="space-y-3 bg-card rounded-2xl p-4 border border-border">
               <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 text-destructive" />
                 Emergency Contact
