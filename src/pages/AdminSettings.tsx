@@ -186,17 +186,11 @@ const AdminSettings = () => {
             <CardContent className="p-4 pt-0 space-y-3">
               <p className="text-xs text-muted-foreground">
                 To send branded registration emails from <strong>comfortlink.app</strong>, 
-                set up a sender domain through Lovable Cloud. This lets your emails come from 
-                your own domain (e.g., notify@comfortlink.app) instead of a generic address.
+                set up a sender domain through Resend or any other SMPT platform like mailgun, Brevo etc. This lets your emails come from 
+                your own domain (e.g., noreply@comfortlink.app) instead of a generic address.
               </p>
               <div className="space-y-2">
                 <p className="text-xs font-medium text-foreground">Steps:</p>
-                <ol className="text-xs text-muted-foreground space-y-1 list-decimal list-inside">
-                  <li>Open <strong>Cloud → Emails</strong> in your Lovable project settings</li>
-                  <li>Click "Set up email domain" and enter <strong>comfortlink.app</strong></li>
-                  <li>Add the provided DNS records at your domain registrar</li>
-                  <li>Wait for DNS verification (up to 72 hours)</li>
-                </ol>
               </div>
               <button
                 onClick={() => setShowEmailInfo(false)}
