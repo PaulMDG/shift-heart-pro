@@ -48,7 +48,7 @@ const AdminCreateShift = () => {
             `<p>Hi ${cg?.full_name || "there"},</p>
              <p>You've been assigned a shift with <strong>${client?.name ?? "a client"}</strong>.</p>
              <p>Date: ${date} &middot; ${startTime} – ${endTime}</p>
-             <p>Please open the ComfortLink app to <strong>accept or decline</strong> this assignment.</p>`
+             <p>Please open the Angels of Comfort app to <strong>accept or decline</strong> this assignment.</p>`
           ),
           create_notification: {
             user_id: caregiverId,
