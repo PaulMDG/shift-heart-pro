@@ -171,13 +171,13 @@ export async function notifyAdmins(args: {
 
 export const emailTemplate = (title: string, bodyHtml: string) => `
 <div style="font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;max-width:560px;margin:0 auto;padding:24px;background:#ffffff;color:#0f172a;">
-  <div style="border-bottom:2px solid #ea580c;padding-bottom:12px;margin-bottom:20px;">
-    <h1 style="margin:0;font-size:20px;color:#ea580c;">ComfortLink</h1>
+  <div style="border-bottom:2px solid #c89052;padding-bottom:12px;margin-bottom:20px;">
+    <h1 style="margin:0;font-size:20px;color:#0c1b34;font-family:Georgia,'Times New Roman',serif;">Angels of Comfort</h1>
   </div>
   <h2 style="font-size:18px;margin:0 0 12px;">${title}</h2>
   <div style="font-size:14px;line-height:1.6;color:#334155;">${bodyHtml}</div>
   <p style="font-size:12px;color:#94a3b8;margin-top:32px;border-top:1px solid #e2e8f0;padding-top:12px;">
-    Sent by ComfortLink &middot; noreply@comfortlink.app
+    Sent by Angels of Comfort &middot; noreply@comfortlink.app
   </p>
 </div>`;
 

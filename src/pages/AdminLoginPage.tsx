@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "@/components/ui/sonner";
-import { Shield, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
+import { LogoMark } from "@/components/brand/Logo";
 
 const AdminLoginPage = () => {
   const [email, setEmail] = useState("");
@@ -44,14 +45,22 @@ const AdminLoginPage = () => {
   };
 
   return (
-    <div className="admin-theme min-h-screen flex items-center justify-center bg-background px-4">
-      <Card className="w-full max-w-sm">
+    <div className="admin-theme min-h-screen flex items-center justify-center bg-background px-4 relative overflow-hidden">
+      <div
+        aria-hidden
+        className="absolute -top-32 -right-32 h-[520px] w-[520px] rounded-full"
+        style={{
+          background:
+            "radial-gradient(circle at center, hsl(38 70% 62% / 0.18), transparent 65%)",
+        }}
+      />
+      <Card className="w-full max-w-sm glass-panel relative">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Shield className="h-6 w-6 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">ComfortLink</CardTitle>
-          <CardDescription>Administrator Portal</CardDescription>
+          <LogoMark className="mx-auto h-14 w-auto text-primary" />
+          <CardTitle className="font-display text-3xl">Angels of Comfort</CardTitle>
+          <CardDescription className="tracking-[0.18em] uppercase text-xs">
+            Administrator Portal
+          </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
@@ -64,6 +73,7 @@ const AdminLoginPage = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder=""
                 required
+                className="h-12 bg-background/60 border-border/60"
               />
             </div>
             <div className="space-y-2">
@@ -76,17 +86,18 @@ const AdminLoginPage = () => {
                 placeholder=""
                 required
                 minLength={6}
+                className="h-12 bg-background/60 border-border/60"
               />
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-3">
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full h-12 rounded-xl gradient-primary text-primary-foreground font-semibold" disabled={loading}>
               {loading && <Loader2 className="animate-spin" />}
               Sign In
             </Button>
             <button
               type="button"
-              className="text-xs text-muted-foreground/60 hover:text-muted-foreground transition-colors mt-1 linear-gradient(135deg,#238b5a,#36a16f)"
+              className="text-xs text-muted-foreground/70 hover:text-foreground transition-colors mt-1"
               onClick={() => navigate("/auth")}
             >
               ← Caregiver Portal
