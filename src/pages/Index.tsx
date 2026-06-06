@@ -16,7 +16,7 @@ import {
 import { useProfile } from "@/hooks/useProfile";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
-import { useMessages } from "@/hooks/useMessages";
+import { useConversations } from "@/hooks/useMessages";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatTime } from "@/lib/format";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
@@ -26,7 +26,7 @@ const Dashboard = () => {
   const { data: shifts = [] } = useShifts();
   const { data: profile } = useProfile();
   const { data: notifications = [] } = useNotifications();
-  const { data: messages = [] } = useMessages?.() ?? ({ data: [] } as any);
+  const { data: conversations = [] } = useConversations();
   const { data: settings } = useAgencySettings();
   const navigate = useNavigate();
 
@@ -62,9 +62,10 @@ const Dashboard = () => {
 
   const isClockedIn = activeShift?.status === "in_progress";
 
-  const unreadMessages = Array.isArray(messages)
-    ? messages.filter((m: any) => !m.read && m.recipient_id === profile?.id).length
-    : 0;
+  const unreadMessages = conversations.reduce(
+    (acc: number, c: any) => acc + (c.unread_count ?? 0),
+    0,
+  );
   const recentAlerts = notifications.slice(0, 2);
 
   const quickAccess = [
