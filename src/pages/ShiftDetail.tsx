@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2, RefreshCw } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2, RefreshCw, ShieldCheck, HelpCircle, Navigation, Calendar, Clock, Briefcase, FileText, Sun, TimerReset } from "lucide-react";
 import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
 import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/components/ui/sonner";
-import { formatTime, formatDateTime } from "@/lib/format";
+import { formatTime, formatDateTime, formatDateLong } from "@/lib/format";
 import LiveLocationStatus from "@/components/LiveLocationStatus";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
@@ -163,47 +163,89 @@ const ShiftDetail = () => {
 
   return (
     <div className="min-h-screen bg-background max-w-lg mx-auto">
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-border">
-        <button onClick={() => navigate(-1)} className="text-primary font-medium flex items-center gap-1">
-          <ArrowLeft className="w-4 h-4" />
-          Back
+      {/* Top bar */}
+      <div className="grid grid-cols-[auto_1fr_auto] items-center px-5 pt-5 pb-3">
+        <button
+          onClick={() => navigate(-1)}
+          className="w-9 h-9 -ml-1 inline-flex items-center justify-center rounded-full text-foreground/90 hover:bg-secondary/60 active:scale-95 transition"
+          aria-label="Back"
+        >
+          <ArrowLeft className="w-5 h-5" />
         </button>
-        <span className="text-lg font-bold text-foreground">CareLink Pro</span>
-        <div className="ml-auto"><LiveLocationStatus compact /></div>
+        <h1 className="text-center text-base font-semibold text-foreground tracking-wide">
+          {status === "completed" ? "Shift Complete" : status === "in_progress" ? "Clock Out" : "Clock In"}
+        </h1>
+        <button
+          onClick={() => navigate(`/messages/new?shiftId=${id}`)}
+          className="inline-flex items-center gap-1.5 text-primary text-sm font-medium px-2 py-1 rounded-full hover:bg-primary/10"
+        >
+          Help <HelpCircle className="w-4 h-4" />
+        </button>
       </div>
 
-      <div className="px-5 py-6 space-y-6 pb-36">
-        <div className="flex items-center justify-between gap-3">
-          <h2 className="text-2xl font-bold text-foreground">Shift Details</h2>
-          <LiveLocationStatus />
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-full bg-primary flex items-center justify-center shrink-0">
-            <User className="w-7 h-7 text-primary-foreground" />
+      <div className="px-5 pb-36 space-y-6">
+        {/* Location verified */}
+        <div className="flex flex-col items-center text-center gap-1 pt-2">
+          <div className="inline-flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-success" />
+            <span className="text-sm font-medium text-foreground">
+              {clientHasLocation ? "Location verified" : "Location not configured"}
+            </span>
           </div>
-          <div>
-            <h3 className="text-lg font-bold text-foreground">{shift.client.name}</h3>
-            <p className="text-sm text-muted-foreground">{shift.client.address}</p>
+          <p className="text-xs text-muted-foreground max-w-[18rem]">{shift.client.address}</p>
+        </div>
+
+        {/* Hero clock button */}
+        {status !== "completed" && status !== "missed" && (
+          <div className="flex justify-center pt-2">
+            <button
+              onClick={status === "not_started" ? handleClockIn : handleClockOut}
+              disabled={updateStatus.isPending || verifyingLocation}
+              className="relative w-64 h-64 rounded-full disabled:opacity-60 active:scale-[0.98] transition-transform group"
+              aria-label={status === "not_started" ? "Clock In" : "Clock Out"}
+            >
+              {/* outer dotted ring */}
+              <span className="absolute inset-0 rounded-full border border-dashed border-primary/40" />
+              {/* glowing solid ring */}
+              <span
+                className="absolute inset-3 rounded-full border-[3px] border-primary"
+                style={{ boxShadow: "0 0 50px hsl(var(--primary) / 0.45), inset 0 0 30px hsl(var(--primary) / 0.25)" }}
+              />
+              {/* inner content */}
+              <span className="absolute inset-3 rounded-full bg-background/40 flex flex-col items-center justify-center gap-2 px-6">
+                {verifyingLocation ? (
+                  <Loader2 className="w-8 h-8 text-primary animate-spin" />
+                ) : status === "in_progress" ? (
+                  <TimerReset className="w-8 h-8 text-primary" />
+                ) : (
+                  <Clock className="w-8 h-8 text-primary" />
+                )}
+                <span className="font-display text-4xl font-bold text-foreground leading-none mt-1">
+                  {verifyingLocation ? "Verifying" : status === "not_started" ? "Clock In" : "Clock Out"}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {status === "not_started" ? "Start your shift" : "End your shift"}
+                </span>
+              </span>
+            </button>
           </div>
-        </div>
+        )}
 
-        <div className="border-t border-border" />
-
-        <div className="flex gap-8">
-          <span className="text-base font-semibold text-foreground w-24 shrink-0">Scheduled</span>
-          <div>
-            <p className="text-lg font-bold text-foreground">{formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
-            <p className="text-sm text-muted-foreground">{shift.client.care_type}</p>
+        {status === "completed" && (
+          <div className="mx-auto w-fit inline-flex items-center gap-2 px-5 py-3 rounded-full bg-success/15 text-success font-semibold">
+            <CheckCircle2 className="w-5 h-5" /> Shift completed
           </div>
-        </div>
+        )}
 
-        <div className="border-t border-border" />
-
-        <div className="flex gap-8">
-          <span className="text-base font-semibold text-foreground w-24 shrink-0">Notes</span>
-          <p className="text-sm text-muted-foreground leading-relaxed">{shift.admin_notes}</p>
-        </div>
+        {/* Geofence helper */}
+        {status !== "completed" && (
+          <div className="flex items-start gap-2 justify-center text-center">
+            <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-sm text-muted-foreground max-w-xs">
+              You must be within {Math.round(metersToFeet(MAX_DISTANCE_METERS))} ft of your client's location to clock {status === "in_progress" ? "out" : "in"}.
+            </p>
+          </div>
+        )}
 
         {locationError && (
           <div className="bg-destructive/10 border border-destructive/20 rounded-2xl p-4 space-y-2">
@@ -240,31 +282,74 @@ const ShiftDetail = () => {
           </div>
         )}
 
-        {verifyingLocation && (
-          <div className="flex items-center justify-center gap-2 py-3">
-            <Loader2 className="w-5 h-5 animate-spin text-primary" />
-            <span className="text-sm text-muted-foreground">Verifying your location…</span>
+        {/* Today's schedule card */}
+        <section className="rounded-2xl bg-card border border-border/60 p-5 shadow-lg shadow-background/40">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase">Today's Schedule</h2>
+            <button
+              onClick={() => navigate("/shifts")}
+              className="text-sm font-medium text-primary inline-flex items-center gap-0.5 hover:underline"
+            >
+              View full schedule <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
-        )}
+          <div className="flex items-center gap-4">
+            <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
+              <User className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="font-display text-xl font-semibold text-foreground truncate">{shift.client.name}</h3>
+              <p className="text-sm text-muted-foreground mt-0.5">{formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
+              <p className="text-sm text-muted-foreground leading-snug truncate">{shift.client.address}</p>
+            </div>
+            {shift.client.lat != null && shift.client.lng != null && (
+              <a
+                href={`https://www.google.com/maps/dir/?api=1&destination=${shift.client.lat},${shift.client.lng}`}
+                target="_blank"
+                rel="noreferrer"
+                className="flex flex-col items-center gap-1 shrink-0"
+              >
+                <span className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+                  <Navigation className="w-5 h-5 text-primary" />
+                </span>
+                <span className="text-xs text-foreground/80">Directions</span>
+              </a>
+            )}
+          </div>
+        </section>
 
-        {status !== "completed" && status !== "missed" && (
+        {/* Shift details card */}
+        <section className="rounded-2xl bg-card border border-border/60 p-5 shadow-lg shadow-background/40">
+          <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase mb-3">Shift Details</h2>
+          <dl className="divide-y divide-border/60">
+            <DetailRow icon={Calendar} label="Date" value={formatDateLong(shift.date)} />
+            <DetailRow
+              icon={Clock}
+              label="Scheduled"
+              value={`${formatTime(shift.start_time)} – ${formatTime(shift.end_time)}`}
+            />
+            <DetailRow icon={Briefcase} label="Position" value="Caregiver" />
+            <DetailRow icon={FileText} label="Shift type" value={shift.client.care_type || "Personal Care"} />
+            {shift.admin_notes && (
+              <DetailRow icon={FileText} label="Notes" value={shift.admin_notes} multiline />
+            )}
+          </dl>
+        </section>
+
+        {/* Tip */}
+        {status === "not_started" && (
           <button
-            onClick={status === "not_started" ? handleClockIn : handleClockOut}
-            disabled={updateStatus.isPending || verifyingLocation}
-            className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground text-lg font-bold tracking-wide mt-4 active:scale-[0.98] transition-transform disabled:opacity-50"
+            type="button"
+            className="w-full flex items-center gap-3 rounded-2xl bg-card border border-border/60 p-4 text-left active:scale-[0.99] transition"
           >
-            {verifyingLocation ? (
-              <span className="flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" /> Verifying Location…
-              </span>
-            ) : status === "not_started" ? "CLOCK IN" : "CLOCK OUT"}
+            <span className="w-10 h-10 rounded-full bg-primary/15 flex items-center justify-center shrink-0">
+              <Sun className="w-5 h-5 text-primary" />
+            </span>
+            <span className="flex-1 text-sm text-foreground/90 leading-snug">
+              <span className="font-semibold">Tip:</span> Clock in 5–10 minutes before your visit to review the care plan.
+            </span>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </button>
-        )}
-
-        {status === "completed" && (
-          <div className="w-full py-4 rounded-2xl bg-success/15 text-success text-lg font-bold text-center">
-            ✓ Completed
-          </div>
         )}
 
         {/* Verification Details */}
@@ -354,28 +439,31 @@ const ShiftDetail = () => {
           </div>
         )}
 
-        <div className="border-t border-border" />
-
-        <div>
-          <h3 className="text-xl font-bold text-foreground mb-3">Shift Actions</h3>
+        {/* Shift actions */}
+        <section className="rounded-2xl bg-card border border-border/60 overflow-hidden">
           <button
             onClick={() => navigate(`/shifts/${id}/swap`)}
-            className="w-full flex items-center justify-between py-3"
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-secondary/40 transition"
           >
-            <span className="text-base text-foreground">Swap Shift</span>
-            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-          </button>
-          <div className="border-t border-border" />
-          <button
-            onClick={() => navigate(`/messages/new?shiftId=${id}`)}
-            className="w-full flex items-center justify-between py-3"
-          >
-            <span className="text-base text-foreground flex items-center gap-2">
-              <MessageSquare className="w-4 h-4 text-primary" />
-              Message about this shift
+            <span className="flex items-center gap-3 text-foreground">
+              <RefreshCw className="w-4 h-4 text-primary" /> Swap shift
             </span>
             <ChevronRight className="w-5 h-5 text-muted-foreground" />
           </button>
+          <div className="border-t border-border/60" />
+          <button
+            onClick={() => navigate(`/messages/new?shiftId=${id}`)}
+            className="w-full flex items-center justify-between px-5 py-4 hover:bg-secondary/40 transition"
+          >
+            <span className="flex items-center gap-3 text-foreground">
+              <MessageSquare className="w-4 h-4 text-primary" /> Message about this shift
+            </span>
+            <ChevronRight className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </section>
+
+        <div className="flex justify-center pt-1">
+          <LiveLocationStatus compact />
         </div>
       </div>
 
@@ -426,3 +514,25 @@ const ShiftDetail = () => {
 };
 
 export default ShiftDetail;
+
+function DetailRow({
+  icon: Icon,
+  label,
+  value,
+  multiline,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  multiline?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-3 py-3">
+      <Icon className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+      <span className="text-sm text-muted-foreground w-24 shrink-0">{label}</span>
+      <span className={`text-sm font-medium text-foreground flex-1 ${multiline ? "" : "text-right"}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
