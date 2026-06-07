@@ -21,6 +21,9 @@ const ShiftDetail = () => {
   const liveLocation = useLiveLocation();
   const updateStatus = useUpdateShiftStatus();
   const updateAssignment = useUpdateAssignmentStatus();
+  const { data: visitHistory = [] } = useVisitHistory(shift?.client?.id, id);
+  const { data: shiftDocs = [] } = useShiftDocuments(id);
+  const uploadDoc = useUploadShiftDocument();
   const [showClockOut, setShowClockOut] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [verifyingLocation, setVerifyingLocation] = useState(false);
@@ -304,18 +307,25 @@ const ShiftDetail = () => {
               <p className="text-sm text-muted-foreground mt-0.5">{formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
               <p className="text-sm text-muted-foreground leading-snug truncate">{shift.client.address}</p>
             </div>
-            {shift.client.lat != null && shift.client.lng != null && (
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${shift.client.lat},${shift.client.lng}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex flex-col items-center gap-1 shrink-0"
+            {(shift.client.lat != null || !!shift.client.address) && (
+              <button
+                type="button"
+                onClick={() =>
+                  openDirections({
+                    lat: shift.client.lat,
+                    lng: shift.client.lng,
+                    address: shift.client.address,
+                    label: shift.client.name,
+                  })
+                }
+                className="flex flex-col items-center gap-1 shrink-0 active:scale-95 transition-transform"
+                aria-label={`Directions to ${shift.client.name}`}
               >
-                <span className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+                <span className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center ring-1 ring-primary/20">
                   <Navigation className="w-5 h-5 text-primary" />
                 </span>
                 <span className="text-xs text-foreground/80">Directions</span>
-              </a>
+              </button>
             )}
           </div>
         </section>
