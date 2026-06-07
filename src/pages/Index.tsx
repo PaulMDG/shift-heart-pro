@@ -21,6 +21,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { formatTime } from "@/lib/format";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { metersToFeet } from "@/hooks/useGeolocation";
+import { openDirections } from "@/lib/directions";
 
 const Dashboard = () => {
   const { data: shifts = [] } = useShifts();
@@ -249,7 +250,14 @@ const Dashboard = () => {
 
               <button
                 type="button"
-                onClick={() => navigate(`/shifts/${nextShift.id}`)}
+                onClick={() =>
+                  openDirections({
+                    lat: nextShift.client?.lat,
+                    lng: nextShift.client?.lng,
+                    address: nextShift.client?.address,
+                    label: nextShift.client?.name,
+                  })
+                }
                 aria-label="Directions"
                 className="shrink-0 flex flex-col items-center gap-1 text-muted-foreground"
               >
