@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2, RefreshCw, ShieldCheck, HelpCircle, Navigation, Calendar, Clock, Briefcase, FileText, Sun, TimerReset } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2, RefreshCw, ShieldCheck, HelpCircle, Navigation, Calendar, Clock, Briefcase, FileText, Sun, TimerReset, Upload, Paperclip, History } from "lucide-react";
 import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
 import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
@@ -10,6 +10,8 @@ import { formatTime, formatDateTime, formatDateLong } from "@/lib/format";
 import LiveLocationStatus from "@/components/LiveLocationStatus";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
+import { openDirections } from "@/lib/directions";
+import { useVisitHistory, useShiftDocuments, useUploadShiftDocument } from "@/hooks/useShiftDocuments";
 
 const ShiftDetail = () => {
   const { id } = useParams();
@@ -19,6 +21,9 @@ const ShiftDetail = () => {
   const liveLocation = useLiveLocation();
   const updateStatus = useUpdateShiftStatus();
   const updateAssignment = useUpdateAssignmentStatus();
+  const { data: visitHistory = [] } = useVisitHistory(shift?.client?.id, id);
+  const { data: shiftDocs = [] } = useShiftDocuments(id);
+  const uploadDoc = useUploadShiftDocument();
   const [showClockOut, setShowClockOut] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [verifyingLocation, setVerifyingLocation] = useState(false);
@@ -302,18 +307,25 @@ const ShiftDetail = () => {
               <p className="text-sm text-muted-foreground mt-0.5">{formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
               <p className="text-sm text-muted-foreground leading-snug truncate">{shift.client.address}</p>
             </div>
-            {shift.client.lat != null && shift.client.lng != null && (
-              <a
-                href={`https://www.google.com/maps/dir/?api=1&destination=${shift.client.lat},${shift.client.lng}`}
-                target="_blank"
-                rel="noreferrer"
-                className="flex flex-col items-center gap-1 shrink-0"
+            {(shift.client.lat != null || !!shift.client.address) && (
+              <button
+                type="button"
+                onClick={() =>
+                  openDirections({
+                    lat: shift.client.lat,
+                    lng: shift.client.lng,
+                    address: shift.client.address,
+                    label: shift.client.name,
+                  })
+                }
+                className="flex flex-col items-center gap-1 shrink-0 active:scale-95 transition-transform"
+                aria-label={`Directions to ${shift.client.name}`}
               >
-                <span className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center">
+                <span className="w-12 h-12 rounded-full bg-secondary flex items-center justify-center ring-1 ring-primary/20">
                   <Navigation className="w-5 h-5 text-primary" />
                 </span>
                 <span className="text-xs text-foreground/80">Directions</span>
-              </a>
+              </button>
             )}
           </div>
         </section>
@@ -335,6 +347,107 @@ const ShiftDetail = () => {
             )}
           </dl>
         </section>
+
+        {/* Visit Documentation */}
+        <section className="rounded-2xl bg-card border border-border/60 p-5 shadow-lg shadow-background/40">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase">
+              Visit Documentation
+            </h2>
+            {shiftDocs.length > 0 && (
+              <span className="text-xs text-muted-foreground">{shiftDocs.length} file{shiftDocs.length === 1 ? "" : "s"}</span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+            Attach signed forms, photos of care plans, or any documentation specific to this visit.
+          </p>
+
+          {shiftDocs.length > 0 && (
+            <ul className="divide-y divide-border/60 mb-3">
+              {shiftDocs.map((doc: any) => (
+                <li key={doc.id} className="py-2.5 flex items-center gap-3">
+                  <Paperclip className="w-4 h-4 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground truncate">
+                      {doc.file_path?.split("/").pop() ?? "Document"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {formatDateTime(doc.uploaded_at)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <label
+            htmlFor="visit-doc-upload"
+            className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 text-sm font-semibold text-primary cursor-pointer hover:bg-primary/10 transition ${
+              uploadDoc.isPending ? "opacity-60 pointer-events-none" : ""
+            }`}
+          >
+            {uploadDoc.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+            {uploadDoc.isPending ? "Uploading…" : "Upload document"}
+          </label>
+          <input
+            id="visit-doc-upload"
+            type="file"
+            className="hidden"
+            accept="image/*,application/pdf,.doc,.docx"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && id) uploadDoc.mutate({ shiftId: id, file });
+              e.target.value = "";
+            }}
+          />
+        </section>
+
+        {/* Visit History preview */}
+        {visitHistory.length > 0 && (
+          <section className="rounded-2xl bg-card border border-border/60 p-5 shadow-lg shadow-background/40">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase">
+                Recent Visits
+              </h2>
+              <button
+                type="button"
+                onClick={() => navigate("/shifts")}
+                className="text-sm font-medium text-primary inline-flex items-center gap-0.5 hover:underline"
+              >
+                View all <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            <ul className="divide-y divide-border/60">
+              {visitHistory.map((v: any) => (
+                <li key={v.id}>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/shifts/${v.id}`)}
+                    className="w-full flex items-center gap-3 py-3 text-left"
+                  >
+                    <span className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                      <History className="w-4 h-4 text-primary" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">
+                        {formatDateLong(v.date)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatTime(v.start_time)} – {formatTime(v.end_time)}
+                        {v.clock_out_notes ? " · Notes on file" : ""}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
 
         {/* Tip */}
         {status === "not_started" && (
