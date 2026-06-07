@@ -514,3 +514,25 @@ const ShiftDetail = () => {
 };
 
 export default ShiftDetail;
+
+function DetailRow({
+  icon: Icon,
+  label,
+  value,
+  multiline,
+}: {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  value: string;
+  multiline?: boolean;
+}) {
+  return (
+    <div className="flex items-start gap-3 py-3">
+      <Icon className="w-5 h-5 text-muted-foreground mt-0.5 shrink-0" />
+      <span className="text-sm text-muted-foreground w-24 shrink-0">{label}</span>
+      <span className={`text-sm font-medium text-foreground flex-1 ${multiline ? "" : "text-right"}`}>
+        {value}
+      </span>
+    </div>
+  );
+}
