@@ -348,6 +348,107 @@ const ShiftDetail = () => {
           </dl>
         </section>
 
+        {/* Visit Documentation */}
+        <section className="rounded-2xl bg-card border border-border/60 p-5 shadow-lg shadow-background/40">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase">
+              Visit Documentation
+            </h2>
+            {shiftDocs.length > 0 && (
+              <span className="text-xs text-muted-foreground">{shiftDocs.length} file{shiftDocs.length === 1 ? "" : "s"}</span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mb-3 leading-relaxed">
+            Attach signed forms, photos of care plans, or any documentation specific to this visit.
+          </p>
+
+          {shiftDocs.length > 0 && (
+            <ul className="divide-y divide-border/60 mb-3">
+              {shiftDocs.map((doc: any) => (
+                <li key={doc.id} className="py-2.5 flex items-center gap-3">
+                  <Paperclip className="w-4 h-4 text-primary shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-foreground truncate">
+                      {doc.file_path?.split("/").pop() ?? "Document"}
+                    </p>
+                    <p className="text-[11px] text-muted-foreground">
+                      {formatDateTime(doc.uploaded_at)}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <label
+            htmlFor="visit-doc-upload"
+            className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 text-sm font-semibold text-primary cursor-pointer hover:bg-primary/10 transition ${
+              uploadDoc.isPending ? "opacity-60 pointer-events-none" : ""
+            }`}
+          >
+            {uploadDoc.isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Upload className="w-4 h-4" />
+            )}
+            {uploadDoc.isPending ? "Uploading…" : "Upload document"}
+          </label>
+          <input
+            id="visit-doc-upload"
+            type="file"
+            className="hidden"
+            accept="image/*,application/pdf,.doc,.docx"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file && id) uploadDoc.mutate({ shiftId: id, file });
+              e.target.value = "";
+            }}
+          />
+        </section>
+
+        {/* Visit History preview */}
+        {visitHistory.length > 0 && (
+          <section className="rounded-2xl bg-card border border-border/60 p-5 shadow-lg shadow-background/40">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase">
+                Recent Visits
+              </h2>
+              <button
+                type="button"
+                onClick={() => navigate("/shifts")}
+                className="text-sm font-medium text-primary inline-flex items-center gap-0.5 hover:underline"
+              >
+                View all <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+            <ul className="divide-y divide-border/60">
+              {visitHistory.map((v: any) => (
+                <li key={v.id}>
+                  <button
+                    type="button"
+                    onClick={() => navigate(`/shifts/${v.id}`)}
+                    className="w-full flex items-center gap-3 py-3 text-left"
+                  >
+                    <span className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
+                      <History className="w-4 h-4 text-primary" />
+                    </span>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-foreground">
+                        {formatDateLong(v.date)}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {formatTime(v.start_time)} – {formatTime(v.end_time)}
+                        {v.clock_out_notes ? " · Notes on file" : ""}
+                      </p>
+                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
+
         {/* Tip */}
         {status === "not_started" && (
           <button
