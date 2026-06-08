@@ -281,6 +281,7 @@ const ChatPage = () => {
                           )
                       : undefined
                   }
+                  currentUserId={user?.id}
                 />
               ))}
             </div>
