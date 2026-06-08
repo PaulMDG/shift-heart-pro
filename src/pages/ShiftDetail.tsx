@@ -190,7 +190,7 @@ const ShiftDetail = () => {
   const handleClockOut = () => {
     setLocationError(null);
     verifyLocationAndProceed(() => {
-      setShowClockOut(true);
+      navigate(`/shifts/${shift.id}/care-notes`);
     });
   };
 
