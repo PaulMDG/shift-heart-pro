@@ -6,8 +6,10 @@ import {
   ArrowLeft,
   Car,
   CheckCheck,
+  ClipboardCheck,
   FileText,
   Image as ImageIcon,
+  Link2,
   Mic,
   MoreVertical,
   Paperclip,
@@ -18,6 +20,7 @@ import {
   Send,
   Shield,
   Smile,
+  StickyNote,
   Trash2,
   Video,
   X,
@@ -25,7 +28,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useChatMessages, useSendMessage, type Message } from "@/hooks/useMessages";
+import { useChatMessages, useSendMessage, useConvertMessageToCareNote, type Message } from "@/hooks/useMessages";
 import { uploadMessageFile } from "@/hooks/useMessageUpload";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { toast } from "sonner";
@@ -58,9 +61,11 @@ const ChatPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const shiftId = searchParams.get("shiftId") || undefined;
+  const [scopeToShift, setScopeToShift] = useState<boolean>(!!shiftId);
   const { user } = useAuth();
-  const { data: messages = [], isLoading } = useChatMessages(userId);
+  const { data: messages = [], isLoading } = useChatMessages(userId, scopeToShift ? shiftId : undefined);
   const sendMessage = useSendMessage();
+  const convertToCareNote = useConvertMessageToCareNote();
   const recorder = useVoiceRecorder();
 
   const [text, setText] = useState("");
@@ -199,6 +204,29 @@ const ChatPage = () => {
         <button className="p-2 text-muted-foreground"><MoreVertical className="w-5 h-5" /></button>
       </header>
 
+      {/* Shift scope chip */}
+      {shiftId && (
+        <div className="px-4 pt-3">
+          <button
+            onClick={() => setScopeToShift((v) => !v)}
+            className={cn(
+              "w-full flex items-center gap-2 rounded-xl px-3 py-2 border text-sm transition-colors",
+              scopeToShift
+                ? "bg-primary/10 border-primary/30 text-primary"
+                : "bg-card border-border/60 text-muted-foreground",
+            )}
+          >
+            <Link2 className="w-4 h-4 shrink-0" />
+            <span className="flex-1 text-left">
+              {scopeToShift ? "Showing messages for this shift" : "Showing all messages"}
+            </span>
+            <span className="text-[11px] font-medium px-2 py-0.5 rounded-full bg-background/60">
+              {scopeToShift ? "Shift" : "All"}
+            </span>
+          </button>
+        </div>
+      )}
+
       {/* Pinned + secure banners */}
       <div className="px-4 pt-3 space-y-2">
         {pinned && (
@@ -240,6 +268,19 @@ const ChatPage = () => {
                   onReact={() => toggleReaction(msg.id)}
                   onPin={() => togglePin(msg.id)}
                   isPinned={pinnedId === msg.id}
+                  canConvert={!!shiftId}
+                  onConvert={
+                    shiftId
+                      ? () =>
+                          convertToCareNote.mutate(
+                            { message: msg, shiftId },
+                            {
+                              onSuccess: () => toast.success("Added to care notes"),
+                              onError: (e: any) => toast.error(e?.message || "Failed to convert"),
+                            },
+                          )
+                      : undefined
+                  }
                 />
               ))}
             </div>
