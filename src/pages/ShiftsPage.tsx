@@ -17,7 +17,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { openDirections } from "@/lib/directions";
 import { formatTime } from "@/lib/format";
 import { useNavigate } from "react-router-dom";
-import { Navigation, MapPin, Clock, CheckCircle2, Route, Wand2, Loader2, ChevronRight, Calendar as CalendarIcon, ListChecks } from "lucide-react";
+import { Navigation, MapPin, Clock, CheckCircle2, Route, Wand2, Loader2, ChevronRight, Calendar as CalendarIcon, ListChecks, AlertTriangle, Timer } from "lucide-react";
 
 const tabs = ["My Day", "Calendar", "Swaps"] as const;
 
@@ -50,7 +50,14 @@ const ShiftsPage = () => {
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>("My Day");
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
   const [optimizedOrder, setOptimizedOrder] = useState<string[] | null>(null);
-  const [routeStats, setRouteStats] = useState<{ durationSec: number; distanceMeters: number; legs: { durationSec: number; distanceMeters: number }[] } | null>(null);
+  const [routeStats, setRouteStats] = useState<{
+    durationSec: number;
+    distanceMeters: number;
+    legs: { durationSec: number; distanceMeters: number }[];
+    fallback?: boolean;
+    fallbackReason?: string;
+    computedAt?: number;
+  } | null>(null);
   const [optimizing, setOptimizing] = useState(false);
 
   const { data: shifts = [], isLoading } = useShifts();
@@ -119,8 +126,19 @@ const ShiftsPage = () => {
       if (error) throw error;
       const completedIds = orderedDayShifts.filter((s) => s.status === "completed").map((s) => s.id);
       setOptimizedOrder([...completedIds, ...(data.orderedIds as string[])]);
-      setRouteStats({ durationSec: data.durationSec, distanceMeters: data.distanceMeters, legs: data.legs ?? [] });
-      toast.success("Route optimized");
+      setRouteStats({
+        durationSec: data.durationSec,
+        distanceMeters: data.distanceMeters,
+        legs: data.legs ?? [],
+        fallback: !!data.fallback,
+        fallbackReason: data.fallbackReason,
+        computedAt: Date.now(),
+      });
+      if (data.fallback) {
+        toast.warning?.("Using approximate route — Google Maps unavailable") ?? toast.error("Using approximate route — Google Maps unavailable");
+      } else {
+        toast.success("Route optimized");
+      }
     } catch (e: any) {
       toast.error(e.message ?? "Failed to optimize route");
     } finally {
@@ -233,6 +251,11 @@ const ShiftsPage = () => {
                 {optimizing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wand2 className="w-4 h-4" />}
                 {optimizing ? "Optimizing route…" : optimizedOrder ? "Re-optimize route" : "Optimize today's route"}
               </button>
+            )}
+
+            {/* Route summary / fallback banner */}
+            {routeStats && (
+              <RouteSummary stats={routeStats} />
             )}
 
             {/* Timeline */}
