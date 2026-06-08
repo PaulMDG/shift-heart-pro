@@ -449,15 +449,20 @@ const CareNotesPage = () => {
           </div>
         </section>
 
+        {/* Version history (shown once at least one submission exists) */}
+        {existing?.submitted_at && (
+          <CareSummaryVersions shiftId={id!} locked={approved} />
+        )}
+
         {gpsError && (
           <div className="rounded-2xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive leading-relaxed">
             {gpsError}
           </div>
         )}
-        <button onClick={handleSubmit} disabled={upsert.isPending || updateStatus.isPending || verifying || progress < 100}
+        <button onClick={handleSubmit} disabled={approved || upsert.isPending || updateStatus.isPending || verifying || progress < 100}
           className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-          {(upsert.isPending || updateStatus.isPending || verifying) ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-          {verifying ? "Verifying location…" : shift.status === "in_progress" ? "Save & Clock Out" : "Save Visit Summary"}
+          {(upsert.isPending || updateStatus.isPending || verifying) ? <Loader2 className="w-5 h-5 animate-spin" /> : approved ? <Lock className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+          {approved ? "Locked — timesheet approved" : verifying ? "Verifying location…" : shift.status === "in_progress" ? "Save & Clock Out" : "Save Visit Summary"}
         </button>
         {progress < 100 && (
           <p className="text-xs text-muted-foreground text-center">Complete every care summary item to enable submission.</p>
