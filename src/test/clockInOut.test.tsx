@@ -119,6 +119,7 @@ function renderShift() {
       <MemoryRouter initialEntries={["/shifts/shift-1"]}>
         <Routes>
           <Route path="/shifts/:id" element={<ShiftDetail />} />
+          <Route path="/shifts/:id/care-notes" element={<div data-testid="care-notes-stub">Care Notes Page</div>} />
         </Routes>
       </MemoryRouter>
     </QueryClientProvider>,
@@ -177,7 +178,7 @@ describe("Caregiver clock-in / clock-out flow", () => {
     expect(updateStatusMock).not.toHaveBeenCalled();
   });
 
-  it("opens the clock-out form when clocking out from inside the geofence", async () => {
+  it("navigates to the Care Notes page when clocking out from inside the geofence", async () => {
     mockGeolocation(40.0, -75.0, 10);
     shiftState = { ...baseShift, status: "in_progress", clock_in_time: new Date().toISOString() };
     renderShift();
@@ -185,10 +186,8 @@ describe("Caregiver clock-in / clock-out flow", () => {
     fireEvent.click(screen.getByRole("button", { name: /^Clock Out$/i }));
 
     await waitFor(() =>
-      expect(screen.getByPlaceholderText(/Describe the visit/i)).toBeInTheDocument(),
+      expect(screen.getByTestId("care-notes-stub")).toBeInTheDocument(),
     );
-    expect(screen.getAllByText(/Care Notes/i).length).toBeGreaterThan(0);
-    expect(screen.getByText(/Mileage Driven/i)).toBeInTheDocument();
   });
 
   it("reuses the same geofence + retry messaging for clock-out as clock-in", async () => {
@@ -208,11 +207,11 @@ describe("Caregiver clock-in / clock-out flow", () => {
     expect(screen.getAllByText(/within .* of the client address/i).length).toBeGreaterThan(0);
   });
 
-  it("renders Recent Visits items linking to that completed shift's detail page", async () => {
+  it("renders Care Summary History items linking to that completed shift's detail page", async () => {
     mockGeolocation(40.0, -75.0, 10);
     renderShift();
 
-    expect(await screen.findByText(/Recent Visits/i)).toBeInTheDocument();
+    expect(await screen.findByText(/Care Summary History/i)).toBeInTheDocument();
     const visitButtons = screen.getAllByRole("button");
     const recentVisit = visitButtons.find((b) =>
       /Notes on file/i.test(b.textContent ?? ""),
