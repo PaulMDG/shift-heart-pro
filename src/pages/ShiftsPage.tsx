@@ -330,6 +330,41 @@ function Stat({ label, value, icon: Icon }: { label: string; value: string; icon
   );
 }
 
+function RouteSummary({ stats }: { stats: { durationSec: number; distanceMeters: number; fallback?: boolean; fallbackReason?: string; computedAt?: number } }) {
+  const computedAt = stats.computedAt ?? Date.now();
+  const eta = new Date(computedAt + stats.durationSec * 1000);
+  const etaText = eta.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  if (stats.fallback) {
+    return (
+      <div className="rounded-2xl border border-warning/40 bg-warning/10 p-4 space-y-2">
+        <div className="flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+          <div className="flex-1">
+            <p className="text-xs font-bold text-warning uppercase tracking-wider">Approximate route</p>
+            <p className="text-[11px] text-foreground/80 leading-relaxed mt-0.5">
+              Live Google Maps routing is temporarily unavailable
+              {stats.fallbackReason ? ` (${stats.fallbackReason})` : ""}.
+              We estimated the order, distance and ETA using straight-line driving math.
+              Navigation still works — tap <strong>Start</strong> to open turn-by-turn directions.
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-3 pt-1 border-t border-warning/30">
+          <span className="inline-flex items-center gap-1.5 text-xs text-foreground"><Timer className="w-3.5 h-3.5 text-warning" /> ETA <strong className="font-bold">{etaText}</strong></span>
+          <span className="inline-flex items-center gap-1.5 text-xs text-foreground"><Route className="w-3.5 h-3.5 text-warning" /> {fmtMin(stats.durationSec)} · {fmtMiles(stats.distanceMeters)}</span>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="rounded-2xl border border-primary/30 bg-primary/5 p-3 flex items-center gap-3">
+      <span className="inline-flex items-center gap-1.5 text-xs text-foreground"><Timer className="w-3.5 h-3.5 text-primary" /> ETA <strong className="font-bold">{etaText}</strong></span>
+      <span className="inline-flex items-center gap-1.5 text-xs text-foreground"><Route className="w-3.5 h-3.5 text-primary" /> {fmtMin(stats.durationSec)} · {fmtMiles(stats.distanceMeters)}</span>
+      <span className="ml-auto text-[10px] text-muted-foreground uppercase tracking-wider">Live</span>
+    </div>
+  );
+}
+
 function RouteMap({ origin, stops }: { origin: { lat: number; lng: number } | null; stops: ShiftWithClient[] }) {
   const points = [
     ...(origin ? [{ lat: origin.lat, lng: origin.lng, label: "•" }] : []),
