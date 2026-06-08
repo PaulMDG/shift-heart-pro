@@ -217,7 +217,7 @@ export function useSendMessage() {
         attachment_name: attachment?.name ?? null,
         attachment_size: attachment?.size ?? null,
         attachment_duration: attachment?.duration ?? null,
-      });
+      } as any);
 
       if (error) throw error;
     },
