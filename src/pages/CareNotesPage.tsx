@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronRight, FileText, Camera, Mic, MicOff, Plus, X, Eye, EyeOff, Loader2, CheckCircle2, Image as ImageIcon, Clock } from "lucide-react";
+import { ArrowLeft, ChevronRight, FileText, Camera, Mic, MicOff, Plus, X, Eye, EyeOff, Loader2, CheckCircle2, Image as ImageIcon, Clock, ShieldCheck, ShieldAlert, MapPin, Lock, AlertTriangle, RefreshCw } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useShift, useUpdateShiftStatus } from "@/hooks/useShifts";
 import { useCareSummary, useUpsertCareSummary, useQuickNoteTemplates, useAddQuickNoteTemplate, DEFAULT_QUICK_NOTES } from "@/hooks/useCareSummary";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
+import { useLiveLocation } from "@/hooks/useLiveLocation";
+import CareSummaryVersions from "@/components/shifts/CareSummaryVersions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,6 +31,7 @@ const CareNotesPage = () => {
   const updateStatus = useUpdateShiftStatus();
   const recorder = useVoiceRecorder();
   const { data: settings } = useAgencySettings();
+  const liveLoc = useLiveLocation();
 
   const [meals, setMeals] = useState<string | null>(null);
   const [meds, setMeds] = useState<string | null>(null);
@@ -49,7 +52,28 @@ const CareNotesPage = () => {
   const [now, setNow] = useState(() => Date.now());
   const [verifying, setVerifying] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  const [verifyResult, setVerifyResult] = useState<{
+    ok: boolean;
+    accuracyM: number | null;
+    distanceM: number | null;
+    accuracyThresholdM: number;
+    distanceThresholdM: number;
+    reason?: string;
+    timestamp: string;
+  } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const approved = (shift as any)?.timesheet_status === "approved";
+  const accuracyThreshold = settings?.accuracy_threshold_m ?? 100;
+
+  // Live, pre-submission distance/accuracy preview (passive — no extra GPS prompts)
+  const liveDistanceM = useMemo(() => {
+    if (!liveLoc.position || !shift?.client?.lat || !shift?.client?.lng) return null;
+    return getDistanceMeters(liveLoc.position, { lat: shift.client.lat, lng: shift.client.lng });
+  }, [liveLoc.position, shift?.client?.lat, shift?.client?.lng]);
+  const liveAccuracyM = liveLoc.accuracy ?? null;
+  const liveAccuracyOk = liveAccuracyM != null && liveAccuracyM <= accuracyThreshold;
+  const liveDistanceOk = liveDistanceM != null && liveDistanceM <= MAX_DISTANCE_METERS;
 
   useEffect(() => {
     if (!existing) return;
@@ -144,6 +168,10 @@ const CareNotesPage = () => {
 
   const handleSubmit = async () => {
     if (!id || !shift) return;
+    if (approved) {
+      toast.error("This shift's timesheet has been approved — care notes are locked.");
+      return;
+    }
     if (progress < 100) {
       toast.error("Complete every care summary item before submitting.");
       return;
@@ -152,25 +180,34 @@ const CareNotesPage = () => {
     if (shift.status === "in_progress") {
       if (shift.client.lat == null || shift.client.lng == null) {
         const msg = "Client location is not configured. Contact your administrator before clocking out.";
-        setGpsError(msg); toast.error(msg); return;
+        setGpsError(msg);
+        setVerifyResult({ ok: false, accuracyM: null, distanceM: null, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, reason: msg, timestamp: new Date().toISOString() });
+        toast.error(msg); return;
       }
       setGpsError(null); setVerifying(true);
       try {
         const pos = await getCurrentPosition();
-        const accuracyThreshold = settings?.accuracy_threshold_m ?? 100;
         if (pos.accuracy == null || pos.accuracy > accuracyThreshold) {
           const msg = `GPS accuracy is too low (±${Math.round(metersToFeet(pos.accuracy ?? 0))} ft). Required ±${Math.round(metersToFeet(accuracyThreshold))} ft or better.`;
-          setGpsError(msg); toast.error("GPS accuracy not met"); return;
+          setGpsError(msg);
+          setVerifyResult({ ok: false, accuracyM: pos.accuracy ?? null, distanceM: null, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, reason: "Accuracy above threshold", timestamp: new Date().toISOString() });
+          toast.error("GPS accuracy not met"); return;
         }
         const distance = getDistanceMeters(pos, { lat: shift.client.lat, lng: shift.client.lng });
         if (distance > MAX_DISTANCE_METERS) {
           const msg = `You are ${formatDistanceMiles(distance)} from ${shift.client.name}. You must be within ${formatDistanceMiles(MAX_DISTANCE_METERS)} of the client address to clock out.`;
-          setGpsError(msg); toast.error("Too far from client"); return;
+          setGpsError(msg);
+          setVerifyResult({ ok: false, accuracyM: pos.accuracy, distanceM: distance, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, reason: "Outside geofence", timestamp: new Date().toISOString() });
+          toast.error("Too far from client"); return;
         }
         clockOutPos = pos;
+        setVerifyResult({ ok: true, accuracyM: pos.accuracy, distanceM: distance, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, timestamp: new Date().toISOString() });
         toast.success(`Location verified (${formatDistanceMiles(distance)} from client)`);
       } catch (e: any) {
-        setGpsError(e.message ?? "Failed to verify location"); toast.error(e.message ?? "GPS error"); return;
+        const msg = e.message ?? "Failed to verify location";
+        setGpsError(msg);
+        setVerifyResult({ ok: false, accuracyM: null, distanceM: null, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, reason: msg, timestamp: new Date().toISOString() });
+        toast.error(msg); return;
       } finally {
         setVerifying(false);
       }
@@ -259,6 +296,35 @@ const CareNotesPage = () => {
             </div>
           </div>
         </div>
+
+        {approved && (
+          <div className="rounded-2xl border border-success/40 bg-success/10 p-4 flex items-start gap-2">
+            <Lock className="w-4 h-4 text-success shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-success uppercase tracking-wider">Care notes locked</p>
+              <p className="text-[11px] text-foreground/80 mt-1 leading-relaxed">
+                Your timesheet for this shift has been approved. The care summary and version history are read-only.
+                Contact your supervisor if a correction is needed.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* GPS verification panel — shown when clocking out */}
+        {shift.status === "in_progress" && !approved && (
+          <GpsVerificationPanel
+            shift={shift}
+            liveDistanceM={liveDistanceM}
+            liveAccuracyM={liveAccuracyM}
+            distanceThresholdM={MAX_DISTANCE_METERS}
+            accuracyThresholdM={accuracyThreshold}
+            distanceOk={liveDistanceOk}
+            accuracyOk={liveAccuracyOk}
+            verifying={verifying}
+            result={verifyResult}
+            onRefresh={() => liveLoc.refresh()}
+          />
+        )}
 
         {/* Quick Notes templates */}
         <section>
@@ -383,15 +449,20 @@ const CareNotesPage = () => {
           </div>
         </section>
 
+        {/* Version history (shown once at least one submission exists) */}
+        {existing?.submitted_at && (
+          <CareSummaryVersions shiftId={id!} locked={approved} />
+        )}
+
         {gpsError && (
           <div className="rounded-2xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive leading-relaxed">
             {gpsError}
           </div>
         )}
-        <button onClick={handleSubmit} disabled={upsert.isPending || updateStatus.isPending || verifying || progress < 100}
+        <button onClick={handleSubmit} disabled={approved || upsert.isPending || updateStatus.isPending || verifying || progress < 100}
           className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-          {(upsert.isPending || updateStatus.isPending || verifying) ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-          {verifying ? "Verifying location…" : shift.status === "in_progress" ? "Save & Clock Out" : "Save Visit Summary"}
+          {(upsert.isPending || updateStatus.isPending || verifying) ? <Loader2 className="w-5 h-5 animate-spin" /> : approved ? <Lock className="w-5 h-5" /> : <CheckCircle2 className="w-5 h-5" />}
+          {approved ? "Locked — timesheet approved" : verifying ? "Verifying location…" : shift.status === "in_progress" ? "Save & Clock Out" : "Save Visit Summary"}
         </button>
         {progress < 100 && (
           <p className="text-xs text-muted-foreground text-center">Complete every care summary item to enable submission.</p>
@@ -458,6 +529,133 @@ function VisBtn({ icon: Icon, active, label, onClick }: { icon: any; active: boo
       <Icon className={`w-4 h-4 ${active ? "text-primary" : ""}`} />
       <span className="text-xs font-semibold">{label}</span>
     </button>
+  );
+}
+
+function GpsVerificationPanel({
+  shift, liveDistanceM, liveAccuracyM, distanceThresholdM, accuracyThresholdM,
+  distanceOk, accuracyOk, verifying, result, onRefresh,
+}: {
+  shift: any;
+  liveDistanceM: number | null;
+  liveAccuracyM: number | null;
+  distanceThresholdM: number;
+  accuracyThresholdM: number;
+  distanceOk: boolean;
+  accuracyOk: boolean;
+  verifying: boolean;
+  result: {
+    ok: boolean; accuracyM: number | null; distanceM: number | null;
+    accuracyThresholdM: number; distanceThresholdM: number; reason?: string; timestamp: string;
+  } | null;
+  onRefresh: () => void;
+}) {
+  const clientConfigured = shift?.client?.lat != null && shift?.client?.lng != null;
+  const overallOk = clientConfigured && distanceOk && accuracyOk;
+  const stateBg = result == null
+    ? overallOk ? "border-success/40 bg-success/5" : "border-warning/40 bg-warning/5"
+    : result.ok ? "border-success/40 bg-success/10" : "border-destructive/40 bg-destructive/10";
+  const Icon = result == null
+    ? overallOk ? ShieldCheck : ShieldAlert
+    : result.ok ? ShieldCheck : ShieldAlert;
+  const iconColor = result == null
+    ? overallOk ? "text-success" : "text-warning"
+    : result.ok ? "text-success" : "text-destructive";
+
+  return (
+    <section className={`rounded-2xl border ${stateBg} p-4 space-y-3`}>
+      <div className="flex items-start gap-2">
+        <Icon className={`w-5 h-5 ${iconColor} shrink-0 mt-0.5`} />
+        <div className="flex-1">
+          <h3 className="text-xs font-bold uppercase tracking-[0.14em]">GPS verification</h3>
+          <p className="text-[11px] text-muted-foreground leading-relaxed mt-0.5">
+            We verify your location against {shift?.client?.name ?? "the client"}'s address before saving the clock-out.
+          </p>
+        </div>
+        {verifying && <Loader2 className="w-4 h-4 animate-spin text-primary" />}
+      </div>
+
+      <div className="grid grid-cols-2 gap-2 text-xs">
+        <MetricCell
+          label="Distance"
+          value={liveDistanceM != null ? formatDistanceMiles(liveDistanceM) : "—"}
+          threshold={`≤ ${formatDistanceMiles(distanceThresholdM)}`}
+          ok={liveDistanceM != null ? distanceOk : null}
+        />
+        <MetricCell
+          label="GPS accuracy"
+          value={liveAccuracyM != null ? `±${Math.round(metersToFeet(liveAccuracyM))} ft` : "—"}
+          threshold={`≤ ±${Math.round(metersToFeet(accuracyThresholdM))} ft`}
+          ok={liveAccuracyM != null ? accuracyOk : null}
+        />
+      </div>
+
+      {!clientConfigured && (
+        <div className="text-[11px] text-destructive inline-flex items-center gap-1.5">
+          <AlertTriangle className="w-3.5 h-3.5" /> Client coordinates are missing — verification will fail.
+        </div>
+      )}
+
+      {result && (
+        <div className={`rounded-xl border ${result.ok ? "border-success/30 bg-success/5" : "border-destructive/30 bg-destructive/5"} p-3 space-y-1`}>
+          <div className="flex items-center justify-between">
+            <p className={`text-xs font-bold uppercase tracking-wider ${result.ok ? "text-success" : "text-destructive"}`}>
+              {result.ok ? "Verification passed" : "Verification failed"}
+            </p>
+            <span className="text-[10px] text-muted-foreground">{new Date(result.timestamp).toLocaleTimeString()}</span>
+          </div>
+          <div className="text-[11px] text-foreground/85 grid grid-cols-2 gap-x-3 gap-y-0.5">
+            <div>
+              Distance:&nbsp;
+              <strong>{result.distanceM != null ? formatDistanceMiles(result.distanceM) : "—"}</strong>
+              <span className="text-muted-foreground"> / ≤ {formatDistanceMiles(result.distanceThresholdM)}</span>
+            </div>
+            <div>
+              Accuracy:&nbsp;
+              <strong>{result.accuracyM != null ? `±${Math.round(metersToFeet(result.accuracyM))} ft` : "—"}</strong>
+              <span className="text-muted-foreground"> / ≤ ±{Math.round(metersToFeet(result.accuracyThresholdM))} ft</span>
+            </div>
+          </div>
+          {!result.ok && result.reason && (
+            <p className="text-[11px] text-destructive mt-1">{result.reason}</p>
+          )}
+        </div>
+      )}
+
+      <button
+        type="button"
+        onClick={onRefresh}
+        className="w-full inline-flex items-center justify-center gap-1.5 text-[11px] font-semibold text-primary hover:underline"
+      >
+        <RefreshCw className="w-3 h-3" /> Refresh GPS fix
+      </button>
+    </section>
+  );
+}
+
+function MetricCell({ label, value, threshold, ok }: { label: string; value: string; threshold: string; ok: boolean | null }) {
+  const toneCls = ok == null
+    ? "border-border/60 bg-secondary/30"
+    : ok
+      ? "border-success/30 bg-success/5"
+      : "border-destructive/30 bg-destructive/5";
+  const valueCls = ok == null ? "text-foreground" : ok ? "text-success" : "text-destructive";
+  return (
+    <div className={`rounded-xl border ${toneCls} p-2.5`}>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className={`text-sm font-bold ${valueCls}`}>{value}</div>
+      <div className="text-[10px] text-muted-foreground mt-0.5">{threshold}</div>
+      {ok === false && (
+        <div className="text-[10px] text-destructive mt-0.5 inline-flex items-center gap-1">
+          <AlertTriangle className="w-3 h-3" /> Above threshold
+        </div>
+      )}
+      {ok === true && (
+        <div className="text-[10px] text-success mt-0.5 inline-flex items-center gap-1">
+          <ShieldCheck className="w-3 h-3" /> Within threshold
+        </div>
+      )}
+    </div>
   );
 }
 

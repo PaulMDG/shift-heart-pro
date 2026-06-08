@@ -1,5 +1,6 @@
 import { useCareSummary } from "@/hooks/useCareSummary";
-import { FileText, ChevronRight, Mic, Image as ImageIcon, Eye, EyeOff, AlertTriangle, PenSquare } from "lucide-react";
+import { useCareNoteAudits } from "@/hooks/useCareNoteAudits";
+import { FileText, ChevronRight, Mic, Image as ImageIcon, Eye, EyeOff, AlertTriangle, PenSquare, Lock, ShieldCheck } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatDateTime } from "@/lib/format";
 
@@ -9,11 +10,16 @@ interface Props {
   embedded?: boolean;
   /** Show a prominent "Review & edit" CTA (e.g. before timesheet approval). */
   editable?: boolean;
+  /** When true the summary is read-only; renders a Locked badge and audit footer instead of edit CTAs. */
+  locked?: boolean;
+  /** Optional approval timestamp/note shown in the locked footer. */
+  lockedAt?: string | null;
 }
 
-export default function CareSummaryPreview({ shiftId, embedded = false, editable = false }: Props) {
+export default function CareSummaryPreview({ shiftId, embedded = false, editable = false, locked = false, lockedAt = null }: Props) {
   const navigate = useNavigate();
   const { data: summary, isLoading } = useCareSummary(shiftId);
+  const { data: audits = [] } = useCareNoteAudits(locked ? shiftId : undefined);
 
   if (isLoading || !summary || !summary.submitted_at) return null;
 
@@ -65,7 +71,32 @@ export default function CareSummaryPreview({ shiftId, embedded = false, editable
         <span className="ml-auto">Submitted {formatDateTime(summary.submitted_at)}</span>
       </div>
 
-      {editable && (
+      {locked ? (
+        <div className="mt-4 rounded-xl border border-success/30 bg-success/5 p-3 space-y-2">
+          <div className="flex items-start gap-2">
+            <ShieldCheck className="w-4 h-4 text-success shrink-0 mt-0.5" />
+            <div className="flex-1">
+              <p className="text-xs font-bold text-success uppercase tracking-wider">Locked — timesheet approved</p>
+              <p className="text-[11px] text-foreground/80 mt-0.5 leading-relaxed">
+                This care summary can no longer be edited. The version below is the approved record of the visit
+                {lockedAt ? ` (approved ${formatDateTime(lockedAt)})` : ""}.
+              </p>
+            </div>
+          </div>
+          {audits.length > 0 && (
+            <div>
+              <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">Audit trail · {audits.length} change{audits.length === 1 ? "" : "s"}</p>
+              <ul className="space-y-1 max-h-32 overflow-y-auto pr-1">
+                {audits.slice(0, 6).map((a) => (
+                  <li key={a.id} className="text-[11px] text-muted-foreground">
+                    {formatDateTime(a.changed_at)}{a.changer_name ? ` · ${a.changer_name}` : ""}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ) : editable && (
         <button
           type="button"
           onClick={() => navigate(`/shifts/${shiftId}/care-notes`)}
@@ -84,14 +115,25 @@ export default function CareSummaryPreview({ shiftId, embedded = false, editable
       <div className="flex items-center justify-between mb-3">
         <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase inline-flex items-center gap-2">
           <FileText className="w-3.5 h-3.5" /> Care Summary
+          {locked && (
+            <span className="ml-1 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-success/15 text-success text-[9px] font-bold">
+              <Lock className="w-2.5 h-2.5" /> LOCKED
+            </span>
+          )}
         </h2>
-        <button
-          type="button"
-          onClick={() => navigate(`/shifts/${shiftId}/care-notes`)}
-          className="text-sm font-medium text-primary inline-flex items-center gap-0.5 hover:underline"
-        >
-          {editable ? "Edit" : "View full"} <ChevronRight className="w-4 h-4" />
-        </button>
+        {locked ? (
+          <span className="text-[11px] text-muted-foreground inline-flex items-center gap-1">
+            <Lock className="w-3 h-3" /> Read-only
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => navigate(`/shifts/${shiftId}/care-notes`)}
+            className="text-sm font-medium text-primary inline-flex items-center gap-0.5 hover:underline"
+          >
+            {editable ? "Edit" : "View full"} <ChevronRight className="w-4 h-4" />
+          </button>
+        )}
       </div>
       {body}
     </section>

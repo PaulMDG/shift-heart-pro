@@ -18,6 +18,9 @@ import { openDirections } from "@/lib/directions";
 import { formatTime } from "@/lib/format";
 import { useNavigate } from "react-router-dom";
 import { Navigation, MapPin, Clock, CheckCircle2, Route, Wand2, Loader2, ChevronRight, Calendar as CalendarIcon, ListChecks, AlertTriangle, Timer } from "lucide-react";
+import { appendRouteFallbackEntry } from "@/lib/routeFallbackLog";
+import RouteFallbackBanner from "@/components/shifts/RouteFallbackBanner";
+import { useAuth } from "@/hooks/useAuth";
 
 const tabs = ["My Day", "Calendar", "Swaps"] as const;
 
@@ -47,6 +50,7 @@ function fmtMiles(m: number) {
 
 const ShiftsPage = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<typeof tabs[number]>("My Day");
   const [selectedDate, setSelectedDate] = useState<string>(() => new Date().toISOString().split("T")[0]);
   const [optimizedOrder, setOptimizedOrder] = useState<string[] | null>(null);
@@ -135,7 +139,27 @@ const ShiftsPage = () => {
         computedAt: Date.now(),
       });
       if (data.fallback) {
-        toast.warning("Using approximate route — Google Maps unavailable");
+        const occurredAt = Date.now();
+        const etaIso = new Date(occurredAt + (data.durationSec ?? 0) * 1000).toISOString();
+        appendRouteFallbackEntry({
+          etaIso,
+          durationSec: data.durationSec ?? 0,
+          distanceMeters: data.distanceMeters ?? 0,
+          stopCount: stopsForRoute.length,
+          fallbackReason: data.fallbackReason,
+        });
+        toast.warning("Using approximate route — Google Maps unavailable", {
+          description: `Estimated ETA ${new Date(etaIso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`,
+        });
+        // Best-effort: persist an in-app notification so it appears in the bell.
+        if (user?.id) {
+          supabase.from("notifications").insert({
+            user_id: user.id,
+            title: "Fallback route used",
+            message: `Google Maps routing was unavailable${data.fallbackReason ? ` (${data.fallbackReason})` : ""}. We estimated your route with an ETA of ${new Date(etaIso).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}.`,
+            type: "alert",
+          } as any).then(({ error }) => { if (error) console.warn("notify insert failed", error); });
+        }
       } else {
         toast.success("Route optimized");
       }
@@ -192,6 +216,9 @@ const ShiftsPage = () => {
 
         {activeTab !== "Swaps" && (
           <>
+            {/* Persistent fallback route log (visible across reloads) */}
+            <RouteFallbackBanner />
+
             {activeTab === "Calendar" && (
               <div className="rounded-2xl border border-border/60 bg-card p-3">
                 <input

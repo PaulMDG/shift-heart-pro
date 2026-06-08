@@ -14,6 +14,7 @@ import { openDirections } from "@/lib/directions";
 import { useVisitHistory, useShiftDocuments, useUploadShiftDocument, validateDocFile, MAX_DOC_BYTES } from "@/hooks/useShiftDocuments";
 import CareSummaryPreview from "@/components/shifts/CareSummaryPreview";
 import CareSummaryHistory from "@/components/shifts/CareSummaryHistory";
+import CareSummaryVersions from "@/components/shifts/CareSummaryVersions";
 
 const ShiftDetail = () => {
   const { id } = useParams();
@@ -285,10 +286,22 @@ const ShiftDetail = () => {
         )}
 
         {/* Care summary preview (shown once submitted) */}
-        <CareSummaryPreview
-          shiftId={shift.id}
-          editable={shift.status === "completed" && (shift as any).timesheet_status !== "approved"}
-        />
+        {(() => {
+          const approved = (shift as any).timesheet_status === "approved";
+          return (
+            <>
+              <CareSummaryPreview
+                shiftId={shift.id}
+                editable={shift.status === "completed" && !approved}
+                locked={approved}
+                lockedAt={(shift as any).updated_at ?? null}
+              />
+              {shift.status === "completed" && (
+                <CareSummaryVersions shiftId={shift.id} locked={approved} />
+              )}
+            </>
+          );
+        })()}
 
         {/* Geofence helper */}
         {status !== "completed" && (
