@@ -71,7 +71,7 @@ const CareNotesPage = () => {
     if (!liveLoc.position || !shift?.client?.lat || !shift?.client?.lng) return null;
     return getDistanceMeters(liveLoc.position, { lat: shift.client.lat, lng: shift.client.lng });
   }, [liveLoc.position, shift?.client?.lat, shift?.client?.lng]);
-  const liveAccuracyM = liveLoc.position?.accuracy ?? null;
+  const liveAccuracyM = liveLoc.accuracy ?? null;
   const liveAccuracyOk = liveAccuracyM != null && liveAccuracyM <= accuracyThreshold;
   const liveDistanceOk = liveDistanceM != null && liveDistanceM <= MAX_DISTANCE_METERS;
 
