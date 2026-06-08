@@ -343,33 +343,73 @@ export type Database = {
       }
       messages: {
         Row: {
+          attachment_duration: number | null
+          attachment_name: string | null
+          attachment_size: number | null
+          attachment_type: string | null
+          attachment_url: string | null
+          category: string
           content: string
+          converted_to_care_note_shift_id: string | null
           created_at: string
           id: string
+          mentions: string[]
+          pinned: boolean
+          reactions: Json
           read: boolean
           recipient_id: string
           sender_id: string
           shift_id: string | null
+          voice_transcript: string | null
         }
         Insert: {
+          attachment_duration?: number | null
+          attachment_name?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          category?: string
           content: string
+          converted_to_care_note_shift_id?: string | null
           created_at?: string
           id?: string
+          mentions?: string[]
+          pinned?: boolean
+          reactions?: Json
           read?: boolean
           recipient_id: string
           sender_id: string
           shift_id?: string | null
+          voice_transcript?: string | null
         }
         Update: {
+          attachment_duration?: number | null
+          attachment_name?: string | null
+          attachment_size?: number | null
+          attachment_type?: string | null
+          attachment_url?: string | null
+          category?: string
           content?: string
+          converted_to_care_note_shift_id?: string | null
           created_at?: string
           id?: string
+          mentions?: string[]
+          pinned?: boolean
+          reactions?: Json
           read?: boolean
           recipient_id?: string
           sender_id?: string
           shift_id?: string | null
+          voice_transcript?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "messages_converted_to_care_note_shift_id_fkey"
+            columns: ["converted_to_care_note_shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "messages_shift_id_fkey"
             columns: ["shift_id"]
