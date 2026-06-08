@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2, RefreshCw, ShieldCheck, HelpCircle, Navigation, Calendar, Clock, Briefcase, FileText, Sun, TimerReset, Upload, Paperclip, History } from "lucide-react";
+import { ArrowLeft, ChevronRight, User, MapPin, Loader2, MessageSquare, ExternalLink, CheckCircle2, RefreshCw, ShieldCheck, HelpCircle, Navigation, Calendar, Clock, Briefcase, FileText, Sun, TimerReset, Upload, Paperclip, History, AlertCircle } from "lucide-react";
 import { useShift, useUpdateShiftStatus, useUpdateAssignmentStatus } from "@/hooks/useShifts";
 import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 import ClockOutForm from "@/components/shifts/ClockOutForm";
@@ -11,7 +11,7 @@ import LiveLocationStatus from "@/components/LiveLocationStatus";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { openDirections } from "@/lib/directions";
-import { useVisitHistory, useShiftDocuments, useUploadShiftDocument } from "@/hooks/useShiftDocuments";
+import { useVisitHistory, useShiftDocuments, useUploadShiftDocument, validateDocFile, MAX_DOC_BYTES } from "@/hooks/useShiftDocuments";
 
 const ShiftDetail = () => {
   const { id } = useParams();
@@ -24,6 +24,9 @@ const ShiftDetail = () => {
   const { data: visitHistory = [] } = useVisitHistory(shift?.client?.id, id);
   const { data: shiftDocs = [] } = useShiftDocuments(id);
   const uploadDoc = useUploadShiftDocument();
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [showClockOut, setShowClockOut] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
   const [verifyingLocation, setVerifyingLocation] = useState(false);
@@ -49,6 +52,43 @@ const ShiftDetail = () => {
     const i = setInterval(() => setNowTick(Date.now()), 500);
     return () => clearInterval(i);
   }, [retryStartedAt]);
+
+  // Simulated progress while upload is in-flight (supabase-js v2 doesn't expose progress)
+  useEffect(() => {
+    if (!uploadDoc.isPending) return;
+    setUploadProgress(8);
+    const i = setInterval(() => {
+      setUploadProgress((p) => (p < 90 ? p + Math.max(1, (90 - p) / 12) : p));
+    }, 250);
+    return () => clearInterval(i);
+  }, [uploadDoc.isPending]);
+
+  const startUpload = (file: File) => {
+    const err = validateDocFile(file);
+    if (err) {
+      setUploadError(err);
+      setPendingFile(file);
+      toast.error(err);
+      return;
+    }
+    setUploadError(null);
+    setPendingFile(file);
+    setUploadProgress(5);
+    uploadDoc.mutate(
+      { shiftId: id!, file },
+      {
+        onSuccess: () => {
+          setUploadProgress(100);
+          setPendingFile(null);
+          setTimeout(() => setUploadProgress(0), 600);
+        },
+        onError: (e: any) => {
+          setUploadError(e?.message ?? "Upload failed");
+          setUploadProgress(0);
+        },
+      },
+    );
+  };
 
   useEffect(() => {
     if (!retryReady) return;
@@ -380,6 +420,53 @@ const ShiftDetail = () => {
             </ul>
           )}
 
+          {uploadDoc.isPending && pendingFile && (
+            <div className="mb-3 rounded-xl bg-secondary/40 border border-border/60 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
+                <p className="text-xs text-foreground truncate flex-1">{pendingFile.name}</p>
+                <span className="text-[11px] text-muted-foreground">{Math.round(uploadProgress)}%</span>
+              </div>
+              <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {uploadError && !uploadDoc.isPending && (
+            <div className="mb-3 rounded-xl bg-destructive/10 border border-destructive/20 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-destructive">Upload failed</p>
+                  <p className="text-[11px] text-destructive/80 mt-0.5 leading-relaxed">{uploadError}</p>
+                  {pendingFile && (
+                    <p className="text-[11px] text-muted-foreground mt-1 truncate">{pendingFile.name}</p>
+                  )}
+                </div>
+              </div>
+              {pendingFile && !validateDocFile(pendingFile) && (
+                <button
+                  type="button"
+                  onClick={() => startUpload(pendingFile)}
+                  className="w-full inline-flex items-center justify-center gap-2 py-2 rounded-lg border border-destructive/30 text-destructive text-xs font-semibold hover:bg-destructive/5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Retry upload
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => { setUploadError(null); setPendingFile(null); }}
+                className="w-full text-[11px] text-muted-foreground hover:text-foreground"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           <label
             htmlFor="visit-doc-upload"
             className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 text-sm font-semibold text-primary cursor-pointer hover:bg-primary/10 transition ${
@@ -393,6 +480,9 @@ const ShiftDetail = () => {
             )}
             {uploadDoc.isPending ? "Uploading…" : "Upload document"}
           </label>
+          <p className="text-[11px] text-muted-foreground text-center mt-2">
+            JPG, PNG, HEIC, PDF, DOC · up to {Math.round(MAX_DOC_BYTES / 1024 / 1024)} MB
+          </p>
           <input
             id="visit-doc-upload"
             type="file"
@@ -400,7 +490,7 @@ const ShiftDetail = () => {
             accept="image/*,application/pdf,.doc,.docx"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file && id) uploadDoc.mutate({ shiftId: id, file });
+              if (file && id) startUpload(file);
               e.target.value = "";
             }}
           />

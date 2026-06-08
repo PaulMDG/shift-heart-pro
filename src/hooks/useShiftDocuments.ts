@@ -2,6 +2,28 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 
+export const ALLOWED_DOC_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/heic",
+  "image/webp",
+  "application/pdf",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+export const MAX_DOC_BYTES = 15 * 1024 * 1024; // 15 MB
+
+export function validateDocFile(file: File): string | null {
+  if (file.size > MAX_DOC_BYTES) {
+    return `File is too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Max 15 MB.`;
+  }
+  const okExt = /\.(jpe?g|png|heic|webp|pdf|docx?|)$/i.test(file.name);
+  if (file.type && !ALLOWED_DOC_TYPES.includes(file.type) && !okExt) {
+    return "Unsupported file type. Use JPG, PNG, HEIC, WEBP, PDF, DOC or DOCX.";
+  }
+  return null;
+}
+
 /**
  * Past completed shifts the current caregiver worked for the given client.
  * Relies on RLS — caregivers only see their own shifts.
