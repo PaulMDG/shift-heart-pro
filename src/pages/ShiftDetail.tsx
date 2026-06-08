@@ -12,6 +12,7 @@ import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { openDirections } from "@/lib/directions";
 import { useVisitHistory, useShiftDocuments, useUploadShiftDocument, validateDocFile, MAX_DOC_BYTES } from "@/hooks/useShiftDocuments";
+import CareSummaryPreview from "@/components/shifts/CareSummaryPreview";
 
 const ShiftDetail = () => {
   const { id } = useParams();
@@ -281,6 +282,9 @@ const ShiftDetail = () => {
             <CheckCircle2 className="w-5 h-5" /> Shift completed
           </div>
         )}
+
+        {/* Care summary preview (shown once submitted) */}
+        <CareSummaryPreview shiftId={shift.id} />
 
         {/* Geofence helper */}
         {status !== "completed" && (
