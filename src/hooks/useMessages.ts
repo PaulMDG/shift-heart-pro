@@ -21,6 +21,8 @@ export interface Message {
   reactions?: Record<string, number> | unknown | null;
   voice_transcript?: string | null;
   converted_to_care_note_shift_id?: string | null;
+  converted_to_care_note_at?: string | null;
+  converted_to_care_note_by?: string | null;
 }
 
 export interface Conversation {
