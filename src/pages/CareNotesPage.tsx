@@ -1,12 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, ChevronRight, FileText, Camera, Mic, MicOff, Plus, X, Eye, EyeOff, Loader2, CheckCircle2, Image as ImageIcon, Clock } from "lucide-react";
+import { ArrowLeft, ChevronRight, FileText, Camera, Mic, MicOff, Plus, X, Eye, EyeOff, Loader2, CheckCircle2, Image as ImageIcon, Clock, ShieldCheck, ShieldAlert, MapPin, Lock, AlertTriangle, RefreshCw } from "lucide-react";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useShift, useUpdateShiftStatus } from "@/hooks/useShifts";
 import { useCareSummary, useUpsertCareSummary, useQuickNoteTemplates, useAddQuickNoteTemplate, DEFAULT_QUICK_NOTES } from "@/hooks/useCareSummary";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
+import { useLiveLocation } from "@/hooks/useLiveLocation";
+import CareSummaryVersions from "@/components/shifts/CareSummaryVersions";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -29,6 +31,7 @@ const CareNotesPage = () => {
   const updateStatus = useUpdateShiftStatus();
   const recorder = useVoiceRecorder();
   const { data: settings } = useAgencySettings();
+  const liveLoc = useLiveLocation();
 
   const [meals, setMeals] = useState<string | null>(null);
   const [meds, setMeds] = useState<string | null>(null);
@@ -49,7 +52,28 @@ const CareNotesPage = () => {
   const [now, setNow] = useState(() => Date.now());
   const [verifying, setVerifying] = useState(false);
   const [gpsError, setGpsError] = useState<string | null>(null);
+  const [verifyResult, setVerifyResult] = useState<{
+    ok: boolean;
+    accuracyM: number | null;
+    distanceM: number | null;
+    accuracyThresholdM: number;
+    distanceThresholdM: number;
+    reason?: string;
+    timestamp: string;
+  } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const approved = (shift as any)?.timesheet_status === "approved";
+  const accuracyThreshold = settings?.accuracy_threshold_m ?? 100;
+
+  // Live, pre-submission distance/accuracy preview (passive — no extra GPS prompts)
+  const liveDistanceM = useMemo(() => {
+    if (!liveLoc.position || !shift?.client?.lat || !shift?.client?.lng) return null;
+    return getDistanceMeters(liveLoc.position, { lat: shift.client.lat, lng: shift.client.lng });
+  }, [liveLoc.position, shift?.client?.lat, shift?.client?.lng]);
+  const liveAccuracyM = liveLoc.position?.accuracy ?? null;
+  const liveAccuracyOk = liveAccuracyM != null && liveAccuracyM <= accuracyThreshold;
+  const liveDistanceOk = liveDistanceM != null && liveDistanceM <= MAX_DISTANCE_METERS;
 
   useEffect(() => {
     if (!existing) return;
@@ -144,6 +168,10 @@ const CareNotesPage = () => {
 
   const handleSubmit = async () => {
     if (!id || !shift) return;
+    if (approved) {
+      toast.error("This shift's timesheet has been approved — care notes are locked.");
+      return;
+    }
     if (progress < 100) {
       toast.error("Complete every care summary item before submitting.");
       return;
@@ -152,25 +180,34 @@ const CareNotesPage = () => {
     if (shift.status === "in_progress") {
       if (shift.client.lat == null || shift.client.lng == null) {
         const msg = "Client location is not configured. Contact your administrator before clocking out.";
-        setGpsError(msg); toast.error(msg); return;
+        setGpsError(msg);
+        setVerifyResult({ ok: false, accuracyM: null, distanceM: null, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, reason: msg, timestamp: new Date().toISOString() });
+        toast.error(msg); return;
       }
       setGpsError(null); setVerifying(true);
       try {
         const pos = await getCurrentPosition();
-        const accuracyThreshold = settings?.accuracy_threshold_m ?? 100;
         if (pos.accuracy == null || pos.accuracy > accuracyThreshold) {
           const msg = `GPS accuracy is too low (±${Math.round(metersToFeet(pos.accuracy ?? 0))} ft). Required ±${Math.round(metersToFeet(accuracyThreshold))} ft or better.`;
-          setGpsError(msg); toast.error("GPS accuracy not met"); return;
+          setGpsError(msg);
+          setVerifyResult({ ok: false, accuracyM: pos.accuracy ?? null, distanceM: null, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, reason: "Accuracy above threshold", timestamp: new Date().toISOString() });
+          toast.error("GPS accuracy not met"); return;
         }
         const distance = getDistanceMeters(pos, { lat: shift.client.lat, lng: shift.client.lng });
         if (distance > MAX_DISTANCE_METERS) {
           const msg = `You are ${formatDistanceMiles(distance)} from ${shift.client.name}. You must be within ${formatDistanceMiles(MAX_DISTANCE_METERS)} of the client address to clock out.`;
-          setGpsError(msg); toast.error("Too far from client"); return;
+          setGpsError(msg);
+          setVerifyResult({ ok: false, accuracyM: pos.accuracy, distanceM: distance, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, reason: "Outside geofence", timestamp: new Date().toISOString() });
+          toast.error("Too far from client"); return;
         }
         clockOutPos = pos;
+        setVerifyResult({ ok: true, accuracyM: pos.accuracy, distanceM: distance, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, timestamp: new Date().toISOString() });
         toast.success(`Location verified (${formatDistanceMiles(distance)} from client)`);
       } catch (e: any) {
-        setGpsError(e.message ?? "Failed to verify location"); toast.error(e.message ?? "GPS error"); return;
+        const msg = e.message ?? "Failed to verify location";
+        setGpsError(msg);
+        setVerifyResult({ ok: false, accuracyM: null, distanceM: null, accuracyThresholdM: accuracyThreshold, distanceThresholdM: MAX_DISTANCE_METERS, reason: msg, timestamp: new Date().toISOString() });
+        toast.error(msg); return;
       } finally {
         setVerifying(false);
       }
