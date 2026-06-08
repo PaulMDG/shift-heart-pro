@@ -97,7 +97,7 @@ const ShiftDetail = () => {
     if (status === "not_started") {
       confirmClockIn();
     } else if (status === "in_progress") {
-      verifyLocationAndProceed(() => setShowClockOut(true));
+      verifyLocationAndProceed(() => navigate(`/shifts/${shift!.id}/care-notes`));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [retryReady]);
