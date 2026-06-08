@@ -429,6 +429,7 @@ function ChatBubble({
   isPinned,
   canConvert,
   onConvert,
+  currentUserId,
 }: {
   msg: Message;
   mine: boolean;
@@ -440,8 +441,19 @@ function ChatBubble({
   isPinned: boolean;
   canConvert?: boolean;
   onConvert?: () => void;
+  currentUserId?: string;
 }) {
   const time = formatTimeShort(new Date(msg.created_at));
+  const isConverted = !!msg.converted_to_care_note_shift_id;
+  const convertedAt = msg.converted_to_care_note_at
+    ? formatTimeShort(new Date(msg.converted_to_care_note_at))
+    : null;
+  const convertedBy =
+    msg.converted_to_care_note_by === currentUserId
+      ? "you"
+      : msg.converted_to_care_note_by === msg.sender_id
+        ? mine ? "you" : partnerName
+        : "admin";
   return (
     <div className={cn("flex gap-2", mine ? "justify-end" : "justify-start")}>
       {!mine && (
