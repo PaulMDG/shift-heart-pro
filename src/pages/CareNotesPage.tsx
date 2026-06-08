@@ -5,6 +5,8 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import { useShift, useUpdateShiftStatus } from "@/hooks/useShifts";
 import { useCareSummary, useUpsertCareSummary, useQuickNoteTemplates, useAddQuickNoteTemplate, DEFAULT_QUICK_NOTES } from "@/hooks/useCareSummary";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { getCurrentPosition, getDistanceMeters, MAX_DISTANCE_METERS, formatDistanceMiles, metersToFeet } from "@/hooks/useGeolocation";
+import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/components/ui/sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -26,6 +28,7 @@ const CareNotesPage = () => {
   const upsert = useUpsertCareSummary();
   const updateStatus = useUpdateShiftStatus();
   const recorder = useVoiceRecorder();
+  const { data: settings } = useAgencySettings();
 
   const [meals, setMeals] = useState<string | null>(null);
   const [meds, setMeds] = useState<string | null>(null);
@@ -44,6 +47,8 @@ const CareNotesPage = () => {
   const [newTplLabel, setNewTplLabel] = useState("");
   const [newTplContent, setNewTplContent] = useState("");
   const [now, setNow] = useState(() => Date.now());
+  const [verifying, setVerifying] = useState(false);
+  const [gpsError, setGpsError] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -143,6 +148,33 @@ const CareNotesPage = () => {
       toast.error("Complete every care summary item before submitting.");
       return;
     }
+    let clockOutPos: { lat: number; lng: number; accuracy: number } | null = null;
+    if (shift.status === "in_progress") {
+      if (shift.client.lat == null || shift.client.lng == null) {
+        const msg = "Client location is not configured. Contact your administrator before clocking out.";
+        setGpsError(msg); toast.error(msg); return;
+      }
+      setGpsError(null); setVerifying(true);
+      try {
+        const pos = await getCurrentPosition();
+        const accuracyThreshold = settings?.accuracy_threshold_m ?? 100;
+        if (pos.accuracy == null || pos.accuracy > accuracyThreshold) {
+          const msg = `GPS accuracy is too low (±${Math.round(metersToFeet(pos.accuracy ?? 0))} ft). Required ±${Math.round(metersToFeet(accuracyThreshold))} ft or better.`;
+          setGpsError(msg); toast.error("GPS accuracy not met"); return;
+        }
+        const distance = getDistanceMeters(pos, { lat: shift.client.lat, lng: shift.client.lng });
+        if (distance > MAX_DISTANCE_METERS) {
+          const msg = `You are ${formatDistanceMiles(distance)} from ${shift.client.name}. You must be within ${formatDistanceMiles(MAX_DISTANCE_METERS)} of the client address to clock out.`;
+          setGpsError(msg); toast.error("Too far from client"); return;
+        }
+        clockOutPos = pos;
+        toast.success(`Location verified (${formatDistanceMiles(distance)} from client)`);
+      } catch (e: any) {
+        setGpsError(e.message ?? "Failed to verify location"); toast.error(e.message ?? "GPS error"); return;
+      } finally {
+        setVerifying(false);
+      }
+    }
     try {
       await upsert.mutateAsync({
         shift_id: id,
@@ -167,6 +199,11 @@ const CareNotesPage = () => {
           status: "completed",
           clock_out_time: new Date().toISOString(),
           clock_out_notes: notes,
+          ...(clockOutPos && {
+            clock_out_lat: clockOutPos.lat,
+            clock_out_lng: clockOutPos.lng,
+            clock_out_accuracy: clockOutPos.accuracy,
+          }),
         });
       }
       toast.success("Visit summary submitted");
@@ -346,10 +383,15 @@ const CareNotesPage = () => {
           </div>
         </section>
 
-        <button onClick={handleSubmit} disabled={upsert.isPending || updateStatus.isPending || progress < 100}
+        {gpsError && (
+          <div className="rounded-2xl bg-destructive/10 border border-destructive/20 p-3 text-xs text-destructive leading-relaxed">
+            {gpsError}
+          </div>
+        )}
+        <button onClick={handleSubmit} disabled={upsert.isPending || updateStatus.isPending || verifying || progress < 100}
           className="w-full py-4 rounded-2xl gradient-primary text-primary-foreground font-bold disabled:opacity-50 inline-flex items-center justify-center gap-2 shadow-lg shadow-primary/20">
-          {upsert.isPending || updateStatus.isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
-          {shift.status === "in_progress" ? "Save & Clock Out" : "Save Visit Summary"}
+          {(upsert.isPending || updateStatus.isPending || verifying) ? <Loader2 className="w-5 h-5 animate-spin" /> : <CheckCircle2 className="w-5 h-5" />}
+          {verifying ? "Verifying location…" : shift.status === "in_progress" ? "Save & Clock Out" : "Save Visit Summary"}
         </button>
         {progress < 100 && (
           <p className="text-xs text-muted-foreground text-center">Complete every care summary item to enable submission.</p>
