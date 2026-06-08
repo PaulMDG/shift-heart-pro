@@ -13,6 +13,7 @@ import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { openDirections } from "@/lib/directions";
 import { useVisitHistory, useShiftDocuments, useUploadShiftDocument, validateDocFile, MAX_DOC_BYTES } from "@/hooks/useShiftDocuments";
 import CareSummaryPreview from "@/components/shifts/CareSummaryPreview";
+import CareSummaryHistory from "@/components/shifts/CareSummaryHistory";
 
 const ShiftDetail = () => {
   const { id } = useParams();
@@ -284,7 +285,10 @@ const ShiftDetail = () => {
         )}
 
         {/* Care summary preview (shown once submitted) */}
-        <CareSummaryPreview shiftId={shift.id} />
+        <CareSummaryPreview
+          shiftId={shift.id}
+          editable={shift.status === "completed" && (shift as any).timesheet_status !== "approved"}
+        />
 
         {/* Geofence helper */}
         {status !== "completed" && (
@@ -500,48 +504,8 @@ const ShiftDetail = () => {
           />
         </section>
 
-        {/* Visit History preview */}
-        {visitHistory.length > 0 && (
-          <section className="rounded-2xl bg-card border border-border/60 p-5 shadow-lg shadow-background/40">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase">
-                Recent Visits
-              </h2>
-              <button
-                type="button"
-                onClick={() => navigate("/shifts")}
-                className="text-sm font-medium text-primary inline-flex items-center gap-0.5 hover:underline"
-              >
-                View all <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-            <ul className="divide-y divide-border/60">
-              {visitHistory.map((v: any) => (
-                <li key={v.id}>
-                  <button
-                    type="button"
-                    onClick={() => navigate(`/shifts/${v.id}`)}
-                    className="w-full flex items-center gap-3 py-3 text-left"
-                  >
-                    <span className="w-9 h-9 rounded-full bg-secondary flex items-center justify-center shrink-0">
-                      <History className="w-4 h-4 text-primary" />
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-foreground">
-                        {formatDateLong(v.date)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {formatTime(v.start_time)} – {formatTime(v.end_time)}
-                        {v.clock_out_notes ? " · Notes on file" : ""}
-                      </p>
-                    </div>
-                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </section>
-        )}
+        {/* Care Summary History — tappable previous visits with compact summaries */}
+        <CareSummaryHistory clientId={shift.client?.id} excludeShiftId={shift.id} />
 
         {/* Tip */}
         {status === "not_started" && (

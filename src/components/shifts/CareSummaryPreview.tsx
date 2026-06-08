@@ -1,9 +1,17 @@
 import { useCareSummary } from "@/hooks/useCareSummary";
-import { FileText, ChevronRight, Mic, Image as ImageIcon, Eye, EyeOff, AlertTriangle } from "lucide-react";
+import { FileText, ChevronRight, Mic, Image as ImageIcon, Eye, EyeOff, AlertTriangle, PenSquare } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { formatDateTime } from "@/lib/format";
 
-export default function CareSummaryPreview({ shiftId }: { shiftId: string }) {
+interface Props {
+  shiftId: string;
+  /** Embedded inside a list (history) — hide header/CTA. */
+  embedded?: boolean;
+  /** Show a prominent "Review & edit" CTA (e.g. before timesheet approval). */
+  editable?: boolean;
+}
+
+export default function CareSummaryPreview({ shiftId, embedded = false, editable = false }: Props) {
   const navigate = useNavigate();
   const { data: summary, isLoading } = useCareSummary(shiftId);
 
@@ -21,21 +29,8 @@ export default function CareSummaryPreview({ shiftId }: { shiftId: string }) {
 
   const incidentTone = summary.incident_severity && summary.incident_severity !== "None" ? "warn" : "default";
 
-  return (
-    <section className="rounded-2xl bg-card border border-border/60 p-5 shadow-lg shadow-background/40">
-      <div className="flex items-center justify-between mb-3">
-        <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase inline-flex items-center gap-2">
-          <FileText className="w-3.5 h-3.5" /> Care Summary
-        </h2>
-        <button
-          type="button"
-          onClick={() => navigate(`/shifts/${shiftId}/care-notes`)}
-          className="text-sm font-medium text-primary inline-flex items-center gap-0.5 hover:underline"
-        >
-          View full <ChevronRight className="w-4 h-4" />
-        </button>
-      </div>
-
+  const body = (
+    <>
       <div className="grid grid-cols-3 gap-2 mb-3">
         <Chip label="Meals" value={summary.meals_status} />
         <Chip label="Meds" value={summary.medications_status === "Given" && summary.medications_count != null ? `Given · ${summary.medications_count}` : summary.medications_status} />
@@ -69,6 +64,36 @@ export default function CareSummaryPreview({ shiftId }: { shiftId: string }) {
         </span>
         <span className="ml-auto">Submitted {formatDateTime(summary.submitted_at)}</span>
       </div>
+
+      {editable && (
+        <button
+          type="button"
+          onClick={() => navigate(`/shifts/${shiftId}/care-notes`)}
+          className="mt-4 w-full inline-flex items-center justify-center gap-2 py-2.5 rounded-xl border border-primary/40 bg-primary/5 text-primary text-sm font-semibold hover:bg-primary/10 transition"
+        >
+          <PenSquare className="w-4 h-4" /> Review & edit care notes
+        </button>
+      )}
+    </>
+  );
+
+  if (embedded) return <div className="pt-1">{body}</div>;
+
+  return (
+    <section className="rounded-2xl bg-card border border-border/60 p-5 shadow-lg shadow-background/40">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xs font-bold tracking-[0.14em] text-primary uppercase inline-flex items-center gap-2">
+          <FileText className="w-3.5 h-3.5" /> Care Summary
+        </h2>
+        <button
+          type="button"
+          onClick={() => navigate(`/shifts/${shiftId}/care-notes`)}
+          className="text-sm font-medium text-primary inline-flex items-center gap-0.5 hover:underline"
+        >
+          {editable ? "Edit" : "View full"} <ChevronRight className="w-4 h-4" />
+        </button>
+      </div>
+      {body}
     </section>
   );
 }
