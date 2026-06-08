@@ -297,6 +297,35 @@ const CareNotesPage = () => {
           </div>
         </div>
 
+        {approved && (
+          <div className="rounded-2xl border border-success/40 bg-success/10 p-4 flex items-start gap-2">
+            <Lock className="w-4 h-4 text-success shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-bold text-success uppercase tracking-wider">Care notes locked</p>
+              <p className="text-[11px] text-foreground/80 mt-1 leading-relaxed">
+                Your timesheet for this shift has been approved. The care summary and version history are read-only.
+                Contact your supervisor if a correction is needed.
+              </p>
+            </div>
+          </div>
+        )}
+
+        {/* GPS verification panel — shown when clocking out */}
+        {shift.status === "in_progress" && !approved && (
+          <GpsVerificationPanel
+            shift={shift}
+            liveDistanceM={liveDistanceM}
+            liveAccuracyM={liveAccuracyM}
+            distanceThresholdM={MAX_DISTANCE_METERS}
+            accuracyThresholdM={accuracyThreshold}
+            distanceOk={liveDistanceOk}
+            accuracyOk={liveAccuracyOk}
+            verifying={verifying}
+            result={verifyResult}
+            onRefresh={() => liveLoc.refresh()}
+          />
+        )}
+
         {/* Quick Notes templates */}
         <section>
           <h3 className="text-xs font-bold tracking-[0.14em] text-primary uppercase mb-2">Quick Notes</h3>
