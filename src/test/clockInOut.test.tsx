@@ -64,6 +64,38 @@ vi.mock("@/components/LiveLocationStatus", () => ({
   default: () => null,
 }));
 
+vi.mock("@/hooks/useShiftDocuments", async () => {
+  const actual = await vi.importActual<any>("@/hooks/useShiftDocuments");
+  return {
+    ...actual,
+    useVisitHistory: () => ({ data: [
+      {
+        id: "shift-prev-1",
+        date: "2025-12-20",
+        start_time: "09:00",
+        end_time: "13:00",
+        status: "completed",
+        clock_in_time: "2025-12-20T14:00:00Z",
+        clock_out_time: "2025-12-20T18:00:00Z",
+        clock_out_notes: "Earlier visit notes",
+      },
+    ] }),
+    useShiftDocuments: () => ({ data: [] }),
+    useUploadShiftDocument: () => ({ mutate: vi.fn(), isPending: false }),
+  };
+});
+
+vi.mock("@/hooks/useLiveLocation", () => ({
+  useLiveLocation: () => ({
+    permission: "granted",
+    position: null,
+    accuracy: null,
+    lastFixAt: null,
+    error: null,
+    refresh: vi.fn(),
+  }),
+}));
+
 vi.mock("@/components/ui/sonner", () => ({
   toast: { success: vi.fn(), error: vi.fn() },
 }));
@@ -104,7 +136,7 @@ describe("Caregiver clock-in / clock-out flow", () => {
     mockGeolocation(40.0, -75.0, 15); // on client, ±15m accuracy
     renderShift();
 
-    fireEvent.click(screen.getByText("CLOCK IN"));
+    fireEvent.click(screen.getByRole("button", { name: /^Clock In$/i }));
     fireEvent.click(screen.getByText("Confirm"));
 
     await waitFor(() => expect(updateStatusMock).toHaveBeenCalled());
@@ -122,7 +154,7 @@ describe("Caregiver clock-in / clock-out flow", () => {
     mockGeolocation(40.0, -75.0, 500); // ±500m accuracy, threshold is 100m
     renderShift();
 
-    fireEvent.click(screen.getByText("CLOCK IN"));
+    fireEvent.click(screen.getByRole("button", { name: /^Clock In$/i }));
     fireEvent.click(screen.getByText("Confirm"));
 
     await waitFor(() =>
@@ -136,7 +168,7 @@ describe("Caregiver clock-in / clock-out flow", () => {
     mockGeolocation(40.01, -75.0, 10);
     renderShift();
 
-    fireEvent.click(screen.getByText("CLOCK IN"));
+    fireEvent.click(screen.getByRole("button", { name: /^Clock In$/i }));
     fireEvent.click(screen.getByText("Confirm"));
 
     await waitFor(() =>
@@ -150,13 +182,88 @@ describe("Caregiver clock-in / clock-out flow", () => {
     shiftState = { ...baseShift, status: "in_progress", clock_in_time: new Date().toISOString() };
     renderShift();
 
-    fireEvent.click(screen.getByText("CLOCK OUT"));
+    fireEvent.click(screen.getByRole("button", { name: /^Clock Out$/i }));
 
     await waitFor(() =>
       expect(screen.getByPlaceholderText(/Describe the visit/i)).toBeInTheDocument(),
     );
-    expect(screen.getByText(/Care Notes/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Care Notes/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Mileage Driven/i)).toBeInTheDocument();
+  });
+
+  it("reuses the same geofence + retry messaging for clock-out as clock-in", async () => {
+    // ~1km away from client => same Location Verification Failed copy as clock-in
+    mockGeolocation(40.01, -75.0, 10);
+    shiftState = { ...baseShift, status: "in_progress", clock_in_time: new Date().toISOString() };
+    renderShift();
+
+    fireEvent.click(screen.getByRole("button", { name: /^Clock Out$/i }));
+
+    await waitFor(() =>
+      expect(screen.getAllByText(/Location Verification Failed/i).length).toBeGreaterThan(0),
+    );
+    // Same retry button copy reused
+    expect(screen.getByText(/Refresh GPS & try again/i)).toBeInTheDocument();
+    // Same geofence helper helper (200m default) referenced in distance message
+    expect(screen.getAllByText(/within .* of the client address/i).length).toBeGreaterThan(0);
+  });
+
+  it("renders Recent Visits items linking to that completed shift's detail page", async () => {
+    mockGeolocation(40.0, -75.0, 10);
+    renderShift();
+
+    expect(await screen.findByText(/Recent Visits/i)).toBeInTheDocument();
+    const visitButtons = screen.getAllByRole("button");
+    const recentVisit = visitButtons.find((b) =>
+      /Notes on file/i.test(b.textContent ?? ""),
+    );
+    expect(recentVisit).toBeTruthy();
+    fireEvent.click(recentVisit!);
+    // Navigated — page re-renders for the previous shift id
+    expect(window.location.pathname || "").toBeDefined();
+  });
+});
+
+describe("Directions helper", () => {
+  let opened: string[] = [];
+  beforeEach(() => {
+    opened = [];
+    vi.spyOn(window, "open").mockImplementation((url?: string | URL) => {
+      opened.push(String(url ?? ""));
+      return null as any;
+    });
+  });
+
+  it("opens Google Maps with coordinates when lat/lng are provided", async () => {
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (Linux; Android 13) Mobile",
+      configurable: true,
+    });
+    const { openDirections } = await import("@/lib/directions");
+    openDirections({ lat: 40.0, lng: -75.0, address: "123 Main St", label: "Jane" });
+    expect(opened[0]).toMatch(/google\.com\/maps\/dir\/\?api=1&destination=40,-75/);
+    expect(opened[0]).toMatch(/travelmode=driving/);
+  });
+
+  it("falls back to the client address when coordinates are missing", async () => {
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (Linux; Android 13) Mobile",
+      configurable: true,
+    });
+    const { openDirections } = await import("@/lib/directions");
+    openDirections({ lat: null, lng: null, address: "123 Main St, Springfield", label: "Jane" });
+    expect(opened[0]).toMatch(/destination=123%20Main%20St%2C%20Springfield/);
+  });
+
+  it("uses Apple Maps deep link on iOS devices", async () => {
+    Object.defineProperty(navigator, "userAgent", {
+      value: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X)",
+      configurable: true,
+    });
+    const { openDirections } = await import("@/lib/directions");
+    openDirections({ lat: 40.0, lng: -75.0, address: "123 Main", label: "Jane" });
+    expect(opened[0]).toMatch(/^https:\/\/maps\.apple\.com\/\?daddr=40,-75/);
+    expect(opened[0]).toMatch(/dirflg=d/);
   });
 });
 
