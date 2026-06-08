@@ -426,6 +426,8 @@ function ChatBubble({
   onReact,
   onPin,
   isPinned,
+  canConvert,
+  onConvert,
 }: {
   msg: Message;
   mine: boolean;
@@ -435,6 +437,8 @@ function ChatBubble({
   onReact: () => void;
   onPin: () => void;
   isPinned: boolean;
+  canConvert?: boolean;
+  onConvert?: () => void;
 }) {
   const time = formatTimeShort(new Date(msg.created_at));
   return (
@@ -511,6 +515,15 @@ function ChatBubble({
             <span className="inline-flex items-center gap-1 text-[10px] text-primary">
               <Pin className="w-3 h-3" /> pinned
             </span>
+          )}
+          {canConvert && onConvert && (
+            <button
+              onClick={onConvert}
+              className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline px-1"
+              title="Add to care notes"
+            >
+              <StickyNote className="w-3 h-3" /> Care note
+            </button>
           )}
         </div>
       </div>
