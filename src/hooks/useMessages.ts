@@ -18,7 +18,7 @@ export interface Message {
   attachment_duration?: number | null;
   category?: string | null;
   pinned?: boolean | null;
-  reactions?: Record<string, number> | null;
+  reactions?: Record<string, number> | unknown | null;
 }
 
 export interface Conversation {
@@ -75,7 +75,7 @@ export function useConversations() {
           convMap.set(partnerId, { messages: [], unread: 0 });
         }
         const conv = convMap.get(partnerId)!;
-        conv.messages.push(msg);
+        conv.messages.push(msg as unknown as Message);
         if (!msg.read && msg.recipient_id === user.id) {
           conv.unread++;
         }
