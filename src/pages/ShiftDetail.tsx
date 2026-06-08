@@ -53,6 +53,43 @@ const ShiftDetail = () => {
     return () => clearInterval(i);
   }, [retryStartedAt]);
 
+  // Simulated progress while upload is in-flight (supabase-js v2 doesn't expose progress)
+  useEffect(() => {
+    if (!uploadDoc.isPending) return;
+    setUploadProgress(8);
+    const i = setInterval(() => {
+      setUploadProgress((p) => (p < 90 ? p + Math.max(1, (90 - p) / 12) : p));
+    }, 250);
+    return () => clearInterval(i);
+  }, [uploadDoc.isPending]);
+
+  const startUpload = (file: File) => {
+    const err = validateDocFile(file);
+    if (err) {
+      setUploadError(err);
+      setPendingFile(file);
+      toast.error(err);
+      return;
+    }
+    setUploadError(null);
+    setPendingFile(file);
+    setUploadProgress(5);
+    uploadDoc.mutate(
+      { shiftId: id!, file },
+      {
+        onSuccess: () => {
+          setUploadProgress(100);
+          setPendingFile(null);
+          setTimeout(() => setUploadProgress(0), 600);
+        },
+        onError: (e: any) => {
+          setUploadError(e?.message ?? "Upload failed");
+          setUploadProgress(0);
+        },
+      },
+    );
+  };
+
   useEffect(() => {
     if (!retryReady) return;
     setRetryStartedAt(null);
