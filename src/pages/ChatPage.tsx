@@ -529,7 +529,7 @@ function ChatBubble({
               <Pin className="w-3 h-3" /> pinned
             </span>
           )}
-          {canConvert && onConvert && (
+          {canConvert && onConvert && !isConverted && (
             <button
               onClick={onConvert}
               className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline px-1"
@@ -537,6 +537,15 @@ function ChatBubble({
             >
               <StickyNote className="w-3 h-3" /> Care note
             </button>
+          )}
+          {isConverted && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2 py-0.5"
+              title={`Converted to care note${convertedAt ? ` at ${convertedAt}` : ""} by ${convertedBy}`}
+            >
+              <ClipboardCheck className="w-3 h-3" />
+              Converted{convertedAt ? ` • ${convertedAt}` : ""} • {convertedBy}
+            </span>
           )}
         </div>
       </div>
