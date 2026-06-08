@@ -19,6 +19,8 @@ export interface Message {
   category?: string | null;
   pinned?: boolean | null;
   reactions?: Record<string, number> | unknown | null;
+  voice_transcript?: string | null;
+  converted_to_care_note_shift_id?: string | null;
 }
 
 export interface Conversation {
@@ -117,7 +119,7 @@ export function useConversations() {
   });
 }
 
-export function useChatMessages(partnerId: string | undefined) {
+export function useChatMessages(partnerId: string | undefined, shiftId?: string) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
 
@@ -137,28 +139,29 @@ export function useChatMessages(partnerId: string | undefined) {
             (msg.sender_id === user.id && msg.recipient_id === partnerId) ||
             (msg.sender_id === partnerId && msg.recipient_id === user.id)
           ) {
-            queryClient.invalidateQueries({ queryKey: ["chat", partnerId] });
+            queryClient.invalidateQueries({ queryKey: ["chat", partnerId, shiftId ?? null] });
             queryClient.invalidateQueries({ queryKey: ["conversations"] });
           }
         }
       )
       .subscribe();
     return () => { supabase.removeChannel(channel); };
-  }, [user, partnerId, queryClient]);
+  }, [user, partnerId, shiftId, queryClient]);
 
   return useQuery({
-    queryKey: ["chat", partnerId],
+    queryKey: ["chat", partnerId, shiftId ?? null],
     enabled: !!user && !!partnerId,
     queryFn: async () => {
       if (!user || !partnerId) return [];
 
-      const { data, error } = await supabase
+      let q = supabase
         .from("messages")
         .select("*")
         .or(
           `and(sender_id.eq.${user.id},recipient_id.eq.${partnerId}),and(sender_id.eq.${partnerId},recipient_id.eq.${user.id})`
-        )
-        .order("created_at", { ascending: true });
+        );
+      if (shiftId) q = q.eq("shift_id", shiftId);
+      const { data, error } = await q.order("created_at", { ascending: true });
 
       if (error) throw error;
 
@@ -175,7 +178,7 @@ export function useChatMessages(partnerId: string | undefined) {
         queryClient.invalidateQueries({ queryKey: ["conversations"] });
       }
 
-      return data as Message[];
+      return data as unknown as Message[];
     },
   });
 }
@@ -220,9 +223,58 @@ export function useSendMessage() {
       } as any);
 
       if (error) throw error;
+
+      // Best-effort push notification for shift-scoped messages
+      if (shiftId) {
+        try {
+          await supabase.functions.invoke("send-push-notification", {
+            body: {
+              recipient_id: recipientId,
+              shift_id: shiftId,
+              preview: (content || (attachment ? "📎 Attachment" : "")).slice(0, 120),
+              category: category || "general",
+            },
+          });
+        } catch (e) {
+          console.warn("[useSendMessage] push notify failed", e);
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
+    },
+  });
+}
+
+export function useConvertMessageToCareNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ message, shiftId }: { message: Message; shiftId: string }) => {
+      const stamp = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      const source = message.voice_transcript?.trim()
+        || message.content?.trim()
+        || (message.attachment_name ? `Attachment: ${message.attachment_name}` : "");
+      if (!source) throw new Error("Nothing to convert");
+      const line = `[${stamp} • from chat] ${source}`;
+
+      const { data: shift, error: fetchErr } = await supabase
+        .from("shifts")
+        .select("clock_out_notes")
+        .eq("id", shiftId)
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
+      const existing = (shift?.clock_out_notes ?? "").trim();
+      const next = existing ? `${existing}\n${line}` : line;
+
+      const { error: updErr } = await supabase
+        .from("shifts")
+        .update({ clock_out_notes: next, updated_at: new Date().toISOString() })
+        .eq("id", shiftId);
+      if (updErr) throw updErr;
+    },
+    onSuccess: (_d, vars) => {
+      queryClient.invalidateQueries({ queryKey: ["shifts", vars.shiftId] });
+      queryClient.invalidateQueries({ queryKey: ["shifts"] });
     },
   });
 }
