@@ -135,7 +135,7 @@ const ShiftsPage = () => {
         computedAt: Date.now(),
       });
       if (data.fallback) {
-        toast.warning?.("Using approximate route — Google Maps unavailable") ?? toast.error("Using approximate route — Google Maps unavailable");
+        toast.warning("Using approximate route — Google Maps unavailable");
       } else {
         toast.success("Route optimized");
       }
