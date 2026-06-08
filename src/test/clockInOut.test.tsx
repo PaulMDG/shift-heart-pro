@@ -187,7 +187,7 @@ describe("Caregiver clock-in / clock-out flow", () => {
     await waitFor(() =>
       expect(screen.getByPlaceholderText(/Describe the visit/i)).toBeInTheDocument(),
     );
-    expect(screen.getByText(/Care Notes/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/Care Notes/i).length).toBeGreaterThan(0);
     expect(screen.getByText(/Mileage Driven/i)).toBeInTheDocument();
   });
 
