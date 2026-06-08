@@ -56,10 +56,41 @@ Deno.serve(async (req) => {
       .maybeSingle();
     const senderName = (senderProfile?.full_name as string) || "New message";
 
-    const externalUserIds = Array.from(
+    // Build candidate list with reason (recipient vs admin) so we can apply
+    // each user's notification preferences independently.
+    const adminSet = new Set(adminIds);
+    const candidateIds = Array.from(
       new Set([body.recipient_id, ...adminIds].filter((id) => id && id !== user.id)),
     );
-    if (externalUserIds.length === 0) return json({ ok: true, sent: 0 });
+    if (candidateIds.length === 0) return json({ ok: true, sent: 0 });
+
+    // Fetch notification preferences for all candidates
+    const { data: prefRows } = await admin
+      .from("notification_preferences")
+      .select("user_id, in_shift_messages, admin_alerts")
+      .in("user_id", candidateIds);
+    const prefs = new Map(
+      (prefRows ?? []).map((r: any) => [r.user_id as string, r]),
+    );
+
+    const externalUserIds = candidateIds.filter((id) => {
+      const p = prefs.get(id);
+      const isRecipient = id === body.recipient_id;
+      const isAdmin = adminSet.has(id);
+      // Default ON when no row exists
+      const wantsInShift = p?.in_shift_messages ?? true;
+      const wantsAdminAlerts = p?.admin_alerts ?? true;
+      // Recipient channel: in_shift_messages
+      if (isRecipient && wantsInShift) return true;
+      // Admin fan-out channel: admin_alerts (skip if same user already
+      // qualified as recipient above)
+      if (isAdmin && !isRecipient && wantsAdminAlerts) return true;
+      return false;
+    });
+
+    if (externalUserIds.length === 0) {
+      return json({ ok: true, sent: 0, reason: "all_recipients_opted_out" });
+    }
 
     const payload = {
       app_id: ONESIGNAL_APP_ID,
