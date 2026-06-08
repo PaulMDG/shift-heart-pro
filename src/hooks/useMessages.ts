@@ -11,6 +11,14 @@ export interface Message {
   read: boolean;
   shift_id: string | null;
   created_at: string;
+  attachment_url?: string | null;
+  attachment_type?: string | null;
+  attachment_name?: string | null;
+  attachment_size?: number | null;
+  attachment_duration?: number | null;
+  category?: string | null;
+  pinned?: boolean | null;
+  reactions?: Record<string, number> | null;
 }
 
 export interface Conversation {
@@ -20,6 +28,7 @@ export interface Conversation {
   last_message: string;
   last_message_time: string;
   unread_count: number;
+  category?: string;
 }
 
 export function useConversations() {
@@ -91,9 +100,10 @@ export function useConversations() {
           user_id: pid,
           full_name: profile?.full_name || "Unknown User",
           avatar_url: profile?.avatar_url || null,
-          last_message: lastMsg.content,
+          last_message: lastMsg.content || attachmentSummary(lastMsg),
           last_message_time: lastMsg.created_at,
           unread_count: conv.unread,
+          category: (lastMsg as any).category || "general",
         };
       });
 
@@ -178,10 +188,20 @@ export function useSendMessage() {
       recipientId,
       content,
       shiftId,
+      category,
+      attachment,
     }: {
       recipientId: string;
-      content: string;
+      content?: string;
       shiftId?: string;
+      category?: string;
+      attachment?: {
+        url: string;
+        type: string;
+        name?: string;
+        size?: number;
+        duration?: number;
+      };
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
@@ -189,8 +209,14 @@ export function useSendMessage() {
       const { error } = await supabase.from("messages").insert({
         sender_id: user.id,
         recipient_id: recipientId,
-        content,
+        content: content ?? "",
         shift_id: shiftId || null,
+        category: category || "general",
+        attachment_url: attachment?.url ?? null,
+        attachment_type: attachment?.type ?? null,
+        attachment_name: attachment?.name ?? null,
+        attachment_size: attachment?.size ?? null,
+        attachment_duration: attachment?.duration ?? null,
       });
 
       if (error) throw error;
@@ -199,6 +225,13 @@ export function useSendMessage() {
       queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
+}
+
+function attachmentSummary(m: any): string {
+  if (!m?.attachment_type) return "";
+  if (m.attachment_type.startsWith("image/")) return "📷 Photo";
+  if (m.attachment_type.startsWith("audio/")) return "🎙 Voice note";
+  return `📎 ${m.attachment_name || "Document"}`;
 }
 
 export function useAvailableUsers() {
