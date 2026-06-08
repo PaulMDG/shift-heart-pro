@@ -420,6 +420,53 @@ const ShiftDetail = () => {
             </ul>
           )}
 
+          {uploadDoc.isPending && pendingFile && (
+            <div className="mb-3 rounded-xl bg-secondary/40 border border-border/60 p-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Loader2 className="w-4 h-4 text-primary animate-spin shrink-0" />
+                <p className="text-xs text-foreground truncate flex-1">{pendingFile.name}</p>
+                <span className="text-[11px] text-muted-foreground">{Math.round(uploadProgress)}%</span>
+              </div>
+              <div className="h-1.5 bg-background rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-primary transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {uploadError && !uploadDoc.isPending && (
+            <div className="mb-3 rounded-xl bg-destructive/10 border border-destructive/20 p-3 space-y-2">
+              <div className="flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-destructive shrink-0 mt-0.5" />
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-destructive">Upload failed</p>
+                  <p className="text-[11px] text-destructive/80 mt-0.5 leading-relaxed">{uploadError}</p>
+                  {pendingFile && (
+                    <p className="text-[11px] text-muted-foreground mt-1 truncate">{pendingFile.name}</p>
+                  )}
+                </div>
+              </div>
+              {pendingFile && !validateDocFile(pendingFile) && (
+                <button
+                  type="button"
+                  onClick={() => startUpload(pendingFile)}
+                  className="w-full inline-flex items-center justify-center gap-2 py-2 rounded-lg border border-destructive/30 text-destructive text-xs font-semibold hover:bg-destructive/5"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" /> Retry upload
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => { setUploadError(null); setPendingFile(null); }}
+                className="w-full text-[11px] text-muted-foreground hover:text-foreground"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           <label
             htmlFor="visit-doc-upload"
             className={`w-full inline-flex items-center justify-center gap-2 py-3 rounded-xl border border-dashed border-primary/40 bg-primary/5 text-sm font-semibold text-primary cursor-pointer hover:bg-primary/10 transition ${
@@ -433,6 +480,9 @@ const ShiftDetail = () => {
             )}
             {uploadDoc.isPending ? "Uploading…" : "Upload document"}
           </label>
+          <p className="text-[11px] text-muted-foreground text-center mt-2">
+            JPG, PNG, HEIC, PDF, DOC · up to {Math.round(MAX_DOC_BYTES / 1024 / 1024)} MB
+          </p>
           <input
             id="visit-doc-upload"
             type="file"
@@ -440,7 +490,7 @@ const ShiftDetail = () => {
             accept="image/*,application/pdf,.doc,.docx"
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file && id) uploadDoc.mutate({ shiftId: id, file });
+              if (file && id) startUpload(file);
               e.target.value = "";
             }}
           />
