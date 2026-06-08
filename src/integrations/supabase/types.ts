@@ -350,6 +350,8 @@ export type Database = {
           attachment_url: string | null
           category: string
           content: string
+          converted_to_care_note_at: string | null
+          converted_to_care_note_by: string | null
           converted_to_care_note_shift_id: string | null
           created_at: string
           id: string
@@ -370,6 +372,8 @@ export type Database = {
           attachment_url?: string | null
           category?: string
           content: string
+          converted_to_care_note_at?: string | null
+          converted_to_care_note_by?: string | null
           converted_to_care_note_shift_id?: string | null
           created_at?: string
           id?: string
@@ -390,6 +394,8 @@ export type Database = {
           attachment_url?: string | null
           category?: string
           content?: string
+          converted_to_care_note_at?: string | null
+          converted_to_care_note_by?: string | null
           converted_to_care_note_shift_id?: string | null
           created_at?: string
           id?: string
@@ -418,6 +424,27 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notification_preferences: {
+        Row: {
+          admin_alerts: boolean
+          in_shift_messages: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_alerts?: boolean
+          in_shift_messages?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_alerts?: boolean
+          in_shift_messages?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -739,6 +766,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      mark_message_converted: {
+        Args: { p_message_id: string; p_shift_id: string }
+        Returns: undefined
       }
     }
     Enums: {
