@@ -21,6 +21,7 @@ import ProfilePersonalInfo from "./pages/ProfilePersonalInfo";
 import ProfileCertifications from "./pages/ProfileCertifications";
 import ProfileTimesheets from "./pages/ProfileTimesheets";
 import ProfilePerformance from "./pages/ProfilePerformance";
+import ProfileNotifications from "./pages/ProfileNotifications";
 import NotificationsPage from "./pages/NotificationsPage";
 import AuthPage from "./pages/AuthPage";
 import AdminDashboard from "./pages/AdminDashboard";
@@ -70,6 +71,7 @@ const App = () => (
             <Route path="/profile/certifications" element={<ProtectedRoute><ProfileCertifications /></ProtectedRoute>} />
             <Route path="/profile/timesheets" element={<ProtectedRoute><ProfileTimesheets /></ProtectedRoute>} />
             <Route path="/profile/performance" element={<ProtectedRoute><ProfilePerformance /></ProtectedRoute>} />
+            <Route path="/profile/notifications" element={<ProtectedRoute><ProfileNotifications /></ProtectedRoute>} />
             <Route path="/notifications" element={<ProtectedRoute><NotificationsPage /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/shifts/new" element={<AdminRoute><AdminCreateShift /></AdminRoute>} />
