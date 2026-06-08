@@ -281,6 +281,7 @@ const ChatPage = () => {
                           )
                       : undefined
                   }
+                  currentUserId={user?.id}
                 />
               ))}
             </div>
@@ -428,6 +429,7 @@ function ChatBubble({
   isPinned,
   canConvert,
   onConvert,
+  currentUserId,
 }: {
   msg: Message;
   mine: boolean;
@@ -439,8 +441,19 @@ function ChatBubble({
   isPinned: boolean;
   canConvert?: boolean;
   onConvert?: () => void;
+  currentUserId?: string;
 }) {
   const time = formatTimeShort(new Date(msg.created_at));
+  const isConverted = !!msg.converted_to_care_note_shift_id;
+  const convertedAt = msg.converted_to_care_note_at
+    ? formatTimeShort(new Date(msg.converted_to_care_note_at))
+    : null;
+  const convertedBy =
+    msg.converted_to_care_note_by === currentUserId
+      ? "you"
+      : msg.converted_to_care_note_by === msg.sender_id
+        ? mine ? "you" : partnerName
+        : "admin";
   return (
     <div className={cn("flex gap-2", mine ? "justify-end" : "justify-start")}>
       {!mine && (
@@ -516,7 +529,7 @@ function ChatBubble({
               <Pin className="w-3 h-3" /> pinned
             </span>
           )}
-          {canConvert && onConvert && (
+          {canConvert && onConvert && !isConverted && (
             <button
               onClick={onConvert}
               className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline px-1"
@@ -524,6 +537,15 @@ function ChatBubble({
             >
               <StickyNote className="w-3 h-3" /> Care note
             </button>
+          )}
+          {isConverted && (
+            <span
+              className="inline-flex items-center gap-1 text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 rounded-full px-2 py-0.5"
+              title={`Converted to care note${convertedAt ? ` at ${convertedAt}` : ""} by ${convertedBy}`}
+            >
+              <ClipboardCheck className="w-3 h-3" />
+              Converted{convertedAt ? ` • ${convertedAt}` : ""} • {convertedBy}
+            </span>
           )}
         </div>
       </div>

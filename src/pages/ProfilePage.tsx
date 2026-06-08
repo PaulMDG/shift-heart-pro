@@ -1,5 +1,5 @@
 import MobileLayout from "@/components/layout/MobileLayout";
-import { User, Shield, FileText, LogOut, ChevronRight, Star } from "lucide-react";
+import { User, Shield, FileText, LogOut, ChevronRight, Star, Bell } from "lucide-react";
 import { useProfile } from "@/hooks/useProfile";
 import { useNotifications } from "@/hooks/useNotifications";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,6 +11,7 @@ const menuItems = [
   { icon: Shield, label: "Certifications", description: "Licenses & background check", path: "/profile/certifications" },
   { icon: FileText, label: "Timesheets", description: "View past timesheets", path: "/profile/timesheets" },
   { icon: Star, label: "Performance", description: "Ratings & feedback", path: "/profile/performance" },
+  { icon: Bell, label: "Notification Preferences", description: "Push alerts for chats & shifts", path: "/profile/notifications" },
 ];
 
 const ProfilePage = () => {

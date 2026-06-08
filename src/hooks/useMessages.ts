@@ -21,6 +21,8 @@ export interface Message {
   reactions?: Record<string, number> | unknown | null;
   voice_transcript?: string | null;
   converted_to_care_note_shift_id?: string | null;
+  converted_to_care_note_at?: string | null;
+  converted_to_care_note_by?: string | null;
 }
 
 export interface Conversation {
@@ -271,10 +273,19 @@ export function useConvertMessageToCareNote() {
         .update({ clock_out_notes: next, updated_at: new Date().toISOString() })
         .eq("id", shiftId);
       if (updErr) throw updErr;
+
+      // Mark message as converted (RLS-safe via SECURITY DEFINER RPC)
+      const { error: rpcErr } = await supabase.rpc("mark_message_converted", {
+        p_message_id: message.id,
+        p_shift_id: shiftId,
+      });
+      if (rpcErr) throw rpcErr;
     },
     onSuccess: (_d, vars) => {
       queryClient.invalidateQueries({ queryKey: ["shifts", vars.shiftId] });
       queryClient.invalidateQueries({ queryKey: ["shifts"] });
+      queryClient.invalidateQueries({ queryKey: ["chat"] });
+      queryClient.invalidateQueries({ queryKey: ["conversations"] });
     },
   });
 }
