@@ -1,76 +1,46 @@
 import { cn } from "@/lib/utils";
+import logoAsset from "@/assets/angels-of-comfort-logo.png.asset.json";
 
 interface LogoProps {
   className?: string;
-  /** Show the wordmark next to the icon */
+  /** Show the full logo with wordmark. When false, only the icon mark is shown. */
   showWordmark?: boolean;
-  /** Stack the wordmark under the icon */
+  /** Stack layout (taller display) */
   stacked?: boolean;
-  /** Tailwind text size for the wordmark */
+  /** @deprecated retained for API compatibility */
   wordmarkClassName?: string;
 }
 
 /**
- * Angels of Comfort brand mark — a stylised gold figure
- * (head dot + arched body) rendered as inline SVG so it
- * scales crisply and inherits colour from `currentColor`.
+ * Icon-only mark cropped from the top of the full logo image.
+ * Uses object-position to show just the gold figure portion.
  */
 export const LogoMark = ({ className }: { className?: string }) => (
-  <svg
-    viewBox="0 0 64 80"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    className={cn("text-primary", className)}
+  <div
+    className={cn("overflow-hidden inline-block", className)}
     aria-hidden="true"
+    style={{ aspectRatio: "1 / 1" }}
   >
-    <circle cx="32" cy="10" r="6" fill="currentColor" />
-    <path
-      d="M32 18 C 24 28, 14 42, 18 64 C 20 72, 26 76, 32 76"
-      stroke="currentColor"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-      fill="none"
+    <img
+      src={logoAsset.url}
+      alt=""
+      className="h-[260%] w-auto max-w-none object-contain"
+      style={{ objectPosition: "center top", marginLeft: "-30%" }}
     />
-    <path
-      d="M32 18 C 40 28, 50 42, 46 64 C 44 72, 38 76, 32 76"
-      stroke="currentColor"
-      strokeWidth="3.5"
-      strokeLinecap="round"
-      fill="none"
-    />
-  </svg>
+  </div>
 );
 
-const Logo = ({
-  className,
-  showWordmark = true,
-  stacked = false,
-  wordmarkClassName,
-}: LogoProps) => {
+const Logo = ({ className, showWordmark = true, stacked = false }: LogoProps) => {
   return (
-    <div
-      className={cn(
-        "flex items-center gap-3",
-        stacked && "flex-col gap-2",
-        className,
-      )}
-    >
-      <LogoMark className={cn("h-10 w-auto", stacked && "h-14")} />
-      {showWordmark && (
-        <div className={cn("flex flex-col leading-none", stacked && "items-center")}>
-          <span
-            className={cn(
-              "font-display font-semibold tracking-[0.18em] text-foreground uppercase",
-              wordmarkClassName ?? "text-xl",
-            )}
-          >
-            Angels
-          </span>
-          <span className="text-[0.6rem] tracking-[0.32em] text-muted-foreground uppercase mt-1">
-            of Comfort
-          </span>
-        </div>
-      )}
+    <div className={cn("flex items-center justify-center", className)}>
+      <img
+        src={logoAsset.url}
+        alt="Angels of Comfort Home Care"
+        className={cn(
+          "object-contain w-auto",
+          showWordmark ? (stacked ? "h-36" : "h-24") : "h-10",
+        )}
+      />
     </div>
   );
 };
