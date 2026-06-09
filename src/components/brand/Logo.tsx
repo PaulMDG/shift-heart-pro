@@ -17,17 +17,19 @@ interface LogoProps {
  */
 export const LogoMark = ({ className }: { className?: string }) => (
   <div
-    className={cn("overflow-hidden inline-block", className)}
-    aria-hidden="true"
-    style={{ aspectRatio: "1 / 1" }}
-  >
-    <img
-      src={logoAsset.url}
-      alt=""
-      className="h-[260%] w-auto max-w-none object-contain"
-      style={{ objectPosition: "center top", marginLeft: "-30%" }}
-    />
-  </div>
+    role="img"
+    aria-label="Angels of Comfort"
+    className={cn("inline-block bg-no-repeat bg-center", className)}
+    style={{
+      backgroundImage: `url(${logoAsset.url})`,
+      // Source image ~1700x1144; icon mark occupies roughly top ~42% height,
+      // centered horizontally over ~20% of the width. Scale the background so
+      // the icon fills the square container and position to the top.
+      backgroundSize: "500% auto",
+      backgroundPosition: "center -2%",
+      aspectRatio: "1 / 1",
+    }}
+  />
 );
 
 const Logo = ({ className, showWordmark = true, stacked = false }: LogoProps) => {
