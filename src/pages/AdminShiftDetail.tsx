@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download, ShieldAlert, Phone, FileText } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download, ShieldAlert, Phone, FileText, ClipboardList } from "lucide-react";
 import { useShift } from "@/hooks/useShifts";
 import { useAdminClient } from "@/hooks/useAdminClient";
 import { getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
@@ -16,6 +16,7 @@ import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { formatDate, formatTime, formatDateTime } from "@/lib/format";
 import { useCareNoteAudits } from "@/hooks/useCareNoteAudits";
 import { History } from "lucide-react";
+import ShiftTasksList from "@/components/shifts/ShiftTasksList";
 
 function useCaregiverFailureHistory(
   caregiverId: string | null | undefined,
