@@ -1,22 +1,12 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { useShifts, type ShiftWithClient } from "@/hooks/useShifts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
 import { ClipboardList, ChevronRight, Clock, MapPin, CheckCircle2 } from "lucide-react";
 import { formatTime } from "@/lib/format";
-
-const DEFAULT_TASKS = [
-  "Personal hygiene assistance",
-  "Meal preparation",
-  "Medication reminder",
-  "Light housekeeping",
-  "Mobility assistance",
-  "Vitals check",
-];
+import ShiftTasksList from "@/components/shifts/ShiftTasksList";
 
 function todayIso() {
   return new Date().toISOString().split("T")[0];
@@ -33,20 +23,6 @@ const TasksPage = () => {
       ),
     [shifts],
   );
-
-  const [checks, setChecks] = useState<Record<string, string[]>>({});
-
-  const toggle = (shiftId: string, task: string) => {
-    setChecks((prev) => {
-      const current = prev[shiftId] ?? [];
-      return {
-        ...prev,
-        [shiftId]: current.includes(task)
-          ? current.filter((t) => t !== task)
-          : [...current, task],
-      };
-    });
-  };
 
   return (
     <MobileLayout>
@@ -85,8 +61,6 @@ const TasksPage = () => {
         ) : (
           <div className="space-y-4">
             {todayShifts.map((shift) => {
-              const completed = checks[shift.id] ?? [];
-              const pct = Math.round((completed.length / DEFAULT_TASKS.length) * 100);
               return (
                 <Card key={shift.id} className="overflow-hidden">
                   <button
@@ -108,36 +82,12 @@ const TasksPage = () => {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <Badge variant="secondary" className="text-[10px]">
-                        {pct}%
-                      </Badge>
-                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                    </div>
+                    <ChevronRight className="w-4 h-4 text-muted-foreground shrink-0" />
                   </button>
 
-                  <ul className="px-4 py-3 space-y-2">
-                    {DEFAULT_TASKS.map((task) => {
-                      const checked = completed.includes(task);
-                      return (
-                        <li key={task} className="flex items-center gap-3">
-                          <Checkbox
-                            id={`${shift.id}-${task}`}
-                            checked={checked}
-                            onCheckedChange={() => toggle(shift.id, task)}
-                          />
-                          <label
-                            htmlFor={`${shift.id}-${task}`}
-                            className={`text-sm flex-1 cursor-pointer ${
-                              checked ? "line-through text-muted-foreground" : "text-foreground"
-                            }`}
-                          >
-                            {task}
-                          </label>
-                        </li>
-                      );
-                    })}
-                  </ul>
+                  <div className="px-4 py-3">
+                    <ShiftTasksList shiftId={shift.id} autoSeed />
+                  </div>
 
                   <div className="px-4 pb-4">
                     <button

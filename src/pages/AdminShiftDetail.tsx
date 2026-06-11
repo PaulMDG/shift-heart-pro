@@ -1,5 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, MapPin, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download, ShieldAlert, Phone, FileText } from "lucide-react";
+import { ArrowLeft, MapPin, Clock, User, Navigation, AlertTriangle, CheckCircle2, Download, ShieldAlert, Phone, FileText, ClipboardList } from "lucide-react";
 import { useShift } from "@/hooks/useShifts";
 import { useAdminClient } from "@/hooks/useAdminClient";
 import { getDistanceMeters, MAX_DISTANCE_METERS } from "@/hooks/useGeolocation";
@@ -16,6 +16,7 @@ import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { formatDate, formatTime, formatDateTime } from "@/lib/format";
 import { useCareNoteAudits } from "@/hooks/useCareNoteAudits";
 import { History } from "lucide-react";
+import ShiftTasksList from "@/components/shifts/ShiftTasksList";
 
 function useCaregiverFailureHistory(
   caregiverId: string | null | undefined,
@@ -472,6 +473,14 @@ const AdminShiftDetail = () => {
               <p className="text-muted-foreground text-center py-4">No client details available.</p>
             )}
           </div>
+        </div>
+
+        <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-card-foreground">Care Tasks</h3>
+          </div>
+          {id && <ShiftTasksList shiftId={id} canManage />}
         </div>
       </div>
     </MobileLayout>

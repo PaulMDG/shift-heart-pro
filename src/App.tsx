@@ -44,6 +44,7 @@ import AdminDocuments from "./pages/AdminDocuments";
 import AdminIncidents from "./pages/AdminIncidents";
 import AdminPayroll from "./pages/AdminPayroll";
 import AdminReports from "./pages/AdminReports";
+import AdminCareTasks from "./pages/AdminCareTasks";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -94,6 +95,7 @@ const App = () => (
             <Route path="/admin/incidents" element={<AdminRoute><AdminIncidents /></AdminRoute>} />
             <Route path="/admin/payroll" element={<AdminRoute><AdminPayroll /></AdminRoute>} />
             <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
+            <Route path="/admin/settings/care-tasks" element={<AdminRoute><AdminCareTasks /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </LiveLocationProvider>

@@ -113,6 +113,36 @@ export type Database = {
         }
         Relationships: []
       }
+      care_task_templates: {
+        Row: {
+          active: boolean
+          care_type: string
+          created_at: string
+          id: string
+          label: string
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          care_type: string
+          created_at?: string
+          id?: string
+          label: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          care_type?: string
+          created_at?: string
+          id?: string
+          label?: string
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       caregiver_documents: {
         Row: {
           caregiver_id: string
@@ -613,6 +643,60 @@ export type Database = {
           },
         ]
       }
+      shift_tasks: {
+        Row: {
+          completed: boolean
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          label: string
+          shift_id: string
+          sort_order: number
+          template_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          completed?: boolean
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          label: string
+          shift_id: string
+          sort_order?: number
+          template_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          completed?: boolean
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          label?: string
+          shift_id?: string
+          sort_order?: number
+          template_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "shift_tasks_shift_id_fkey"
+            columns: ["shift_id"]
+            isOneToOne: false
+            referencedRelation: "shifts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "shift_tasks_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "care_task_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       shifts: {
         Row: {
           admin_notes: string
@@ -771,6 +855,7 @@ export type Database = {
         Args: { p_message_id: string; p_shift_id: string }
         Returns: undefined
       }
+      seed_shift_tasks: { Args: { p_shift_id: string }; Returns: number }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
