@@ -39,20 +39,45 @@
         justify-content: center;
         background: #0a1a24;
         z-index: 9999;
+        padding: 2rem;
       ">
         <img
           src="/pwa-icon-192.png"
           alt="Angels of Comfort"
-          style="width: 120px; height: 120px; object-fit: contain;"
+          style="width: 140px; height: 140px; object-fit: contain; animation: aoc-splash-pulse 1.8s ease-in-out infinite;"
         />
         <p style="
           margin-top: 1.5rem;
           font-family: 'Inter', system-ui, sans-serif;
-          font-size: 1.125rem;
-          font-weight: 500;
+          font-size: 1.25rem;
+          font-weight: 600;
           color: #cf9859;
-          letter-spacing: 0.02em;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          margin-bottom: 0.25rem;
         ">Angels of Comfort</p>
+        <p style="
+          font-family: 'Inter', system-ui, sans-serif;
+          font-size: 0.8125rem;
+          color: rgba(207, 152, 89, 0.65);
+          letter-spacing: 0.04em;
+        ">Compassionate Home Care</p>
+        <div style="
+          margin-top: 2.5rem;
+          width: 32px;
+          height: 32px;
+          border: 2px solid rgba(207, 152, 89, 0.2);
+          border-top-color: #cf9859;
+          border-radius: 50%;
+          animation: aoc-splash-spin 0.9s linear infinite;
+        "></div>
+        <style>
+          @keyframes aoc-splash-spin { to { transform: rotate(360deg); } }
+          @keyframes aoc-splash-pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.85; transform: scale(0.97); }
+          }
+        </style>
       </div>
     </div>
     <script type="module" src="/src/main.tsx"></script>
