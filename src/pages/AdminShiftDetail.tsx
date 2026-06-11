@@ -480,7 +480,7 @@ const AdminShiftDetail = () => {
             <ClipboardList className="w-4 h-4 text-primary" />
             <h3 className="font-semibold text-card-foreground">Care Tasks</h3>
           </div>
-          <ShiftTasksList shiftId={String((shift as any)?.id ?? "")} canManage />
+          {id && <ShiftTasksList shiftId={id} canManage />}
         </div>
       </div>
     </MobileLayout>
