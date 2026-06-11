@@ -11,6 +11,7 @@ import LocationPermissionGate from "@/components/LocationPermissionGate";
 import { LiveLocationProvider } from "@/hooks/useLiveLocation";
 import Index from "./pages/Index";
 import ShiftsPage from "./pages/ShiftsPage";
+import TasksPage from "./pages/TasksPage";
 import ShiftDetail from "./pages/ShiftDetail";
 import ShiftSwapPage from "./pages/ShiftSwapPage";
 import CareNotesPage from "./pages/CareNotesPage";
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/admin/login" element={<AdminLoginPage />} />
             <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
             <Route path="/shifts" element={<ProtectedRoute><ShiftsPage /></ProtectedRoute>} />
+            <Route path="/tasks" element={<ProtectedRoute><TasksPage /></ProtectedRoute>} />
             <Route path="/shifts/:id" element={<ProtectedRoute><ShiftDetail /></ProtectedRoute>} />
             <Route path="/shifts/:id/swap" element={<ProtectedRoute><ShiftSwapPage /></ProtectedRoute>} />
             <Route path="/shifts/:id/care-notes" element={<ProtectedRoute><CareNotesPage /></ProtectedRoute>} />
