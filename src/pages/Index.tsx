@@ -75,7 +75,7 @@ const Dashboard = () => {
       label: "Tasks",
       sub: todayShifts.length ? `${todayShifts.length} today` : "View all",
       tone: "bg-primary/15 text-primary",
-      path: "/shifts",
+      path: "/tasks",
     },
     {
       icon: MessageCircle,
