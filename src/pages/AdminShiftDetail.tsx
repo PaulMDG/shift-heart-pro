@@ -474,6 +474,14 @@ const AdminShiftDetail = () => {
             )}
           </div>
         </div>
+
+        <div className="bg-card rounded-2xl border border-border p-5 space-y-3">
+          <div className="flex items-center gap-2">
+            <ClipboardList className="w-4 h-4 text-primary" />
+            <h3 className="font-semibold text-card-foreground">Care Tasks</h3>
+          </div>
+          <ShiftTasksList shiftId={String((shift as any)?.id ?? "")} canManage />
+        </div>
       </div>
     </MobileLayout>
   );
