@@ -16,6 +16,17 @@ import {
 import { useAllShifts, useAllClients } from "@/hooks/useAdmin";
 import { useSeedShiftTasks } from "@/hooks/useShiftTasks";
 import { toast } from "@/components/ui/sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
 
 const AdminCareTasks = () => {
   const navigate = useNavigate();
@@ -30,6 +41,16 @@ const AdminCareTasks = () => {
   const [careType, setCareType] = useState("");
   const [label, setLabel] = useState("");
   const [order, setOrder] = useState("0");
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [applying, setApplying] = useState(false);
+  const [preview, setPreview] = useState<{
+    careType: string;
+    targets: Array<{ id: string; date: string }>;
+    alreadySeeded: number;
+    toSeed: number;
+    activeTemplates: number;
+  } | null>(null);
 
   const grouped = useMemo(() => {
     const map = new Map<string, typeof templates>();
@@ -66,28 +87,85 @@ const AdminCareTasks = () => {
     }
   };
 
-  const applyToUpcomingShifts = async (ct: string) => {
-    const matchingClientIds = new Set(
-      (clients as any[]).filter((c) => c.care_type === ct).map((c) => c.id),
-    );
-    const today = new Date().toISOString().split("T")[0];
-    const targets = (shifts as any[]).filter(
-      (s) => matchingClientIds.has(s.client_id) && s.date >= today && s.status !== "cancelled",
-    );
-    if (targets.length === 0) {
-      toast.info("No upcoming shifts matched");
-      return;
-    }
-    let added = 0;
-    for (const s of targets) {
-      try {
-        const n = await seed.mutateAsync(s.id);
-        added += n ?? 0;
-      } catch {
-        /* swallow per-shift errors */
+  const openPreview = async (ct: string) => {
+    setPreviewOpen(true);
+    setPreviewLoading(true);
+    setPreview(null);
+    try {
+      const matchingClientIds = new Set(
+        (clients as any[]).filter((c) => c.care_type === ct).map((c) => c.id),
+      );
+      const today = new Date().toISOString().split("T")[0];
+      const targets = (shifts as any[])
+        .filter(
+          (s) =>
+            matchingClientIds.has(s.client_id) &&
+            s.date >= today &&
+            s.status !== "cancelled",
+        )
+        .map((s) => ({ id: s.id as string, date: s.date as string }));
+
+      const activeTemplates = templates.filter(
+        (t) => t.care_type === ct && t.active,
+      ).length;
+
+      let alreadySeeded = 0;
+      if (targets.length > 0) {
+        const { data, error } = await supabase
+          .from("shift_tasks")
+          .select("shift_id")
+          .in(
+            "shift_id",
+            targets.map((t) => t.id),
+          );
+        if (error) throw error;
+        const seededSet = new Set((data ?? []).map((r: any) => r.shift_id));
+        alreadySeeded = targets.filter((t) => seededSet.has(t.id)).length;
       }
+
+      setPreview({
+        careType: ct,
+        targets,
+        alreadySeeded,
+        toSeed: targets.length - alreadySeeded,
+        activeTemplates,
+      });
+    } catch (e: any) {
+      toast.error(e.message || "Failed to preview");
+      setPreviewOpen(false);
+    } finally {
+      setPreviewLoading(false);
     }
-    toast.success(`Seeded ${added} task${added === 1 ? "" : "s"} across ${targets.length} shift${targets.length === 1 ? "" : "s"}`);
+  };
+
+  const confirmApply = async () => {
+    if (!preview) return;
+    setApplying(true);
+    let added = 0;
+    let seededShifts = 0;
+    try {
+      for (const t of preview.targets) {
+        try {
+          const n = await seed.mutateAsync(t.id);
+          if ((n ?? 0) > 0) {
+            added += n ?? 0;
+            seededShifts += 1;
+          }
+        } catch {
+          /* swallow per-shift errors */
+        }
+      }
+      toast.success(
+        `Seeded ${added} task${added === 1 ? "" : "s"} across ${seededShifts} shift${seededShifts === 1 ? "" : "s"}` +
+          (preview.alreadySeeded > 0
+            ? ` (${preview.alreadySeeded} already had tasks, skipped)`
+            : ""),
+      );
+      setPreviewOpen(false);
+      setPreview(null);
+    } finally {
+      setApplying(false);
+    }
   };
 
   return (
@@ -168,8 +246,8 @@ const AdminCareTasks = () => {
                   <Button
                     size="sm"
                     variant="outline"
-                    onClick={() => applyToUpcomingShifts(ct)}
-                    disabled={seed.isPending}
+                    onClick={() => openPreview(ct)}
+                    disabled={seed.isPending || previewLoading}
                   >
                     <Sparkles className="w-3.5 h-3.5 mr-1.5" />
                     Apply to upcoming
@@ -214,6 +292,55 @@ const AdminCareTasks = () => {
             ))}
           </div>
         )}
+
+        <AlertDialog open={previewOpen} onOpenChange={(o) => !applying && setPreviewOpen(o)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Apply templates to upcoming shifts</AlertDialogTitle>
+              <AlertDialogDescription asChild>
+                {previewLoading || !preview ? (
+                  <span className="flex items-center gap-2 text-sm">
+                    <Loader2 className="w-4 h-4 animate-spin" /> Calculating impact…
+                  </span>
+                ) : (
+                  <span className="block space-y-1 text-sm">
+                    <span className="block">
+                      Care type: <strong>{preview.careType}</strong>
+                    </span>
+                    <span className="block">
+                      Active templates to apply: <strong>{preview.activeTemplates}</strong>
+                    </span>
+                    <span className="block">
+                      Matching upcoming shifts: <strong>{preview.targets.length}</strong>
+                    </span>
+                    <span className="block text-muted-foreground">
+                      {preview.toSeed} will be seeded · {preview.alreadySeeded} already have tasks (skipped)
+                    </span>
+                  </span>
+                )}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={applying}>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  confirmApply();
+                }}
+                disabled={
+                  applying ||
+                  previewLoading ||
+                  !preview ||
+                  preview.toSeed === 0 ||
+                  preview.activeTemplates === 0
+                }
+              >
+                {applying && <Loader2 className="w-4 h-4 animate-spin mr-2" />}
+                Apply to {preview?.toSeed ?? 0} shift{preview?.toSeed === 1 ? "" : "s"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </MobileLayout>
   );
