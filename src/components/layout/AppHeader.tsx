@@ -1,7 +1,6 @@
 import { Bell, Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useNotifications } from "@/hooks/useNotifications";
-import { LogoMark } from "@/components/brand/Logo";
 
 const AppHeader = () => {
   const navigate = useNavigate();
