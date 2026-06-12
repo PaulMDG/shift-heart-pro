@@ -97,6 +97,7 @@ const App = () => (
             <Route path="/admin/payroll" element={<AdminRoute><AdminPayroll /></AdminRoute>} />
             <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
             <Route path="/admin/settings/care-tasks" element={<AdminRoute><AdminCareTasks /></AdminRoute>} />
+            <Route path="/admin/analytics/tasks" element={<AdminRoute><AdminTaskAnalytics /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
           </LiveLocationProvider>
