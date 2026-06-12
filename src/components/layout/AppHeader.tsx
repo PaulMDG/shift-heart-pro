@@ -21,7 +21,6 @@ const AppHeader = () => {
           </button>
         </div>
         <div className="justify-self-center flex flex-col items-center leading-none">
-          <LogoMark className="h-7 w-auto text-primary mb-1.5" />
           <h1 className="font-display text-[0.95rem] font-medium tracking-[0.32em] text-foreground uppercase">
             Angels
           </h1>
