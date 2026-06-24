@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Mail, Shield, Users, DollarSign, Bell, Database, ExternalLink, MapPin, Loader2, ClipboardList, BarChart3, Activity } from "lucide-react";
+import { ArrowLeft, Mail, Shield, Users, DollarSign, Bell, Database, ExternalLink, MapPin, Loader2, ClipboardList, BarChart3, Activity, Phone, Briefcase, CalendarClock, Stethoscope, Heart, Save } from "lucide-react";
 import { useAgencySettings, useUpdateAgencySettings } from "@/hooks/useAgencySettings";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -75,12 +75,42 @@ const AdminSettings = () => {
   const [radius, setRadius] = useState<string>("");
   const [accuracy, setAccuracy] = useState<string>("");
   const [repeat, setRepeat] = useState<string>("");
+  const [contacts, setContacts] = useState({
+    agency_name: "",
+    agency_phone: "",
+    agency_email: "",
+    scheduler_name: "",
+    scheduler_phone: "",
+    scheduler_email: "",
+    clinical_supervisor_name: "",
+    clinical_supervisor_phone: "",
+    clinical_supervisor_email: "",
+    family_contact_label: "",
+    family_contact_phone: "",
+    family_contact_email: "",
+    documents_url: "",
+  });
 
   useEffect(() => {
     if (settings) {
       setRadius(String(settings.geofence_radius_m));
       setAccuracy(String(settings.accuracy_threshold_m));
       setRepeat(String(settings.repeat_failure_threshold));
+      setContacts({
+        agency_name: settings.agency_name ?? "",
+        agency_phone: settings.agency_phone ?? "",
+        agency_email: settings.agency_email ?? "",
+        scheduler_name: settings.scheduler_name ?? "",
+        scheduler_phone: settings.scheduler_phone ?? "",
+        scheduler_email: settings.scheduler_email ?? "",
+        clinical_supervisor_name: settings.clinical_supervisor_name ?? "",
+        clinical_supervisor_phone: settings.clinical_supervisor_phone ?? "",
+        clinical_supervisor_email: settings.clinical_supervisor_email ?? "",
+        family_contact_label: settings.family_contact_label ?? "",
+        family_contact_phone: settings.family_contact_phone ?? "",
+        family_contact_email: settings.family_contact_email ?? "",
+        documents_url: settings.documents_url ?? "",
+      });
     }
   }, [settings]);
 
@@ -110,6 +140,29 @@ const AdminSettings = () => {
     }
     if (item.path) navigate(item.path);
   };
+
+  const saveContacts = async () => {
+    try {
+      await updateSettings.mutateAsync(contacts);
+      toast.success("Quick Contacts updated");
+    } catch (e: any) {
+      toast.error(e.message || "Failed to save");
+    }
+  };
+
+  const contactRoles: Array<{
+    icon: any;
+    title: string;
+    nameKey: keyof typeof contacts | null;
+    namePlaceholder: string;
+    phoneKey: keyof typeof contacts;
+    emailKey: keyof typeof contacts;
+  }> = [
+    { icon: Briefcase, title: "Agency", nameKey: "agency_name", namePlaceholder: "Angels of Comfort HQ", phoneKey: "agency_phone", emailKey: "agency_email" },
+    { icon: CalendarClock, title: "Scheduler", nameKey: "scheduler_name", namePlaceholder: "Scheduler name", phoneKey: "scheduler_phone", emailKey: "scheduler_email" },
+    { icon: Stethoscope, title: "Clinical Supervisor", nameKey: "clinical_supervisor_name", namePlaceholder: "Supervisor name", phoneKey: "clinical_supervisor_phone", emailKey: "clinical_supervisor_email" },
+    { icon: Heart, title: "Family Contact", nameKey: "family_contact_label", namePlaceholder: "Label shown to caregivers", phoneKey: "family_contact_phone", emailKey: "family_contact_email" },
+  ];
 
   return (
     <MobileLayout>
@@ -188,6 +241,80 @@ const AdminSettings = () => {
                 >
                   {updateSettings.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
                   Save thresholds
+                </button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Quick Communication directory */}
+        <Card className="border-border">
+          <CardHeader className="p-4 pb-2 flex flex-row items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
+              <Phone className="w-5 h-5 text-accent-foreground" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-sm">Quick Contacts</CardTitle>
+              <CardDescription className="text-xs mt-0.5">
+                Phone and email shown in the caregiver Messages screen's Quick Contacts.
+              </CardDescription>
+            </div>
+          </CardHeader>
+          <CardContent className="p-4 pt-2 space-y-4">
+            {settingsLoading ? (
+              <p className="text-xs text-muted-foreground">Loading…</p>
+            ) : (
+              <>
+                {contactRoles.map((role) => (
+                  <div key={role.title} className="space-y-2 rounded-xl border border-border p-3">
+                    <div className="flex items-center gap-2">
+                      <role.icon className="w-4 h-4 text-primary" />
+                      <p className="text-sm font-semibold text-foreground">{role.title}</p>
+                    </div>
+                    {role.nameKey && (
+                      <Input
+                        value={(contacts as any)[role.nameKey]}
+                        onChange={(e) => setContacts((c) => ({ ...c, [role.nameKey as string]: e.target.value }))}
+                        placeholder={role.namePlaceholder}
+                      />
+                    )}
+                    <div className="grid grid-cols-2 gap-2">
+                      <Input
+                        value={(contacts as any)[role.phoneKey]}
+                        onChange={(e) => setContacts((c) => ({ ...c, [role.phoneKey as string]: e.target.value }))}
+                        placeholder="Phone"
+                        type="tel"
+                      />
+                      <Input
+                        value={(contacts as any)[role.emailKey]}
+                        onChange={(e) => setContacts((c) => ({ ...c, [role.emailKey as string]: e.target.value }))}
+                        placeholder="Email"
+                        type="email"
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                <div className="space-y-1">
+                  <Label className="text-xs">Agency documents link (optional)</Label>
+                  <Input
+                    value={contacts.documents_url}
+                    onChange={(e) => setContacts((c) => ({ ...c, documents_url: e.target.value }))}
+                    placeholder="https://…"
+                    type="url"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    Opens when caregivers tap "View documents" from the Agency contact.
+                  </p>
+                </div>
+
+                <button
+                  onClick={saveContacts}
+                  disabled={updateSettings.isPending}
+                  className="w-full py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {updateSettings.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  Save Quick Contacts
                 </button>
               </>
             )}
