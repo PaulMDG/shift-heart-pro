@@ -194,7 +194,27 @@
   --card-foreground: 217 60% 12%;
   --popover: 0 0% 100%;
   --popover-foreground: 217 60% 12%;
-  --primary: 28 62% 42%;
-  --primary-foreground: 0 0% 100%;
-  --ring: 28 62% 42%;
+  --ring: 32 55% 50%;
+}
+
+/**
+ * Use for SMALL or thin (<18pt non-bold) gold text rendered on a white/ivory
+ * surface. The base `--primary` (HSL 32 55% 58%) only passes WCAG AA at large
+ * sizes; this darker shade reaches ≥4.5:1 on hsl(0 0% 100%) and ivory.
+ */
+.text-primary-strong {
+  color: hsl(28 62% 38%);
+}
+
+/**
+ * Standard focus ring for hand-rolled interactive elements that don't go
+ * through the shadcn button variants. Pair with `focus-visible:outline-none`.
+ */
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  outline: 2px solid hsl(28 62% 42%);
+  outline-offset: 2px;
+  border-radius: inherit;
 }
