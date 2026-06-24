@@ -40,7 +40,7 @@ const Logo = ({ className, showWordmark = true, stacked = false }: LogoProps) =>
         alt="Angels of Comfort Home Care"
         className={cn(
           "object-contain w-auto",
-          showWordmark ? (stacked ? "h-36" : "h-24") : "h-10",
+          showWordmark ? (stacked ? "h-44" : "h-28") : "h-12",
         )}
       />
     </div>

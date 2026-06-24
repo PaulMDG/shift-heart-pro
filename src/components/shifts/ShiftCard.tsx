@@ -114,17 +114,26 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") navigate(`/shifts/${shift.id}`);
       }}
-      className="w-full bg-card rounded-2xl p-4 border border-border hover:border-primary/30 hover:shadow-sm active:scale-[0.99] transition-all text-left cursor-pointer"
+      className="w-full bg-surface text-surface-foreground rounded-2xl p-4 border border-[hsl(var(--ivory-border))] shadow-soft hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.99] transition-all text-left cursor-pointer"
     >
       <div className="flex items-start justify-between mb-3 gap-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-semibold text-card-foreground truncate">
-            {clientName}
-          </h3>
-
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {careType}
-          </p>
+        <div className="flex-1 min-w-0 flex items-center gap-3">
+          <div
+            aria-hidden
+            className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-primary-foreground"
+            style={{
+              background:
+                "linear-gradient(135deg, hsl(32 55% 62%), hsl(28 50% 50%))",
+            }}
+          >
+            {clientName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+          </div>
+          <div className="min-w-0">
+            <h3 className="font-semibold text-surface-foreground truncate">
+              {clientName}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-0.5">{careType}</p>
+          </div>
         </div>
 
         <div className="flex flex-col items-end gap-1">

@@ -70,8 +70,9 @@ export default function ShiftTasksList({ shiftId, canManage = false, autoSeed = 
       {isLoading ? (
         <p className="text-xs text-muted-foreground">Loading tasks…</p>
       ) : tasks.length === 0 ? (
-        <p className="text-xs text-muted-foreground">
-          No tasks have been assigned for this shift yet.
+        <p className="text-xs text-muted-foreground leading-relaxed">
+          No tasks assigned for this visit. Continue documenting observations,
+          care notes, and any changes in condition.
         </p>
       ) : (
         <ul className="space-y-2">

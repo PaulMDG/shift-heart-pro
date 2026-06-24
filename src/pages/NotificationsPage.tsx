@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { formatDistanceToNow } from "date-fns";
+import { formatRelativeTime } from "@/lib/format";
 
 const iconMap: Record<string, typeof Bell> = {
   shift: Bell,
@@ -59,14 +59,14 @@ const NotificationsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background max-w-lg mx-auto">
-      <div className="sticky top-0 z-40 bg-card border-b border-border px-5 py-4">
+    <div className="min-h-screen bg-canvas text-canvas-foreground max-w-lg mx-auto">
+      <div className="sticky top-0 z-40 bg-surface border-b border-[hsl(var(--ivory-border))] px-5 py-4 shadow-soft">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
           <button onClick={() => navigate(-1)} className="p-1">
-            <ArrowLeft className="w-5 h-5 text-foreground" />
+            <ArrowLeft className="w-5 h-5 text-surface-foreground" />
           </button>
-          <h1 className="text-lg font-bold text-foreground">Notifications</h1>
+          <h1 className="text-lg font-bold text-surface-foreground">Notifications</h1>
           </div>
           {unreadCount > 0 && (
             <Button
@@ -86,17 +86,17 @@ const NotificationsPage = () => {
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
         ) : notifications.length === 0 ? (
-          <div className="bg-card rounded-2xl p-8 text-center">
+          <div className="bg-surface text-surface-foreground rounded-2xl p-8 text-center border border-[hsl(var(--ivory-border))] shadow-soft">
             <p className="text-sm text-muted-foreground">No notifications yet</p>
           </div>
         ) : (
           notifications.map((n) => {
             const Icon = iconMap[n.type] || Bell;
-            const timeAgo = formatDistanceToNow(new Date(n.created_at), { addSuffix: true });
+            const timeAgo = formatRelativeTime(n.created_at);
             return (
               <div
                 key={n.id}
-                className={`bg-card rounded-2xl p-4 shadow-card cursor-pointer transition-colors ${!n.read ? "border-l-4 border-primary" : ""}`}
+                className={`bg-surface text-surface-foreground rounded-2xl p-4 shadow-soft cursor-pointer transition-colors border border-[hsl(var(--ivory-border))] ${!n.read ? "border-l-4 border-l-primary" : ""}`}
                 onClick={() => { if (!n.read) markRead.mutate(n.id); }}
               >
                 <div className="flex items-start gap-3">
@@ -104,12 +104,12 @@ const NotificationsPage = () => {
                     <Icon className={`w-4 h-4 ${!n.read ? "text-primary-foreground" : "text-muted-foreground"}`} />
                   </div>
                   <div className="flex-1">
-                    <h3 className={`text-sm ${!n.read ? "font-bold text-card-foreground" : "font-medium text-card-foreground"}`}>
+                    <h3 className={`text-sm ${!n.read ? "font-bold text-surface-foreground" : "font-medium text-surface-foreground"}`}>
                       {n.title}
                     </h3>
                     <p className="text-xs text-muted-foreground mt-0.5">{n.message}</p>
                     <div className="flex items-center gap-2 mt-1.5">
-                      <p className="text-[10px] text-muted-foreground/60">{timeAgo}</p>
+                      <p className="text-[11px] text-muted-foreground font-medium">{timeAgo}</p>
                       {emailStatusBadge((n as any).email_status)}
                       {(n as any).email_status === "failed" && (n as any).email_payload && (
                         <button
