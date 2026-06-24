@@ -49,7 +49,7 @@ export function useShifts() {
       if (clientIds.length) {
         const { data: clients, error: cErr } = await supabase
           .from("clients_caregiver_safe" as any)
-          .select("id, name, address, care_type, lat, lng")
+          .select("id, name, address, care_type, lat, lng, photo_url")
           .in("id", clientIds);
         if (cErr) console.warn("[useShifts] clients fetch failed", cErr);
         (clients ?? []).forEach((c: any) => clientsById.set(c.id, c));
@@ -83,7 +83,7 @@ export function useShift(id: string | undefined) {
       if (!shift) return null;
       const { data: client, error: cErr } = await supabase
         .from("clients_caregiver_safe" as any)
-        .select("id, name, address, care_type, lat, lng")
+        .select("id, name, address, care_type, lat, lng, photo_url")
         .eq("id", (shift as any).client_id)
         .maybeSingle();
       if (cErr) console.warn("[useShift] client fetch failed", cErr);
