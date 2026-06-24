@@ -313,7 +313,29 @@ export function useAvailableUsers(search: string = "") {
         full_name: string;
         avatar_url: string | null;
         role: string | null;
+        phone: string | null;
       }>;
+    },
+  });
+}
+
+export function useMessageRecipient(userId: string | undefined) {
+  return useQuery({
+    queryKey: ["message-recipient", userId],
+    enabled: !!userId,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("get_message_recipient", {
+        _user_id: userId!,
+      });
+      if (error) throw error;
+      const row = (data || [])[0];
+      return (row || null) as {
+        id: string;
+        full_name: string;
+        avatar_url: string | null;
+        role: string | null;
+        phone: string | null;
+      } | null;
     },
   });
 }
