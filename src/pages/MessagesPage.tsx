@@ -59,8 +59,7 @@ const QUICK_ACTIONS = [
   { id: "call", label: "Call agency", icon: Phone, tone: "bg-primary/15 text-primary" },
 ];
 
-const QUICK_CONTACTS = [
-const QUICK_CONTACTS: Array<{ id: QuickContact["id"]; label: string; icon: any; tone: string }> = [
+const QUICK_CONTACTS: Array<{ id: string; label: string; icon: any; tone: string }> = [
   { id: "agency", label: "Agency", icon: Briefcase, tone: "from-[hsl(32_55%_62%)] to-[hsl(28_50%_50%)]" },
   { id: "scheduler", label: "Scheduler", icon: CalendarClock, tone: "from-[hsl(210_70%_55%)] to-[hsl(220_60%_45%)]" },
   { id: "clinical", label: "Clinical Supervisor", icon: Stethoscope, tone: "from-[hsl(152_50%_45%)] to-[hsl(160_55%_38%)]" },
