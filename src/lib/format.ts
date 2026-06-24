@@ -67,3 +67,42 @@ function parseDateOnly(s: string): Date | null {
   const d = new Date(s);
   return isNaN(d.getTime()) ? null : d;
 }
+
+/**
+ * Friendly relative time:
+ *  - "Just now" (<60s)
+ *  - "5 mins ago" (<60m)
+ *  - "Today, 2:14 PM"
+ *  - "Yesterday, 2:14 PM"
+ *  - "May 12" (this year)
+ *  - "May 12, 2024" (older)
+ */
+export function formatRelativeTime(value?: string | Date | null): string {
+  if (!value) return "";
+  const d = typeof value === "string" ? new Date(value) : value;
+  if (!d || isNaN(d.getTime())) return String(value ?? "");
+  const now = new Date();
+  const diffSec = Math.floor((now.getTime() - d.getTime()) / 1000);
+  if (diffSec < 60 && diffSec >= -30) return "Just now";
+  if (diffSec < 3600 && diffSec >= 0) {
+    const m = Math.floor(diffSec / 60);
+    return `${m} min${m === 1 ? "" : "s"} ago`;
+  }
+  const time = d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true });
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  if (sameDay) return `Today, ${time}`;
+  const yest = new Date(now);
+  yest.setDate(yest.getDate() - 1);
+  const isYesterday =
+    d.getFullYear() === yest.getFullYear() &&
+    d.getMonth() === yest.getMonth() &&
+    d.getDate() === yest.getDate();
+  if (isYesterday) return `Yesterday, ${time}`;
+  const sameYear = d.getFullYear() === now.getFullYear();
+  return d.toLocaleDateString("en-US", sameYear
+    ? { month: "short", day: "numeric" }
+    : { month: "short", day: "numeric", year: "numeric" });
+}
