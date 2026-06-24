@@ -106,8 +106,8 @@ const Dashboard = () => {
   return (
     <MobileLayout>
       <div className="pb-6">
-        {/* Navy hero band — greeting only, no avatar */}
-        <div className="bg-hero-navy px-5 pt-2 pb-7 rounded-b-[2rem] shadow-soft">
+        {/* Greeting — flat on the navy canvas, no overlapping hero band */}
+        <div className="px-5 pt-3 pb-5">
           <p className="text-sm text-[hsl(40_30%_78%)]">{greeting}</p>
           <h2 className="font-display text-[2.25rem] text-[hsl(var(--hero-foreground))] leading-tight">
             {firstName}
@@ -119,7 +119,7 @@ const Dashboard = () => {
           </p>
         </div>
 
-        <div className="px-5 -mt-5 space-y-5">
+        <div className="px-5 space-y-4">
 
         {/* Dominant Clock In/Out CTA */}
         <button
