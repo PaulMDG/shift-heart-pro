@@ -59,6 +59,12 @@ const settingsItems = [
     description: "Export data, manage backups, and compliance settings",
     path: "/admin/settings/data",
   },
+  {
+    icon: Activity,
+    title: "System Status",
+    description: "Asset health, logo verification, and environment checks",
+    path: "/admin/status",
+  },
 ];
 
 const AdminSettings = () => {
