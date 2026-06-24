@@ -272,7 +272,7 @@ function ConvCard({ conv, onOpen }: { conv: Conversation; onOpen: () => void }) 
                 {badge.label}
               </span>
             )}
-            <span className="text-sm font-semibold text-foreground truncate">
+            <span className="text-sm font-semibold text-surface-foreground truncate">
               {conv.full_name}
             </span>
             <span className="text-[10px] text-muted-foreground ml-auto whitespace-nowrap">
@@ -281,7 +281,7 @@ function ConvCard({ conv, onOpen }: { conv: Conversation; onOpen: () => void }) 
           </div>
           <p className={cn(
             "text-sm mt-1",
-            conv.unread_count > 0 ? "text-foreground font-medium" : "text-muted-foreground",
+            conv.unread_count > 0 ? "text-surface-foreground font-medium" : "text-muted-foreground",
           )}>
             {conv.last_message}
           </p>
