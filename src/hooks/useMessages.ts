@@ -297,20 +297,23 @@ function attachmentSummary(m: any): string {
   return `📎 ${m.attachment_name || "Document"}`;
 }
 
-export function useAvailableUsers() {
+export function useAvailableUsers(search: string = "") {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["available-users"],
+    queryKey: ["available-users", search],
     enabled: !!user,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url")
-        .neq("id", user!.id);
-
+      const { data, error } = await supabase.rpc("search_message_recipients", {
+        search_text: search,
+      });
       if (error) throw error;
-      return data || [];
+      return (data || []) as Array<{
+        id: string;
+        full_name: string;
+        avatar_url: string | null;
+        role: string | null;
+      }>;
     },
   });
 }
