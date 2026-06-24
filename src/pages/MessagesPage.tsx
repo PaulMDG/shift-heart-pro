@@ -264,12 +264,18 @@ const MessagesPage = () => {
                 key={q.id}
                 onClick={() => {
                   if (q.id === "call") {
-                    window.location.href = "tel:+18005550199";
+                    const phone = (settings as any)?.agency_phone?.trim();
+                    if (phone) {
+                      window.location.href = `tel:${phone}`;
+                    } else {
+                      setActiveContact(resolveContact("agency", "Agency"));
+                    }
                   } else {
                     navigate("/messages/new");
                   }
                 }}
                 className="flex flex-col items-center gap-2"
+                aria-label={q.label}
               >
                 <span className={cn("w-12 h-12 rounded-full flex items-center justify-center", q.tone)}>
                   <q.icon className="w-5 h-5" />
