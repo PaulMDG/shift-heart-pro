@@ -10,6 +10,42 @@ import { supabase } from "@/integrations/supabase/client";
 const CACHE = new Map<string, { url: string; expiresAt: number }>();
 const SIGN_TTL_SECONDS = 60 * 60; // 1h
 
+const SUPPORTED_MIME = /^image\/(png|jpe?g|webp)$/i;
+const SUPPORTED_EXT = /\.(png|jpe?g|webp)$/i;
+const MAX_BYTES = 5 * 1024 * 1024;
+
+/**
+ * Throws a user-friendly Error when `file` is not a supported client photo.
+ * Recognises common unsupported formats (HEIC/HEIF/AVIF/GIF/BMP/TIFF/SVG) so
+ * we can tell the admin exactly what's wrong rather than the generic
+ * "upload failed" from Supabase Storage.
+ */
+export function validateClientPhotoFile(file: File): void {
+  if (file.size === 0) throw new Error("This file is empty. Pick a different photo.");
+  if (file.size > MAX_BYTES) {
+    const mb = (file.size / (1024 * 1024)).toFixed(1);
+    throw new Error(`Photo is ${mb} MB — must be under 5 MB. Try a smaller image.`);
+  }
+  const name = file.name.toLowerCase();
+  const heicLike = /\.(heic|heif)$/i.test(name) || /heic|heif/i.test(file.type);
+  if (heicLike) {
+    throw new Error(
+      "HEIC/HEIF photos aren't supported. Export the photo as JPG or PNG and try again.",
+    );
+  }
+  const otherUnsupported = /\.(avif|gif|bmp|tif|tiff|svg)$/i.test(name);
+  if (otherUnsupported) {
+    throw new Error(
+      `${name.split(".").pop()?.toUpperCase()} files aren't supported. Use JPG, PNG, or WebP.`,
+    );
+  }
+  const mimeOk = SUPPORTED_MIME.test(file.type);
+  const extOk = SUPPORTED_EXT.test(name);
+  if (!mimeOk && !extOk) {
+    throw new Error("Only JPG, PNG, or WebP photos are supported.");
+  }
+}
+
 export async function getClientPhotoUrl(path: string | null | undefined): Promise<string | null> {
   if (!path) return null;
   const cached = CACHE.get(path);
@@ -56,10 +92,7 @@ export function clientStoragePath(clientId: string, file: File): string {
 
 /** Upload a client photo, update the clients row, and remove the previous object. */
 export async function uploadClientPhoto(clientId: string, file: File, previousPath?: string | null): Promise<string> {
-  if (file.size > 5 * 1024 * 1024) throw new Error("Photo must be under 5 MB");
-  if (!/^image\/(png|jpe?g|webp)$/.test(file.type)) {
-    throw new Error("Only PNG, JPEG, or WebP photos are supported");
-  }
+  validateClientPhotoFile(file);
   const path = clientStoragePath(clientId, file);
   const { error: upErr } = await supabase.storage.from("avatars").upload(path, file, {
     cacheControl: "3600",

@@ -18,8 +18,9 @@ import CompletenessBadge from "@/components/admin/CompletenessBadge";
 import { useClientDocuments } from "@/hooks/useComplianceDocuments";
 import { evaluateClientCompleteness } from "@/lib/profileCompleteness";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { useClientPhotoUrl, uploadClientPhoto, removeClientPhoto } from "@/lib/clientPhoto";
+import { useClientPhotoUrl, uploadClientPhoto, removeClientPhoto, validateClientPhotoFile } from "@/lib/clientPhoto";
 import { useQueryClient } from "@tanstack/react-query";
+import ClientPhotoCropper from "@/components/admin/ClientPhotoCropper";
 
 interface ClientDetailSheetProps {
   client: any;
@@ -52,6 +53,7 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
   const [photoBusy, setPhotoBusy] = useState(false);
+  const [pendingPhoto, setPendingPhoto] = useState<File | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const qc = useQueryClient();
   const updateClient = useUpdateClient();
@@ -66,17 +68,28 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
     .slice(0, 2)
     .toUpperCase();
 
-  const onPickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onPickPhoto = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file || !client?.id) return;
+    try {
+      validateClientPhotoFile(file);
+      setPendingPhoto(file);
+    } catch (err: any) {
+      toast.error(err?.message || "Unsupported image");
+    }
+  };
+
+  const onConfirmCrop = async (cropped: File) => {
+    if (!client?.id) return;
     setPhotoBusy(true);
     try {
-      await uploadClientPhoto(client.id, file, client.photo_url);
+      await uploadClientPhoto(client.id, cropped, client.photo_url);
       await qc.invalidateQueries({ queryKey: ["admin-clients"] });
       toast.success("Photo updated");
+      setPendingPhoto(null);
     } catch (err: any) {
-      toast.error(err?.message || "Upload failed");
+      toast.error(err?.message || "Upload failed. Please try again.");
     } finally {
       setPhotoBusy(false);
     }
@@ -294,12 +307,20 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
             <input
               ref={fileRef}
               type="file"
-              accept="image/png,image/jpeg,image/webp"
+              accept="image/png,image/jpeg,image/webp,.jpg,.jpeg,.png,.webp"
               onChange={onPickPhoto}
               className="hidden"
             />
           </div>
         </div>
+
+        <ClientPhotoCropper
+          file={pendingPhoto}
+          open={!!pendingPhoto}
+          onClose={() => !photoBusy && setPendingPhoto(null)}
+          onConfirm={onConfirmCrop}
+          busy={photoBusy}
+        />
 
         {editing ? (
           <div className="space-y-4">

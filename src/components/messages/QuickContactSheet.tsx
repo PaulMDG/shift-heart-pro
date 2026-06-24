@@ -1,10 +1,19 @@
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Phone, Mail, FileText, MessageCircle, AlertTriangle } from "lucide-react";
+import {
+  Phone,
+  Mail,
+  FileText,
+  MessageCircle,
+  AlertTriangle,
+  CalendarClock,
+  Stethoscope,
+  Users,
+} from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 
 export interface QuickContact {
-  id: string;
+  id: "agency" | "scheduler" | "clinical" | "family" | string;
   label: string;
   name?: string | null;
   phone?: string | null;
@@ -24,14 +33,60 @@ interface Props {
  * screen. Surfaces phone (`tel:`), email (`mailto:`), and an in-app message
  * shortcut, with disabled states when the agency hasn't published a detail.
  */
+/** Per-contact "View documents" destination mapping. */
+function documentsDestination(id: string, documentsUrl?: string | null) {
+  const url = documentsUrl?.trim() || null;
+  switch (id) {
+    case "agency":
+      return {
+        label: "View documents",
+        sub: url ? "Open agency documents" : "Your caregiver documents",
+        icon: FileText,
+        target: url ?? "/profile",
+        external: !!url,
+      };
+    case "scheduler":
+      return {
+        label: "View schedule",
+        sub: "Open My Day & swaps",
+        icon: CalendarClock,
+        target: "/shifts",
+        external: false,
+      };
+    case "clinical":
+      return {
+        label: "Care plans & clinical notes",
+        sub: "Open client documents",
+        icon: Stethoscope,
+        target: "/profile",
+        external: false,
+      };
+    case "family":
+      return {
+        label: "Family handoffs",
+        sub: "Open family conversations",
+        icon: Users,
+        target: "/messages?category=family",
+        external: false,
+      };
+    default:
+      return null;
+  }
+}
+
 const QuickContactSheet = ({ contact, open, onClose }: Props) => {
   const navigate = useNavigate();
   if (!contact) return null;
 
   const hasPhone = !!contact.phone?.trim();
   const hasEmail = !!contact.email?.trim();
-  const hasDocs = !!contact.documentsUrl?.trim();
   const anyDetail = hasPhone || hasEmail;
+
+  // Per-contact in-app chat fallback (always available so the caregiver can
+  // start a thread even before admin publishes a phone/email).
+  const inAppDestination = `/messages/new?context=${encodeURIComponent(contact.id)}`;
+
+  const docs = documentsDestination(contact.id, contact.documentsUrl);
 
   const actions: Array<{
     key: string;
@@ -54,39 +109,43 @@ const QuickContactSheet = ({ contact, open, onClose }: Props) => {
     },
     {
       key: "message",
-      label: "Send message",
-      sub: hasEmail
-        ? (contact.email as string)
-        : "Opens in-app chat",
-      icon: hasEmail ? Mail : MessageCircle,
-      enabled: hasEmail || true,
+      label: "Send in-app message",
+      sub: `Start a thread with ${contact.label}`,
+      icon: MessageCircle,
+      enabled: true,
       onClick: () => {
         onClose();
-        if (hasEmail) {
-          window.location.href = `mailto:${contact.email}?subject=${encodeURIComponent(
-            `[Caregiver] ${contact.label}`,
-          )}`;
-        } else {
-          navigate("/messages/new");
-        }
+        navigate(inAppDestination);
       },
       tone: "neutral",
     },
   ];
 
-  if (contact.id === "agency") {
+  if (hasEmail) {
+    actions.push({
+      key: "email",
+      label: "Email",
+      sub: contact.email as string,
+      icon: Mail,
+      enabled: true,
+      href: `mailto:${contact.email}?subject=${encodeURIComponent(`[Caregiver] ${contact.label}`)}`,
+      tone: "neutral",
+    });
+  }
+
+  if (docs) {
     actions.push({
       key: "documents",
-      label: "View documents",
-      sub: hasDocs ? "Open agency documents" : "Caregiver documents",
-      icon: FileText,
+      label: docs.label,
+      sub: docs.sub,
+      icon: docs.icon,
       enabled: true,
       onClick: () => {
         onClose();
-        if (hasDocs) {
-          window.open(contact.documentsUrl as string, "_blank", "noopener,noreferrer");
+        if (docs.external) {
+          window.open(docs.target, "_blank", "noopener,noreferrer");
         } else {
-          navigate("/profile");
+          navigate(docs.target);
         }
       },
       tone: "neutral",
@@ -106,12 +165,13 @@ const QuickContactSheet = ({ contact, open, onClose }: Props) => {
           )}
         </SheetHeader>
 
-        {!anyDetail && contact.id !== "agency" && (
+        {!anyDetail && (
           <div className="mt-3 flex items-start gap-2 rounded-xl bg-warning/10 border border-warning/30 p-3">
             <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
             <p className="text-xs text-foreground/80">
-              No contact details published yet. Ask your admin to add a phone
-              or email for this role in <strong>Settings → Quick Contacts</strong>.
+              No phone or email published yet — you can still start an in-app
+              message below. Ask your admin to add direct contact details
+              under <strong>Settings → Quick Contacts</strong>.
             </p>
           </div>
         )}
