@@ -177,33 +177,62 @@
 }
 
 /**
- * Ivory canvas scope — applied to the caregiver MobileLayout root.
- * Overrides text/muted/border tokens so shadcn components and
- * `text-muted-foreground` utilities meet WCAG AA contrast on a
- * light surface, without breaking the dark admin shell.
+ * Caregiver canvas scope — applied to the caregiver MobileLayout root.
+ * Re-points the surface tokens to the Angels of Comfort deep-navy palette
+ * so Home / Schedule / Tasks / Messages / Visit Details all render on
+ * navy cards with ivory text and warm-gold accents (matching the
+ * approved redesign mockups). The admin shell is unaffected because it
+ * sits outside `.theme-canvas`.
  */
 .theme-canvas {
-  --foreground: 217 60% 12%;
-  --muted-foreground: 217 18% 36%;
-  --muted: 32 30% 92%;
-  --border: 32 25% 86%;
-  --input: 0 0% 100%;
-  --accent: 32 40% 92%;
-  --accent-foreground: 217 60% 12%;
-  --card: 0 0% 100%;
-  --card-foreground: 217 60% 12%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 217 60% 12%;
-  --ring: 32 55% 50%;
+  /* Base surfaces */
+  --canvas: 217 55% 9%;
+  --canvas-foreground: 40 40% 92%;
+  --surface: 217 50% 13%;
+  --surface-foreground: 40 40% 92%;
+
+  /* shadcn tokens */
+  --background: 217 55% 9%;
+  --foreground: 40 40% 92%;
+  --card: 217 50% 13%;
+  --card-foreground: 40 40% 92%;
+  --popover: 217 50% 13%;
+  --popover-foreground: 40 40% 92%;
+  --muted: 217 38% 18%;
+  --muted-foreground: 40 20% 78%;
+  --secondary: 217 40% 16%;
+  --secondary-foreground: 40 40% 92%;
+  --accent: 32 55% 58%;
+  --accent-foreground: 217 60% 10%;
+  --border: 217 35% 22%;
+  --input: 217 40% 16%;
+  --ring: 32 60% 60%;
+
+  /* The legacy `--ivory-border` token is reused across cards as a
+   * hand-rolled border; keep the name but repoint to a navy hairline
+   * with a subtle warm tint so existing `border-[hsl(var(--ivory-border))]`
+   * utilities pick up the dark theme without code changes. */
+  --ivory-border: 217 35% 24%;
+}
+
+/* On dark navy the base "soft" shadow disappears; swap it for a deeper
+ * outline so cards still feel lifted off the canvas. */
+.theme-canvas .shadow-soft {
+  box-shadow: 0 10px 28px -16px hsl(217 80% 4% / 0.7),
+    0 1px 0 hsl(40 40% 92% / 0.04) inset;
 }
 
 /**
- * Use for SMALL or thin (<18pt non-bold) gold text rendered on a white/ivory
- * surface. The base `--primary` (HSL 32 55% 58%) only passes WCAG AA at large
- * sizes; this darker shade reaches ≥4.5:1 on hsl(0 0% 100%) and ivory.
+ * Strong gold text utility — original ivory shell used a darkened gold for
+ * AA contrast on white. The caregiver shell is now navy, so brighten it
+ * back up; admin/ivory contexts (outside `.theme-canvas`) keep the darker
+ * shade for ≥4.5:1 on light backgrounds.
  */
 .text-primary-strong {
   color: hsl(28 62% 38%);
+}
+.theme-canvas .text-primary-strong {
+  color: hsl(38 78% 68%);
 }
 
 /**
