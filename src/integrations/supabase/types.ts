@@ -17,28 +17,67 @@ export type Database = {
       agency_settings: {
         Row: {
           accuracy_threshold_m: number
+          agency_email: string | null
+          agency_name: string | null
+          agency_phone: string | null
+          clinical_supervisor_email: string | null
+          clinical_supervisor_name: string | null
+          clinical_supervisor_phone: string | null
+          documents_url: string | null
+          family_contact_email: string | null
+          family_contact_label: string | null
+          family_contact_phone: string | null
           geofence_radius_m: number
           id: string
           is_global: boolean
           repeat_failure_threshold: number
+          scheduler_email: string | null
+          scheduler_name: string | null
+          scheduler_phone: string | null
           updated_at: string
           updated_by: string | null
         }
         Insert: {
           accuracy_threshold_m?: number
+          agency_email?: string | null
+          agency_name?: string | null
+          agency_phone?: string | null
+          clinical_supervisor_email?: string | null
+          clinical_supervisor_name?: string | null
+          clinical_supervisor_phone?: string | null
+          documents_url?: string | null
+          family_contact_email?: string | null
+          family_contact_label?: string | null
+          family_contact_phone?: string | null
           geofence_radius_m?: number
           id?: string
           is_global?: boolean
           repeat_failure_threshold?: number
+          scheduler_email?: string | null
+          scheduler_name?: string | null
+          scheduler_phone?: string | null
           updated_at?: string
           updated_by?: string | null
         }
         Update: {
           accuracy_threshold_m?: number
+          agency_email?: string | null
+          agency_name?: string | null
+          agency_phone?: string | null
+          clinical_supervisor_email?: string | null
+          clinical_supervisor_name?: string | null
+          clinical_supervisor_phone?: string | null
+          documents_url?: string | null
+          family_contact_email?: string | null
+          family_contact_label?: string | null
+          family_contact_phone?: string | null
           geofence_radius_m?: number
           id?: string
           is_global?: boolean
           repeat_failure_threshold?: number
+          scheduler_email?: string | null
+          scheduler_name?: string | null
+          scheduler_phone?: string | null
           updated_at?: string
           updated_by?: string | null
         }
@@ -268,6 +307,7 @@ export type Database = {
           lng: number | null
           name: string
           phone: string | null
+          photo_url: string | null
           primary_language: string | null
           responsible_party: string | null
           service_start_date: string | null
@@ -292,6 +332,7 @@ export type Database = {
           lng?: number | null
           name: string
           phone?: string | null
+          photo_url?: string | null
           primary_language?: string | null
           responsible_party?: string | null
           service_start_date?: string | null
@@ -316,6 +357,7 @@ export type Database = {
           lng?: number | null
           name?: string
           phone?: string | null
+          photo_url?: string | null
           primary_language?: string | null
           responsible_party?: string | null
           service_start_date?: string | null
