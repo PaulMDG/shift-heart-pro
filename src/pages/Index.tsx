@@ -22,6 +22,8 @@ import { formatTime, formatRelativeTime } from "@/lib/format";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { metersToFeet } from "@/hooks/useGeolocation";
 import { openDirections } from "@/lib/directions";
+import { useClientPhotoUrl } from "@/lib/clientPhoto";
+import RouteSummaryCard from "@/components/dashboard/RouteSummaryCard";
 
 const Dashboard = () => {
   const { data: shifts = [] } = useShifts();
@@ -43,6 +45,7 @@ const Dashboard = () => {
     todayShifts[0];
 
   const nextShift = upcomingShifts[0];
+  const nextPhotoUrl = useClientPhotoUrl((nextShift?.client as any)?.photo_url ?? null);
 
   const firstName = profile?.full_name?.split(" ")[0] || "there";
   const hour = new Date().getHours();
@@ -124,7 +127,7 @@ const Dashboard = () => {
           onClick={() => activeShift && navigate(`/shifts/${activeShift.id}`)}
           disabled={!activeShift}
           aria-label={isClockedIn ? "Clock out" : "Clock in"}
-          className="w-full gradient-cta text-primary-foreground rounded-3xl px-6 py-6 flex items-center justify-between gap-4 active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
+          className="focus-ring w-full min-h-[88px] gradient-cta text-primary-foreground rounded-3xl px-6 py-6 flex items-center justify-between gap-4 active:scale-[0.98] transition-transform disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <div className="flex items-center gap-4 min-w-0">
             <span className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur flex items-center justify-center shrink-0">
@@ -176,7 +179,7 @@ const Dashboard = () => {
               <span className="w-7 h-7 rounded-full bg-primary/15 text-primary flex items-center justify-center">
                 <Clock className="w-3.5 h-3.5" />
               </span>
-              <span className="text-muted-foreground">Today's total</span>
+                <span className="text-muted-foreground">Today's total</span>
               <span className="font-semibold">
                 {totalH}h {String(totalM).padStart(2, "0")}m
               </span>
@@ -184,13 +187,17 @@ const Dashboard = () => {
             <button
               type="button"
               onClick={() => navigate("/profile/timesheets")}
-              className="text-primary text-sm font-semibold inline-flex items-center gap-0.5"
+                className="focus-ring text-primary-strong text-sm font-semibold inline-flex items-center gap-0.5 min-h-11 px-1"
+                aria-label="Open timesheet"
             >
               Timesheet
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         </section>
+
+        {/* Today's route summary (replaces old schedule graph) */}
+        <RouteSummaryCard shifts={todayShifts} />
 
         {/* Up next */}
         {nextShift && (
@@ -202,7 +209,8 @@ const Dashboard = () => {
               <button
                 type="button"
                 onClick={() => navigate("/shifts")}
-                className="text-primary text-sm font-medium inline-flex items-center gap-0.5"
+                className="focus-ring text-primary-strong text-sm font-semibold inline-flex items-center gap-0.5 min-h-11 px-1"
+                aria-label="View full schedule"
               >
                 View full schedule
                 <ChevronRight className="w-4 h-4" />
@@ -227,9 +235,9 @@ const Dashboard = () => {
 
               <div className="flex-1 min-w-0 flex gap-3">
                 <Avatar className="w-12 h-12 rounded-xl">
-                  <AvatarImage src={(nextShift.client as any)?.photo_url || undefined} />
+                  <AvatarImage src={nextPhotoUrl ?? undefined} alt="" />
                   <AvatarFallback
-                    className="rounded-xl text-primary-foreground font-semibold"
+                    className="rounded-xl text-white font-semibold"
                     style={{ background: "linear-gradient(135deg, hsl(32 55% 62%), hsl(28 50% 50%))" }}
                   >
                     {nextShift.client?.name?.slice(0, 1).toUpperCase() ?? "C"}
@@ -261,7 +269,7 @@ const Dashboard = () => {
                   })
                 }
                 aria-label="Directions"
-                className="shrink-0 flex flex-col items-center gap-1 text-muted-foreground"
+                className="focus-ring shrink-0 flex flex-col items-center gap-1 text-muted-foreground min-w-11 min-h-11"
               >
                 <span className="w-11 h-11 rounded-full bg-primary/15 flex items-center justify-center">
                   <Navigation className="w-4 h-4 text-primary" />

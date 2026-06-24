@@ -7,6 +7,20 @@ export interface AgencySettings {
   accuracy_threshold_m: number;
   repeat_failure_threshold: number;
   updated_at: string;
+  // Quick Communication contact directory (all optional)
+  agency_name?: string | null;
+  agency_phone?: string | null;
+  agency_email?: string | null;
+  scheduler_name?: string | null;
+  scheduler_phone?: string | null;
+  scheduler_email?: string | null;
+  clinical_supervisor_name?: string | null;
+  clinical_supervisor_phone?: string | null;
+  clinical_supervisor_email?: string | null;
+  family_contact_label?: string | null;
+  family_contact_phone?: string | null;
+  family_contact_email?: string | null;
+  documents_url?: string | null;
 }
 
 export const DEFAULT_SETTINGS: AgencySettings = {
@@ -38,7 +52,7 @@ export function useAgencySettings() {
 export function useUpdateAgencySettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async (patch: Partial<Pick<AgencySettings, "geofence_radius_m" | "accuracy_threshold_m" | "repeat_failure_threshold">>) => {
+    mutationFn: async (patch: Partial<AgencySettings>) => {
       const { data: existing } = await (supabase.from("agency_settings") as any)
         .select("id")
         .eq("is_global", true)

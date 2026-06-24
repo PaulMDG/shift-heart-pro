@@ -48,12 +48,13 @@ const TasksPage = () => {
           <Card className="p-8 text-center space-y-3">
             <CheckCircle2 className="w-10 h-10 mx-auto text-success" />
             <p className="font-display text-xl">No visits scheduled today</p>
-            <p className="text-sm text-muted-foreground">
-              Check your full schedule for upcoming shifts.
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              Review your upcoming shifts to prepare for tomorrow's care, and
+              check Messages for any agency updates.
             </p>
             <button
               onClick={() => navigate("/shifts")}
-              className="text-sm text-primary font-medium underline-offset-4 hover:underline"
+              className="focus-ring text-sm text-primary-strong font-semibold underline-offset-4 hover:underline min-h-11 px-2"
             >
               View schedule
             </button>

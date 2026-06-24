@@ -311,7 +311,10 @@ const ShiftsPage = () => {
               ) : (
                 <div className="rounded-2xl bg-card border border-border p-8 text-center">
                   <CalendarIcon className="w-8 h-8 text-muted-foreground/50 mx-auto mb-2" />
-                  <p className="text-sm text-muted-foreground">No shifts scheduled</p>
+                  <p className="text-sm font-semibold text-foreground">No visits scheduled</p>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto">
+                    Check back later or contact the scheduler if you expected a visit on this day.
+                  </p>
                 </div>
               )}
             </div>
@@ -337,7 +340,14 @@ const ShiftsPage = () => {
                   : mySwaps.length > 0 ? mySwaps.map((req) => (
                       <SwapRequestCard key={req.id} request={req} variant="outgoing" onCancel={handleCancel} isLoading={cancelSwap.isPending} />
                     ))
-                  : <div className="bg-card rounded-2xl p-8 border border-border text-center"><p className="text-sm text-muted-foreground">No swap requests yet</p></div>}
+                  : (
+                    <div className="bg-card rounded-2xl p-8 border border-border text-center">
+                      <p className="text-sm font-semibold text-foreground">No swap requests yet</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Open a shift to request coverage from another caregiver.
+                      </p>
+                    </div>
+                  )}
               </div>
             </section>
           </div>
