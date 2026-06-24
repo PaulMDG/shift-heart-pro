@@ -15,6 +15,8 @@ import { useVisitHistory, useShiftDocuments, useUploadShiftDocument, validateDoc
 import CareSummaryPreview from "@/components/shifts/CareSummaryPreview";
 import CareSummaryHistory from "@/components/shifts/CareSummaryHistory";
 import CareSummaryVersions from "@/components/shifts/CareSummaryVersions";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useClientPhotoUrl } from "@/lib/clientPhoto";
 
 const ShiftDetail = () => {
   const { id } = useParams();
