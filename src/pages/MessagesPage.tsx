@@ -24,6 +24,8 @@ import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { useAgencySettings } from "@/hooks/useAgencySettings";
+import QuickContactSheet, { type QuickContact } from "@/components/messages/QuickContactSheet";
 
 type Filter = "all" | "admin" | "family" | "alert" | "handoff";
 
@@ -58,17 +60,61 @@ const QUICK_ACTIONS = [
 ];
 
 const QUICK_CONTACTS = [
+const QUICK_CONTACTS: Array<{ id: QuickContact["id"]; label: string; icon: any; tone: string }> = [
   { id: "agency", label: "Agency", icon: Briefcase, tone: "from-[hsl(32_55%_62%)] to-[hsl(28_50%_50%)]" },
   { id: "scheduler", label: "Scheduler", icon: CalendarClock, tone: "from-[hsl(210_70%_55%)] to-[hsl(220_60%_45%)]" },
-  { id: "clinical", label: "Clinical", icon: Stethoscope, tone: "from-[hsl(152_50%_45%)] to-[hsl(160_55%_38%)]" },
-  { id: "family", label: "Family", icon: Heart, tone: "from-[hsl(0_65%_60%)] to-[hsl(340_60%_50%)]" },
+  { id: "clinical", label: "Clinical Supervisor", icon: Stethoscope, tone: "from-[hsl(152_50%_45%)] to-[hsl(160_55%_38%)]" },
+  { id: "family", label: "Family Contact", icon: Heart, tone: "from-[hsl(0_65%_60%)] to-[hsl(340_60%_50%)]" },
 ];
 
 const MessagesPage = () => {
   const { data: conversations = [], isLoading } = useConversations();
+  const { data: settings } = useAgencySettings();
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
+  const [activeContact, setActiveContact] = useState<QuickContact | null>(null);
+
+  const resolveContact = (id: string, fallbackLabel: string): QuickContact => {
+    const s: any = settings || {};
+    switch (id) {
+      case "agency":
+        return {
+          id: "agency",
+          label: s.agency_name || fallbackLabel,
+          name: s.agency_name,
+          phone: s.agency_phone,
+          email: s.agency_email,
+          documentsUrl: s.documents_url,
+        };
+      case "scheduler":
+        return {
+          id: "scheduler",
+          label: "Scheduler",
+          name: s.scheduler_name,
+          phone: s.scheduler_phone,
+          email: s.scheduler_email,
+        };
+      case "clinical":
+        return {
+          id: "clinical",
+          label: "Clinical Supervisor",
+          name: s.clinical_supervisor_name,
+          phone: s.clinical_supervisor_phone,
+          email: s.clinical_supervisor_email,
+        };
+      case "family":
+        return {
+          id: "family",
+          label: s.family_contact_label || "Family Contact",
+          name: s.family_contact_label,
+          phone: s.family_contact_phone,
+          email: s.family_contact_email,
+        };
+      default:
+        return { id, label: fallbackLabel };
+    }
+  };
 
   const counts = useMemo(() => {
     const c: Record<Filter, number> = { all: 0, admin: 0, family: 0, alert: 0, handoff: 0 };
@@ -95,9 +141,9 @@ const MessagesPage = () => {
           <button
             onClick={() => navigate("/messages/new")}
             aria-label="New message"
-            className="w-9 h-9 rounded-xl border border-primary/40 flex items-center justify-center text-primary"
+            className="focus-ring w-11 h-11 rounded-xl border border-primary/40 flex items-center justify-center text-primary-strong"
           >
-            <PencilLine className="w-4 h-4" />
+            <PencilLine className="w-5 h-5" />
           </button>
         </div>
 
@@ -110,8 +156,9 @@ const MessagesPage = () => {
             {QUICK_CONTACTS.map((c) => (
               <button
                 key={c.id}
-                onClick={() => navigate("/messages/new")}
-                className="flex flex-col items-center gap-1.5 shrink-0 w-[68px]"
+                onClick={() => setActiveContact(resolveContact(c.id, c.label))}
+                className="focus-ring flex flex-col items-center gap-1.5 shrink-0 w-[72px] min-h-[88px] rounded-xl p-1"
+                aria-label={`${c.label} quick contact`}
               >
                 <span
                   className={cn(
@@ -193,8 +240,11 @@ const MessagesPage = () => {
         ) : filtered.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <MessageCircle className="w-10 h-10 mx-auto mb-3 opacity-40" />
-            <p className="text-sm">No conversations</p>
-            <p className="text-xs mt-1">Tap the pencil to start a new chat</p>
+            <p className="text-sm font-semibold text-surface-foreground">No active conversations</p>
+            <p className="text-xs mt-1 max-w-xs mx-auto leading-relaxed">
+              Reach out to your agency, scheduler, clinical supervisor, or
+              family using Quick Contacts above.
+            </p>
           </div>
         ) : (
           <div className="space-y-2.5">
@@ -231,6 +281,11 @@ const MessagesPage = () => {
           </div>
         </section>
       </div>
+      <QuickContactSheet
+        contact={activeContact}
+        open={!!activeContact}
+        onClose={() => setActiveContact(null)}
+      />
     </MobileLayout>
   );
 };
