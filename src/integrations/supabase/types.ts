@@ -889,6 +889,16 @@ export type Database = {
         Args: { p_shift_id: string; p_target_id?: string }
         Returns: string
       }
+      get_message_recipient: {
+        Args: { _user_id: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+          phone: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -906,6 +916,7 @@ export type Database = {
           avatar_url: string
           full_name: string
           id: string
+          phone: string
           role: Database["public"]["Enums"]["app_role"]
         }[]
       }
