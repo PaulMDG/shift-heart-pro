@@ -6,6 +6,8 @@ import { formatTime } from "@/lib/format";
 import { useLiveLocation } from "@/hooks/useLiveLocation";
 import { useAgencySettings } from "@/hooks/useAgencySettings";
 import { metersToFeet } from "@/hooks/useGeolocation";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useClientPhotoUrl } from "@/lib/clientPhoto";
 
 const statusConfig: Record<string, { label: string; className: string }> = {
   not_started: {
@@ -57,6 +59,13 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
   const clientName = shift.client?.name || "Assigned Client";
   const careType = shift.client?.care_type || "Care shift";
   const address = shift.client?.address || "Client address unavailable";
+  const photoUrl = useClientPhotoUrl((shift.client as any)?.photo_url ?? null);
+  const initials = clientName
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   const showAcceptDecline =
     shift.assignment_status === "pending" && shift.status === "not_started";
@@ -114,20 +123,23 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") navigate(`/shifts/${shift.id}`);
       }}
-      className="w-full bg-surface text-surface-foreground rounded-2xl p-4 border border-[hsl(var(--ivory-border))] shadow-soft hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.99] transition-all text-left cursor-pointer"
+      aria-label={`Open shift for ${clientName} at ${formatTime(shift.start_time)}`}
+      className="focus-ring w-full bg-surface text-surface-foreground rounded-2xl p-4 border border-[hsl(var(--ivory-border))] shadow-soft hover:border-primary/40 hover:-translate-y-0.5 active:scale-[0.99] transition-all text-left cursor-pointer"
     >
       <div className="flex items-start justify-between mb-3 gap-3">
         <div className="flex-1 min-w-0 flex items-center gap-3">
-          <div
-            aria-hidden
-            className="shrink-0 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold text-primary-foreground"
-            style={{
-              background:
-                "linear-gradient(135deg, hsl(32 55% 62%), hsl(28 50% 50%))",
-            }}
-          >
-            {clientName.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
-          </div>
+          <Avatar aria-hidden className="shrink-0 w-11 h-11">
+            <AvatarImage src={photoUrl ?? undefined} alt="" />
+            <AvatarFallback
+              className="text-sm font-bold text-white"
+              style={{
+                background:
+                  "linear-gradient(135deg, hsl(32 55% 62%), hsl(28 50% 50%))",
+              }}
+            >
+              {initials}
+            </AvatarFallback>
+          </Avatar>
           <div className="min-w-0">
             <h3 className="font-semibold text-surface-foreground truncate">
               {clientName}
@@ -188,22 +200,22 @@ const ShiftCard = ({ shift }: { shift: ShiftWithClient }) => {
       </div>
 
       {showAcceptDecline && (
-        <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+        <div className="flex gap-2 mt-3 pt-3 border-t border-[hsl(var(--ivory-border))]">
           <button
             type="button"
             onClick={(e) => handleAssignment(e, "accepted")}
             disabled={updateAssignment.isPending}
-            className="flex-1 py-2 rounded-xl gradient-primary text-primary-foreground text-xs font-bold inline-flex items-center justify-center gap-1 disabled:opacity-50"
+            className="focus-ring flex-1 min-h-11 py-2.5 rounded-xl gradient-primary text-primary-foreground text-sm font-bold inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
-            <Check className="w-3.5 h-3.5" /> Accept
+            <Check className="w-4 h-4" /> Accept
           </button>
           <button
             type="button"
             onClick={(e) => handleAssignment(e, "declined")}
             disabled={updateAssignment.isPending}
-            className="flex-1 py-2 rounded-xl border border-border text-xs font-bold text-foreground inline-flex items-center justify-center gap-1 disabled:opacity-50"
+            className="focus-ring flex-1 min-h-11 py-2.5 rounded-xl border border-[hsl(var(--ivory-border))] text-sm font-bold text-foreground inline-flex items-center justify-center gap-1.5 disabled:opacity-50"
           >
-            <X className="w-3.5 h-3.5" /> Decline
+            <X className="w-4 h-4" /> Decline
           </button>
         </div>
       )}
