@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Mail, Shield, Users, DollarSign, Bell, Database, ExternalLink, MapPin, Loader2, ClipboardList, BarChart3 } from "lucide-react";
+import { ArrowLeft, Mail, Shield, Users, DollarSign, Bell, Database, ExternalLink, MapPin, Loader2, ClipboardList, BarChart3, Activity } from "lucide-react";
 import { useAgencySettings, useUpdateAgencySettings } from "@/hooks/useAgencySettings";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
