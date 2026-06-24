@@ -74,10 +74,21 @@ const AuthPage = () => {
     }
   };
 
-  const handleOAuth = (provider: "google" | "apple") => {
-    toast.info(
-      `${provider === "google" ? "Google" : "Apple"} sign-in isn't configured yet. Ask your administrator to enable it.`,
-    );
+  const handleOAuth = async (provider: "google" | "apple") => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: {
+          redirectTo: `${window.location.origin}/`,
+        },
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(
+        error?.message ??
+          `${provider === "google" ? "Google" : "Apple"} sign-in failed. Please try again.`,
+      );
+    }
   };
 
   return (
