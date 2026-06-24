@@ -363,9 +363,12 @@ const ShiftDetail = () => {
             </button>
           </div>
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-xl bg-secondary flex items-center justify-center shrink-0 overflow-hidden">
-              <User className="w-8 h-8 text-muted-foreground" />
-            </div>
+            <Avatar className="w-16 h-16 rounded-xl shrink-0 ring-1 ring-primary/20">
+              <AvatarImage src={clientPhotoUrl ?? undefined} alt={`${shift.client.name} profile photo`} className="object-cover" />
+              <AvatarFallback className="rounded-xl bg-secondary text-muted-foreground">
+                <User className="w-8 h-8" />
+              </AvatarFallback>
+            </Avatar>
             <div className="flex-1 min-w-0">
               <h3 className="font-display text-xl font-semibold text-foreground truncate">{shift.client.name}</h3>
               <p className="text-sm text-muted-foreground mt-0.5">{formatTime(shift.start_time)} – {formatTime(shift.end_time)}</p>
