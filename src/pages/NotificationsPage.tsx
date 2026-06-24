@@ -63,8 +63,12 @@ const NotificationsPage = () => {
       <div className="sticky top-0 z-40 bg-surface border-b border-[hsl(var(--ivory-border))] px-5 py-4 shadow-soft">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="p-1">
-            <ArrowLeft className="w-5 h-5 text-surface-foreground" />
+          <button
+            onClick={() => navigate(-1)}
+            aria-label="Back"
+            className="focus-ring w-11 h-11 -ml-2 rounded-xl flex items-center justify-center text-surface-foreground"
+          >
+            <ArrowLeft className="w-5 h-5" />
           </button>
           <h1 className="text-lg font-bold text-surface-foreground">Notifications</h1>
           </div>
@@ -87,7 +91,14 @@ const NotificationsPage = () => {
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
         ) : notifications.length === 0 ? (
           <div className="bg-surface text-surface-foreground rounded-2xl p-8 text-center border border-[hsl(var(--ivory-border))] shadow-soft">
-            <p className="text-sm text-muted-foreground">No notifications yet</p>
+            <Bell className="w-8 h-8 mx-auto mb-3 text-muted-foreground/60" />
+            <p className="text-sm font-semibold text-surface-foreground">
+              You're all caught up
+            </p>
+            <p className="text-xs text-muted-foreground mt-1 max-w-xs mx-auto leading-relaxed">
+              Shift updates, care alerts, and clock-in reminders will appear
+              here as they happen.
+            </p>
           </div>
         ) : (
           notifications.map((n) => {
