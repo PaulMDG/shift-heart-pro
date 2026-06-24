@@ -24,7 +24,10 @@ const BottomNav = () => {
       ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-canvas/95 backdrop-blur border-t border-[hsl(var(--ivory-border))]">
+    <nav
+      aria-label="Primary"
+      className="fixed bottom-0 left-0 right-0 z-50 bg-canvas/95 backdrop-blur border-t border-[hsl(var(--ivory-border))]"
+    >
       <div className="flex items-stretch justify-around max-w-lg mx-auto px-2 pt-2">
         {navItems.map((item) => {
           const isActive =
@@ -34,7 +37,9 @@ const BottomNav = () => {
             <button
               key={item.label}
               onClick={() => navigate(item.path)}
-              className={`relative flex flex-col items-center justify-start gap-1 px-3 pt-2 pb-2 mx-0.5 min-w-[60px] flex-1 rounded-2xl transition-colors ${
+              aria-label={item.label}
+              aria-current={isActive ? "page" : undefined}
+              className={`focus-ring relative flex flex-col items-center justify-start gap-1 px-3 pt-2 pb-2 mx-0.5 min-w-[60px] min-h-[56px] flex-1 rounded-2xl transition-colors ${
                 isActive ? "bg-primary/10" : "bg-transparent"
               }`}
             >
@@ -44,7 +49,7 @@ const BottomNav = () => {
               <div className="relative">
                 <item.icon
                   className={`w-[22px] h-[22px] transition-colors ${
-                    isActive ? "text-primary fill-primary/25" : "text-[hsl(217_25%_45%)]"
+                    isActive ? "text-primary-strong fill-primary/25" : "text-[hsl(217_28%_32%)]"
                   }`}
                   strokeWidth={isActive ? 2.5 : 1.75}
                 />
@@ -56,7 +61,7 @@ const BottomNav = () => {
               </div>
               <span
                 className={`text-[11px] ${
-                  isActive ? "text-primary font-bold" : "text-[hsl(217_20%_45%)] font-medium"
+                  isActive ? "text-primary-strong font-bold" : "text-[hsl(217_28%_32%)] font-medium"
                 }`}
               >
                 {item.label}
