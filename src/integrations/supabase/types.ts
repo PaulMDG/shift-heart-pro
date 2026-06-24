@@ -900,6 +900,15 @@ export type Database = {
         Args: { p_message_id: string; p_shift_id: string }
         Returns: undefined
       }
+      search_message_recipients: {
+        Args: { search_text?: string }
+        Returns: {
+          avatar_url: string
+          full_name: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+        }[]
+      }
       seed_shift_tasks: { Args: { p_shift_id: string }; Returns: number }
     }
     Enums: {
