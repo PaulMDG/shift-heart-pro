@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,13 +10,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MapPin, Phone, AlertTriangle, FileText, Pencil, Save, X, Loader2, Trash2, Search } from "lucide-react";
+import { MapPin, Phone, AlertTriangle, FileText, Pencil, Save, X, Loader2, Trash2, Search, Camera, ImageOff } from "lucide-react";
 import { useUpdateClient, useDeleteClient } from "@/hooks/useAdmin";
 import { toast } from "@/components/ui/sonner";
 import { geocodeAddress } from "@/lib/geocode";
 import CompletenessBadge from "@/components/admin/CompletenessBadge";
 import { useClientDocuments } from "@/hooks/useComplianceDocuments";
 import { evaluateClientCompleteness } from "@/lib/profileCompleteness";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useClientPhotoUrl, uploadClientPhoto, removeClientPhoto } from "@/lib/clientPhoto";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface ClientDetailSheetProps {
   client: any;
@@ -48,10 +51,50 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [geocoding, setGeocoding] = useState(false);
+  const [photoBusy, setPhotoBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const qc = useQueryClient();
   const updateClient = useUpdateClient();
   const deleteClient = useDeleteClient();
   const { data: docs } = useClientDocuments(client?.id);
   const completeness = client ? evaluateClientCompleteness(client, docs ?? []) : null;
+  const photoUrl = useClientPhotoUrl(client?.photo_url ?? null);
+  const initials = (client?.name || "?")
+    .split(" ")
+    .map((n: string) => n[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+
+  const onPickPhoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file || !client?.id) return;
+    setPhotoBusy(true);
+    try {
+      await uploadClientPhoto(client.id, file, client.photo_url);
+      await qc.invalidateQueries({ queryKey: ["admin-clients"] });
+      toast.success("Photo updated");
+    } catch (err: any) {
+      toast.error(err?.message || "Upload failed");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
+
+  const onRemovePhoto = async () => {
+    if (!client?.id) return;
+    setPhotoBusy(true);
+    try {
+      await removeClientPhoto(client.id, client.photo_url);
+      await qc.invalidateQueries({ queryKey: ["admin-clients"] });
+      toast.success("Photo removed");
+    } catch (err: any) {
+      toast.error(err?.message || "Remove failed");
+    } finally {
+      setPhotoBusy(false);
+    }
+  };
 
   const resetForm = () => {
     setForm({
@@ -213,6 +256,50 @@ const ClientDetailSheet = ({ client, open, onClose }: ClientDetailSheetProps) =>
             )}
           </div>
         </SheetHeader>
+
+        {/* Profile photo manager */}
+        <div className="flex items-center gap-4 bg-card rounded-2xl p-4 border border-border mb-4">
+          <Avatar className="w-16 h-16 ring-2 ring-primary/20">
+            <AvatarImage src={photoUrl ?? undefined} alt={`${client.name} profile photo`} />
+            <AvatarFallback className="bg-primary/15 text-primary text-base font-bold">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-foreground">Profile photo</p>
+            <p className="text-[11px] text-muted-foreground">
+              Shown to caregivers on shifts and care plans. JPG/PNG/WebP, max 5 MB.
+            </p>
+            <div className="flex gap-2 mt-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={photoBusy}
+                className="inline-flex items-center gap-1 text-xs font-semibold text-primary px-2.5 py-1.5 rounded-lg border border-primary/30 disabled:opacity-50"
+              >
+                {photoBusy ? <Loader2 className="w-3 h-3 animate-spin" /> : <Camera className="w-3 h-3" />}
+                {client.photo_url ? "Replace" : "Upload"}
+              </button>
+              {client.photo_url && (
+                <button
+                  type="button"
+                  onClick={onRemovePhoto}
+                  disabled={photoBusy}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-destructive px-2.5 py-1.5 rounded-lg border border-destructive/30 disabled:opacity-50"
+                >
+                  <ImageOff className="w-3 h-3" /> Remove
+                </button>
+              )}
+            </div>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={onPickPhoto}
+              className="hidden"
+            />
+          </div>
+        </div>
 
         {editing ? (
           <div className="space-y-4">
