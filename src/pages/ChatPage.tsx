@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { format, isToday, isYesterday } from "date-fns";
 import {
   ArrowLeft,
+  Bell,
   Car,
   CheckCheck,
   ClipboardCheck,
@@ -22,13 +22,12 @@ import {
   Smile,
   StickyNote,
   Trash2,
-  Video,
   X,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import { useChatMessages, useSendMessage, useConvertMessageToCareNote, type Message } from "@/hooks/useMessages";
+import { useChatMessages, useSendMessage, useConvertMessageToCareNote, useMessageRecipient, type Message } from "@/hooks/useMessages";
+import { useNotifications } from "@/hooks/useNotifications";
 import { uploadMessageFile } from "@/hooks/useMessageUpload";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { toast } from "sonner";
@@ -78,18 +77,9 @@ const ChatPage = () => {
   });
   const [pinnedId, setPinnedId] = useState<string | null>(() => localStorage.getItem(`pinned:${userId}`));
 
-  const { data: partner } = useQuery({
-    queryKey: ["profile", userId],
-    enabled: !!userId,
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url")
-        .eq("id", userId!)
-        .maybeSingle();
-      return data;
-    },
-  });
+  const { data: partner } = useMessageRecipient(userId);
+  const { data: notifications = [] } = useNotifications();
+  const unreadNotifications = notifications.filter((n: any) => !n.read).length;
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -199,9 +189,30 @@ const ChatPage = () => {
             </span>
           </div>
         </div>
-        <button className="p-2 text-muted-foreground"><Phone className="w-5 h-5" /></button>
-        <button className="p-2 text-muted-foreground"><Video className="w-5 h-5" /></button>
-        <button className="p-2 text-muted-foreground"><MoreVertical className="w-5 h-5" /></button>
+        <button
+          onClick={() => {
+            const phone = partner?.phone?.trim();
+            if (phone) window.location.href = `tel:${phone}`;
+            else toast.error("No phone number on file for this contact");
+          }}
+          className="p-2 text-muted-foreground"
+          aria-label={partner?.phone ? `Call ${partner.full_name}` : "No phone available"}
+        >
+          <Phone className="w-5 h-5" />
+        </button>
+        <button
+          onClick={() => navigate("/notifications")}
+          className="relative p-2 text-muted-foreground"
+          aria-label="Notifications"
+        >
+          <Bell className="w-5 h-5" />
+          {unreadNotifications > 0 && (
+            <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
+              {unreadNotifications > 9 ? "9+" : unreadNotifications}
+            </span>
+          )}
+        </button>
+        <button className="p-2 text-muted-foreground" aria-label="More"><MoreVertical className="w-5 h-5" /></button>
       </header>
 
       {/* Shift scope chip */}
