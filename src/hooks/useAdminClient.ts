@@ -57,7 +57,7 @@ export function useAdminClient(
       metrics.attempts += 1;
       const { data, error } = await supabase
         .from("clients")
-        .select("id, name, address, care_type, emergency_contact, emergency_phone, care_plan_summary")
+        .select("id, name, address, care_type, emergency_contact, emergency_phone, care_plan_summary, photo_url")
         .eq("id", clientId!)
         .maybeSingle();
       const duration = performance.now() - start;
