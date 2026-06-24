@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, CheckCircle, XCircle, Image } from "lucide-react";
+import { ArrowLeft, CheckCircle, XCircle, Image as ImageIcon } from "lucide-react";
 import logoAsset from "@/assets/angels-of-comfort-logo.png.asset.json";
 
 const AdminStatus = () => {
@@ -12,7 +12,7 @@ const AdminStatus = () => {
   const previewUrl = `https://id-preview--6b505da8-bffd-4d1b-bb16-35dbe437ffc9.lovable.app${logoAsset.url}`;
 
   useEffect(() => {
-    const img = new Image();
+    const img = new window.Image();
     img.onload = () => setLogoLoaded(true);
     img.onerror = () => setLogoLoaded(false);
     img.src = logoAsset.url;
