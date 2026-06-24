@@ -46,6 +46,7 @@ import AdminPayroll from "./pages/AdminPayroll";
 import AdminReports from "./pages/AdminReports";
 import AdminCareTasks from "./pages/AdminCareTasks";
 import AdminTaskAnalytics from "./pages/AdminTaskAnalytics";
+import AdminStatus from "./pages/AdminStatus";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
