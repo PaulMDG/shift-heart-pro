@@ -29,6 +29,7 @@ const ShiftDetail = () => {
   const { data: visitHistory = [] } = useVisitHistory(shift?.client?.id, id);
   const { data: shiftDocs = [] } = useShiftDocuments(id);
   const uploadDoc = useUploadShiftDocument();
+  const clientPhotoUrl = useClientPhotoUrl((shift?.client as any)?.photo_url ?? null);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState(0);
