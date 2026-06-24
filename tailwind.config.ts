@@ -52,6 +52,18 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        canvas: {
+          DEFAULT: "hsl(var(--canvas))",
+          foreground: "hsl(var(--canvas-foreground))",
+        },
+        surface: {
+          DEFAULT: "hsl(var(--surface))",
+          foreground: "hsl(var(--surface-foreground))",
+        },
+        hero: {
+          DEFAULT: "hsl(var(--hero))",
+          foreground: "hsl(var(--hero-foreground))",
+        },
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",

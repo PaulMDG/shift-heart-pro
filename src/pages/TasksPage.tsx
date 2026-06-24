@@ -32,7 +32,7 @@ const TasksPage = () => {
             <ClipboardList className="w-5 h-5" />
             <span className="text-xs uppercase tracking-[0.18em] font-semibold">Today</span>
           </div>
-          <h1 className="font-display text-3xl text-foreground">Care Tasks</h1>
+          <h1 className="font-display text-3xl text-canvas-foreground">Care Tasks</h1>
           <p className="text-sm text-muted-foreground">
             Track care tasks for each of today's visits. Final task completion is captured
             on clock-out.
@@ -62,13 +62,13 @@ const TasksPage = () => {
           <div className="space-y-4">
             {todayShifts.map((shift) => {
               return (
-                <Card key={shift.id} className="overflow-hidden">
+                <Card key={shift.id} className="overflow-hidden bg-surface text-surface-foreground border-[hsl(var(--ivory-border))] shadow-soft">
                   <button
                     onClick={() => navigate(`/shifts/${shift.id}`)}
-                    className="w-full text-left px-4 pt-4 pb-3 flex items-start justify-between gap-3 border-b border-border/50"
+                    className="w-full text-left px-4 pt-4 pb-3 flex items-start justify-between gap-3 border-b border-[hsl(var(--ivory-border))]"
                   >
                     <div className="space-y-1 min-w-0">
-                      <p className="font-display text-lg truncate">{shift.client.name}</p>
+                      <p className="font-display text-lg truncate text-surface-foreground">{shift.client.name}</p>
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="inline-flex items-center gap-1">
                           <Clock className="w-3 h-3" />
@@ -92,9 +92,9 @@ const TasksPage = () => {
                   <div className="px-4 pb-4">
                     <button
                       onClick={() => navigate(`/shifts/${shift.id}/care-notes`)}
-                      className="w-full text-sm font-medium text-primary border border-primary/40 rounded-md py-2 hover:bg-primary/10 transition"
+                      className="w-full text-sm font-semibold tracking-wide text-primary border border-primary/40 rounded-lg py-2.5 hover:bg-primary/10 transition uppercase"
                     >
-                      Open care notes
+                      Visit Documentation
                     </button>
                   </div>
                 </Card>

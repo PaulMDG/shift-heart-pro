@@ -9,7 +9,7 @@ interface MobileLayoutProps {
 
 const MobileLayout = ({ children, showHeader = true }: MobileLayoutProps) => {
   return (
-    <div className="min-h-screen bg-background max-w-lg mx-auto relative">
+    <div className="min-h-screen bg-canvas text-canvas-foreground max-w-lg mx-auto relative">
       {showHeader && <AppHeader />}
       <main className="pb-20">{children}</main>
       <BottomNav />

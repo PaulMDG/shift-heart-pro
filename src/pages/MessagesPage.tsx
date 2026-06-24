@@ -13,6 +13,10 @@ import {
   SlidersHorizontal,
   Users,
   User as UserIcon,
+  Briefcase,
+  CalendarClock,
+  Stethoscope,
+  Heart,
 } from "lucide-react";
 import { useConversations, type Conversation } from "@/hooks/useMessages";
 import { useNavigate } from "react-router-dom";
@@ -53,6 +57,13 @@ const QUICK_ACTIONS = [
   { id: "call", label: "Call agency", icon: Phone, tone: "bg-primary/15 text-primary" },
 ];
 
+const QUICK_CONTACTS = [
+  { id: "agency", label: "Agency", icon: Briefcase, tone: "from-[hsl(32_55%_62%)] to-[hsl(28_50%_50%)]" },
+  { id: "scheduler", label: "Scheduler", icon: CalendarClock, tone: "from-[hsl(210_70%_55%)] to-[hsl(220_60%_45%)]" },
+  { id: "clinical", label: "Clinical", icon: Stethoscope, tone: "from-[hsl(152_50%_45%)] to-[hsl(160_55%_38%)]" },
+  { id: "family", label: "Family", icon: Heart, tone: "from-[hsl(0_65%_60%)] to-[hsl(340_60%_50%)]" },
+];
+
 const MessagesPage = () => {
   const { data: conversations = [], isLoading } = useConversations();
   const navigate = useNavigate();
@@ -80,7 +91,7 @@ const MessagesPage = () => {
       <div className="px-4 pt-3 pb-6 space-y-4">
         {/* Header */}
         <div className="flex items-center justify-between px-1">
-          <h2 className="font-display text-2xl text-foreground">Messages</h2>
+          <h2 className="font-display text-2xl text-canvas-foreground">Messages</h2>
           <button
             onClick={() => navigate("/messages/new")}
             aria-label="New message"
@@ -90,8 +101,36 @@ const MessagesPage = () => {
           </button>
         </div>
 
+        {/* Quick Contacts */}
+        <section className="bg-surface text-surface-foreground rounded-2xl border border-[hsl(var(--ivory-border))] shadow-soft p-4">
+          <p className="text-[11px] tracking-[0.22em] text-primary font-semibold uppercase mb-3">
+            Quick Contacts
+          </p>
+          <div className="flex gap-3 overflow-x-auto no-scrollbar -mx-1 px-1">
+            {QUICK_CONTACTS.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => navigate("/messages/new")}
+                className="flex flex-col items-center gap-1.5 shrink-0 w-[68px]"
+              >
+                <span
+                  className={cn(
+                    "w-14 h-14 rounded-full bg-gradient-to-br flex items-center justify-center shadow-soft",
+                    c.tone,
+                  )}
+                >
+                  <c.icon className="w-6 h-6 text-white" strokeWidth={2} />
+                </span>
+                <span className="text-[11px] font-medium text-surface-foreground text-center leading-tight">
+                  {c.label}
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
         {/* Category tabs */}
-        <div className="bg-card/40 rounded-2xl border border-border/40 p-2 grid grid-cols-5 gap-1">
+        <div className="bg-surface rounded-2xl border border-[hsl(var(--ivory-border))] shadow-soft p-2 grid grid-cols-5 gap-1">
           {TABS.map((t) => {
             const active = filter === t.id;
             const count = counts[t.id];
@@ -101,7 +140,7 @@ const MessagesPage = () => {
                 onClick={() => setFilter(t.id)}
                 className={cn(
                   "flex flex-col items-center gap-1 pt-2 pb-1 rounded-xl relative transition-colors",
-                  active ? "bg-card" : "bg-transparent",
+                  active ? "bg-primary/10" : "bg-transparent",
                 )}
               >
                 <div className="relative">
@@ -135,10 +174,10 @@ const MessagesPage = () => {
               placeholder="Search messages"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9 rounded-xl bg-card/60 border-border/60"
+              className="pl-9 rounded-xl bg-surface text-surface-foreground border-[hsl(var(--ivory-border))]"
             />
           </div>
-          <button className="px-3 py-2 rounded-xl border border-border/60 text-primary text-sm font-medium inline-flex items-center gap-1">
+          <button className="px-3 py-2 rounded-xl border border-[hsl(var(--ivory-border))] bg-surface text-primary text-sm font-medium inline-flex items-center gap-1">
             <SlidersHorizontal className="w-4 h-4" />
             Filter
           </button>
@@ -148,7 +187,7 @@ const MessagesPage = () => {
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-20 bg-card/40 rounded-2xl animate-pulse" />
+              <div key={i} className="h-20 bg-surface/60 rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : filtered.length === 0 ? (
@@ -165,8 +204,11 @@ const MessagesPage = () => {
           </div>
         )}
 
-        {/* Quick actions */}
-        <div className="bg-card rounded-2xl border border-border/50 p-4">
+        {/* Quick Communication */}
+        <section className="bg-surface text-surface-foreground rounded-2xl border border-[hsl(var(--ivory-border))] shadow-soft p-4">
+          <p className="text-[11px] tracking-[0.22em] text-primary font-semibold uppercase mb-3">
+            Quick Communication
+          </p>
           <div className="grid grid-cols-4 gap-3">
             {QUICK_ACTIONS.map((q) => (
               <button
@@ -183,11 +225,11 @@ const MessagesPage = () => {
                 <span className={cn("w-12 h-12 rounded-full flex items-center justify-center", q.tone)}>
                   <q.icon className="w-5 h-5" />
                 </span>
-                <span className="text-[11px] text-foreground text-center leading-tight">{q.label}</span>
+                <span className="text-[11px] text-surface-foreground text-center leading-tight">{q.label}</span>
               </button>
             ))}
           </div>
-        </div>
+        </section>
       </div>
     </MobileLayout>
   );
@@ -203,8 +245,8 @@ function ConvCard({ conv, onOpen }: { conv: Conversation; onOpen: () => void }) 
       className={cn(
         "w-full text-left rounded-2xl p-4 border transition-colors",
         isAlert
-          ? "bg-red-500/5 border-red-500/30"
-          : "bg-card border-border/50 hover:border-border",
+          ? "bg-red-500/10 border-red-500/40"
+          : "bg-surface text-surface-foreground border-[hsl(var(--ivory-border))] shadow-soft hover:border-primary/40",
       )}
     >
       <div className="flex items-start gap-3">
@@ -230,7 +272,7 @@ function ConvCard({ conv, onOpen }: { conv: Conversation; onOpen: () => void }) 
                 {badge.label}
               </span>
             )}
-            <span className="text-sm font-semibold text-foreground truncate">
+            <span className="text-sm font-semibold text-surface-foreground truncate">
               {conv.full_name}
             </span>
             <span className="text-[10px] text-muted-foreground ml-auto whitespace-nowrap">
@@ -239,7 +281,7 @@ function ConvCard({ conv, onOpen }: { conv: Conversation; onOpen: () => void }) 
           </div>
           <p className={cn(
             "text-sm mt-1",
-            conv.unread_count > 0 ? "text-foreground font-medium" : "text-muted-foreground",
+            conv.unread_count > 0 ? "text-surface-foreground font-medium" : "text-muted-foreground",
           )}>
             {conv.last_message}
           </p>
