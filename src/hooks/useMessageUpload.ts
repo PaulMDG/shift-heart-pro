@@ -18,6 +18,10 @@ export async function uploadMessageFile(file: File | Blob, filename: string) {
     contentType: (file as File).type || `application/${ext}`,
   });
   if (error) throw error;
-  const { data } = supabase.storage.from(BUCKET).getPublicUrl(path);
-  return { url: data.publicUrl, path };
+  // Private bucket: create a long-lived signed URL (1 year) so recipients can view.
+  const { data, error: signErr } = await supabase.storage
+    .from(BUCKET)
+    .createSignedUrl(path, 60 * 60 * 24 * 365);
+  if (signErr) throw signErr;
+  return { url: data.signedUrl, path };
 }
