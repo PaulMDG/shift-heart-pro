@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { useIsAdmin, useRole } from "@/hooks/useRole";
 import { toast } from "sonner";
+import CallConfirmDialog from "@/components/messages/CallConfirmDialog";
 
 function roleMeta(role: string | null) {
   switch (role) {
@@ -77,6 +78,7 @@ const NewChatPage = () => {
   const { data: conversations = [] } = useConversations();
   const { data: myRoles = [] } = useRole();
   const { isAdmin } = useIsAdmin();
+  const [callTarget, setCallTarget] = useState<{ recipient: Recipient; allowed: boolean; reason?: string } | null>(null);
 
   // Build a set of recent partner ids
   const recentIds = useMemo(
@@ -106,16 +108,11 @@ const NewChatPage = () => {
     e?.preventDefault();
     e?.stopPropagation();
     const allowed = canCall(myRoles, r.role, recentIds.has(r.id));
-    if (!allowed) {
-      toast.error("You can only call this person after exchanging a message first.");
-      return;
-    }
-    const phone = r.phone?.trim();
-    if (!phone) {
-      toast.error(`No phone on file for ${r.full_name}`);
-      return;
-    }
-    window.location.href = `tel:${phone}`;
+    setCallTarget({
+      recipient: r,
+      allowed,
+      reason: allowed ? undefined : "You can only call this person after exchanging a message first.",
+    });
   };
 
   const showRecents = !debounced && recents.length > 0;
@@ -291,6 +288,14 @@ const NewChatPage = () => {
           {" "}Use ↑ ↓ to browse and Enter to open.
         </p>
       </div>
+
+      <CallConfirmDialog
+        open={!!callTarget}
+        onOpenChange={(v) => { if (!v) setCallTarget(null); }}
+        recipient={callTarget?.recipient ?? null}
+        allowed={!!callTarget?.allowed}
+        reason={callTarget?.reason}
+      />
     </div>
   );
 };
