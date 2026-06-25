@@ -27,7 +27,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/hooks/useAuth";
 import { useChatMessages, useSendMessage, useConvertMessageToCareNote, useMessageRecipient, type Message } from "@/hooks/useMessages";
-import { useNotifications } from "@/hooks/useNotifications";
+import NotificationBell from "@/components/notifications/NotificationBell";
+import CallConfirmDialog from "@/components/messages/CallConfirmDialog";
 import { uploadMessageFile } from "@/hooks/useMessageUpload";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { toast } from "sonner";
@@ -78,8 +79,7 @@ const ChatPage = () => {
   const [pinnedId, setPinnedId] = useState<string | null>(() => localStorage.getItem(`pinned:${userId}`));
 
   const { data: partner } = useMessageRecipient(userId);
-  const { data: notifications = [] } = useNotifications();
-  const unreadNotifications = notifications.filter((n: any) => !n.read).length;
+  const [callOpen, setCallOpen] = useState(false);
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
@@ -190,30 +190,30 @@ const ChatPage = () => {
           </div>
         </div>
         <button
-          onClick={() => {
-            const phone = partner?.phone?.trim();
-            if (phone) window.location.href = `tel:${phone}`;
-            else toast.error("No phone number on file for this contact");
-          }}
+          onClick={() => setCallOpen(true)}
           className="p-2 text-muted-foreground"
-          aria-label={partner?.phone ? `Call ${partner.full_name}` : "No phone available"}
+          aria-label={partner?.phone ? `Call ${partner?.full_name}` : "Call"}
         >
           <Phone className="w-5 h-5" />
         </button>
-        <button
-          onClick={() => navigate("/notifications")}
-          className="relative p-2 text-muted-foreground"
-          aria-label="Notifications"
-        >
-          <Bell className="w-5 h-5" />
-          {unreadNotifications > 0 && (
-            <span className="absolute top-1 right-1 min-w-[16px] h-4 px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-              {unreadNotifications > 9 ? "9+" : unreadNotifications}
-            </span>
-          )}
-        </button>
+        <div className="p-2 text-muted-foreground">
+          <NotificationBell />
+        </div>
         <button className="p-2 text-muted-foreground" aria-label="More"><MoreVertical className="w-5 h-5" /></button>
       </header>
+
+      <CallConfirmDialog
+        open={callOpen}
+        onOpenChange={setCallOpen}
+        recipient={partner ? {
+          id: partner.id,
+          full_name: partner.full_name,
+          avatar_url: partner.avatar_url,
+          role: partner.role,
+          phone: partner.phone,
+        } : null}
+        allowed={true}
+      />
 
       {/* Shift scope chip */}
       {shiftId && (

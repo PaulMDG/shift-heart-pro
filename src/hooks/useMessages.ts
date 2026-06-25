@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useEffect } from "react";
+import { playMessageChime, isSoundEnabled } from "@/lib/notifySound";
 
 export interface Message {
   id: string;
@@ -46,7 +47,16 @@ export function useConversations() {
       .channel(`user:${user.id}`)
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "messages" },
+        { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` },
+        () => {
+          if (isSoundEnabled()) playMessageChime();
+          queryClient.invalidateQueries({ queryKey: ["conversations"] });
+          queryClient.invalidateQueries({ queryKey: ["notifications"] });
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["conversations"] });
         }

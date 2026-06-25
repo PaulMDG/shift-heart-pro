@@ -1,12 +1,10 @@
-import { Bell, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { useNotifications } from "@/hooks/useNotifications";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import logoAsset from "@/assets/angels-of-comfort-logo.png.asset.json";
 
 const AppHeader = () => {
   const navigate = useNavigate();
-  const { data: notifications = [] } = useNotifications();
-  const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (
     <header className="sticky top-0 z-40 bg-canvas/95 backdrop-blur border-b border-[hsl(var(--ivory-border))]">
@@ -34,16 +32,7 @@ const AppHeader = () => {
           />
         </button>
         <div className="justify-self-end">
-          <button
-            onClick={() => navigate("/notifications")}
-            aria-label="Notifications"
-            className="relative p-1"
-          >
-            <Bell className="w-6 h-6 text-primary" strokeWidth={1.85} />
-            {unreadCount > 0 && (
-              <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-primary rounded-full ring-2 ring-canvas" />
-            )}
-          </button>
+          <NotificationBell className="p-1 text-primary" />
         </div>
       </div>
     </header>
