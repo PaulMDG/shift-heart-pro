@@ -20,7 +20,7 @@ import {
   Heart,
 } from "lucide-react";
 import { useConversations, type Conversation } from "@/hooks/useMessages";
-import { useNotifications } from "@/hooks/useNotifications";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -71,8 +71,6 @@ const QUICK_CONTACTS: Array<{ id: string; label: string; icon: any; tone: string
 const MessagesPage = () => {
   const { data: conversations = [], isLoading } = useConversations();
   const { data: settings } = useAgencySettings();
-  const { data: notifications = [] } = useNotifications();
-  const unreadNotifications = notifications.filter((n: any) => !n.read).length;
   const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<Filter>("all");
@@ -142,18 +140,9 @@ const MessagesPage = () => {
         <div className="flex items-center justify-between px-1">
           <h2 className="font-display text-2xl text-canvas-foreground">Messages</h2>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => navigate("/notifications")}
-              aria-label={`Notifications${unreadNotifications ? `, ${unreadNotifications} unread` : ""}`}
-              className="focus-ring relative w-11 h-11 rounded-xl border border-[hsl(var(--ivory-border))] flex items-center justify-center text-primary-strong"
-            >
-              <Bell className="w-5 h-5" />
-              {unreadNotifications > 0 && (
-                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center">
-                  {unreadNotifications > 9 ? "9+" : unreadNotifications}
-                </span>
-              )}
-            </button>
+            <div className="w-11 h-11 rounded-xl border border-[hsl(var(--ivory-border))] flex items-center justify-center text-primary-strong">
+              <NotificationBell />
+            </div>
             <button
               onClick={() => navigate("/messages/new")}
               aria-label="New message"
