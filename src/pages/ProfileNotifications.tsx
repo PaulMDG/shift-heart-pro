@@ -3,14 +3,37 @@ import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, Bell } from "lucide-react";
+import { ArrowLeft, Bell, BellRing, BellOff } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useNotificationPrefs, useUpdateNotificationPrefs } from "@/hooks/useNotificationPrefs";
+import { useEffect, useState } from "react";
+import { requestPushPermission, getPushPermissionState } from "@/lib/onesignal";
 
 const ProfileNotifications = () => {
   const navigate = useNavigate();
   const { data, isLoading } = useNotificationPrefs();
   const update = useUpdateNotificationPrefs();
+  const [pushState, setPushState] = useState<"granted" | "denied" | "default" | "unsupported">(
+    "default",
+  );
+  const [enabling, setEnabling] = useState(false);
+
+  useEffect(() => {
+    setPushState(getPushPermissionState());
+  }, []);
+
+  const handleEnablePush = async () => {
+    setEnabling(true);
+    try {
+      const ok = await requestPushPermission();
+      setPushState(getPushPermissionState());
+      if (ok) toast.success("Push notifications enabled");
+      else toast.message("Push not enabled", { description: "You can enable it later from this screen or your browser settings." });
+    } finally {
+      setEnabling(false);
+    }
+  };
 
   const toggle = (key: "in_shift_messages" | "admin_alerts", value: boolean) => {
     update.mutate(
@@ -46,6 +69,28 @@ const ProfileNotifications = () => {
             <p className="text-xs text-muted-foreground">Control which push alerts you receive</p>
           </div>
         </div>
+
+        <Card className="border-border">
+          <CardContent className="p-4 flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${pushState === "granted" ? "bg-emerald-500/15 text-emerald-500" : "bg-accent text-accent-foreground"}`}>
+              {pushState === "granted" ? <BellRing className="w-5 h-5" /> : <BellOff className="w-5 h-5" />}
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-foreground">Browser push notifications</p>
+              <p className="text-xs text-muted-foreground">
+                {pushState === "granted" && "Enabled on this device."}
+                {pushState === "denied" && "Blocked. Enable from your browser site settings."}
+                {pushState === "default" && "Allow alerts even when the app is closed."}
+                {pushState === "unsupported" && "This browser does not support push notifications."}
+              </p>
+            </div>
+            {pushState !== "granted" && pushState !== "unsupported" && (
+              <Button size="sm" onClick={handleEnablePush} disabled={enabling || pushState === "denied"}>
+                {enabling ? "…" : pushState === "denied" ? "Blocked" : "Enable"}
+              </Button>
+            )}
+          </CardContent>
+        </Card>
 
         <Card className="border-border">
           <CardContent className="p-2 divide-y divide-border">
