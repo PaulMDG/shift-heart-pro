@@ -17,13 +17,13 @@ export async function initOneSignal(): Promise<void> {
     await OneSignal.init({
       appId: ONESIGNAL_APP_ID,
       allowLocalhostAsSecureOrigin: true,
-      notifyButton: { enable: false },
       promptOptions: {
         slidedown: {
           prompts: [
             {
               type: "push",
               autoPrompt: false,
+              delay: { pageViews: 1, timeDelay: 3 },
               text: {
                 actionMessage:
                   "Get real-time alerts for new messages, shift updates, and admin notices.",
@@ -34,7 +34,7 @@ export async function initOneSignal(): Promise<void> {
           ],
         },
       },
-    });
+    } as any);
     initialized = true;
     console.log("[OneSignal] Initialized");
   } catch (e) {
