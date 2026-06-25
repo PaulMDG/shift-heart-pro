@@ -527,6 +527,36 @@ export type Database = {
           },
         ]
       }
+      notification_errors: {
+        Row: {
+          created_at: string
+          error_code: string | null
+          error_message: string | null
+          id: string
+          payload: Json | null
+          source: string
+          target_user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          source: string
+          target_user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          error_code?: string | null
+          error_message?: string | null
+          id?: string
+          payload?: Json | null
+          source?: string
+          target_user_id?: string | null
+        }
+        Relationships: []
+      }
       notification_preferences: {
         Row: {
           admin_alerts: boolean

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Bell, Repeat, AlertCircle, Mail, MailX, CheckCheck, RefreshCw } from "lucide-react";
-import { useNotifications, useMarkNotificationRead, useMarkAllRead } from "@/hooks/useNotifications";
+import { ArrowLeft, Bell, Repeat, AlertCircle, Mail, MailX, CheckCheck, RefreshCw, AlertTriangle } from "lucide-react";
+import { useNotifications, useMarkNotificationRead, useMarkAllRead, useNotificationErrorCount } from "@/hooks/useNotifications";
 import { retryNotificationEmail } from "@/lib/notifyEmail";
 import { toast } from "@/components/ui/sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -21,6 +21,7 @@ const NotificationsPage = () => {
   const { data: notifications = [], isLoading } = useNotifications();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllRead();
+  const { data: errorCount = 0 } = useNotificationErrorCount();
   const queryClient = useQueryClient();
   const [retrying, setRetrying] = useState<string | null>(null);
 
@@ -87,6 +88,22 @@ const NotificationsPage = () => {
       </div>
 
       <div className="px-5 py-4 space-y-2">
+        {errorCount > 0 && (
+          <button
+            onClick={() => navigate("/admin/notification-errors")}
+            className="w-full flex items-center gap-3 bg-destructive/5 border border-destructive/30 rounded-2xl p-3 text-left hover:bg-destructive/10 transition-colors"
+          >
+            <AlertTriangle className="w-5 h-5 text-destructive shrink-0" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-destructive">
+                {errorCount} notification {errorCount === 1 ? "error" : "errors"} logged
+              </p>
+              <p className="text-[11px] text-muted-foreground">
+                Tap to inspect failing payloads (admin only)
+              </p>
+            </div>
+          </button>
+        )}
         {isLoading ? (
           Array.from({ length: 3 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)
         ) : notifications.length === 0 ? (
