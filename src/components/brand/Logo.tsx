@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import logoAsset from "@/assets/angels-of-comfort-logo.png.asset.json";
 
 interface LogoProps {
   className?: string;
