@@ -3,19 +3,19 @@ import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle, XCircle, Image as ImageIcon } from "lucide-react";
-import logoAsset from "@/assets/angels-of-comfort-logo.png.asset.json";
+const LOGO_PATH = "/logo.png";
+const PRODUCTION_URL = `https://shift-heart-pro.lovable.app${LOGO_PATH}`;
+const PREVIEW_URL = `https://id-preview--6b505da8-bffd-4d1b-bb16-35dbe437ffc9.lovable.app${LOGO_PATH}`;
 
 const AdminStatus = () => {
   const navigate = useNavigate();
   const [logoLoaded, setLogoLoaded] = useState<boolean | null>(null);
-  const productionUrl = `https://shift-heart-pro.lovable.app${logoAsset.url}`;
-  const previewUrl = `https://id-preview--6b505da8-bffd-4d1b-bb16-35dbe437ffc9.lovable.app${logoAsset.url}`;
 
   useEffect(() => {
     const img = new window.Image();
     img.onload = () => setLogoLoaded(true);
     img.onerror = () => setLogoLoaded(false);
-    img.src = logoAsset.url;
+    img.src = LOGO_PATH;
   }, []);
 
   return (
