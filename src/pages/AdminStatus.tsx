@@ -3,19 +3,19 @@ import { useNavigate } from "react-router-dom";
 import MobileLayout from "@/components/layout/MobileLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, CheckCircle, XCircle, Image as ImageIcon } from "lucide-react";
-import logoAsset from "@/assets/angels-of-comfort-logo.png.asset.json";
+const LOGO_PATH = "/logo.png";
+const PRODUCTION_URL = `https://shift-heart-pro.lovable.app${LOGO_PATH}`;
+const PREVIEW_URL = `https://id-preview--6b505da8-bffd-4d1b-bb16-35dbe437ffc9.lovable.app${LOGO_PATH}`;
 
 const AdminStatus = () => {
   const navigate = useNavigate();
   const [logoLoaded, setLogoLoaded] = useState<boolean | null>(null);
-  const productionUrl = `https://shift-heart-pro.lovable.app${logoAsset.url}`;
-  const previewUrl = `https://id-preview--6b505da8-bffd-4d1b-bb16-35dbe437ffc9.lovable.app${logoAsset.url}`;
 
   useEffect(() => {
     const img = new window.Image();
     img.onload = () => setLogoLoaded(true);
     img.onerror = () => setLogoLoaded(false);
-    img.src = logoAsset.url;
+    img.src = LOGO_PATH;
   }, []);
 
   return (
@@ -45,20 +45,16 @@ const AdminStatus = () => {
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-4">
             <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Asset ID</p>
-              <p className="text-xs font-mono text-foreground break-all">{logoAsset.asset_id}</p>
-            </div>
-            <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Local URL</p>
-              <p className="text-xs font-mono text-foreground break-all">{logoAsset.url}</p>
+              <p className="text-xs font-mono text-foreground break-all">{LOGO_PATH}</p>
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Production URL</p>
-              <p className="text-xs font-mono text-foreground break-all">{productionUrl}</p>
+              <p className="text-xs font-mono text-foreground break-all">{PRODUCTION_URL}</p>
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Preview URL</p>
-              <p className="text-xs font-mono text-foreground break-all">{previewUrl}</p>
+              <p className="text-xs font-mono text-foreground break-all">{PREVIEW_URL}</p>
             </div>
             <div className="flex items-center gap-2 pt-1">
               {logoLoaded === null ? (
@@ -78,7 +74,7 @@ const AdminStatus = () => {
             <div className="pt-2 border-t border-border">
               <p className="text-xs font-medium text-muted-foreground mb-2">Rendered preview</p>
               <img
-                src={logoAsset.url}
+                src={LOGO_PATH}
                 alt="Auth logo"
                 className="h-24 w-auto object-contain"
                 onLoad={() => setLogoLoaded(true)}

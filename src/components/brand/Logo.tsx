@@ -1,5 +1,4 @@
 import { cn } from "@/lib/utils";
-import logoAsset from "@/assets/angels-of-comfort-logo.png.asset.json";
 
 interface LogoProps {
   className?: string;
@@ -21,7 +20,7 @@ export const LogoMark = ({ className }: { className?: string }) => (
     aria-label="Angels of Comfort"
     className={cn("inline-block bg-no-repeat bg-center", className)}
     style={{
-      backgroundImage: `url(${logoAsset.url})`,
+      backgroundImage: `url(/logo.png)`,
       // Source image ~1700x1144; icon mark occupies roughly top ~42% height,
       // centered horizontally over ~20% of the width. Scale the background so
       // the icon fills the square container and position to the top.
@@ -36,7 +35,7 @@ const Logo = ({ className, showWordmark = true, stacked = false }: LogoProps) =>
   return (
     <div className={cn("flex items-center justify-center", className)}>
       <img
-        src={logoAsset.url}
+        src="/logo.png"
         alt="Angels of Comfort Home Care"
         className={cn(
           "object-contain w-auto",
