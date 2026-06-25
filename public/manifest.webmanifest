@@ -2,12 +2,22 @@
   "name": "Angels of Comfort",
   "short_name": "Angels of Comfort",
   "description": "Compassionate home care workforce management for caregivers and agencies.",
+  "id": "/",
+  "scope": "/",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0a1a24",
   "theme_color": "#cf9859",
   "orientation": "portrait",
+  "lang": "en",
+  "categories": ["health", "medical", "productivity"],
   "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "32x32",
+      "type": "image/png",
+      "purpose": "any"
+    },
     {
       "src": "/pwa-icon-192.png",
       "sizes": "192x192",
