@@ -74,7 +74,7 @@ const AdminStatus = () => {
             <div className="pt-2 border-t border-border">
               <p className="text-xs font-medium text-muted-foreground mb-2">Rendered preview</p>
               <img
-                src={logoAsset.url}
+                src={LOGO_PATH}
                 alt="Auth logo"
                 className="h-24 w-auto object-contain"
                 onLoad={() => setLogoLoaded(true)}
