@@ -35,7 +35,7 @@ const Logo = ({ className, showWordmark = true, stacked = false }: LogoProps) =>
   return (
     <div className={cn("flex items-center justify-center", className)}>
       <img
-        src={logoAsset.url}
+        src="/logo.png"
         alt="Angels of Comfort Home Care"
         className={cn(
           "object-contain w-auto",
