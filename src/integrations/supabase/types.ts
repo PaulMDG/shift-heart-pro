@@ -125,6 +125,36 @@ export type Database = {
           },
         ]
       }
+      call_logs: {
+        Row: {
+          caller_id: string
+          created_at: string
+          id: string
+          recipient_id: string
+          recipient_name: string | null
+          recipient_phone: string | null
+          status: string
+        }
+        Insert: {
+          caller_id: string
+          created_at?: string
+          id?: string
+          recipient_id: string
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          status?: string
+        }
+        Update: {
+          caller_id?: string
+          created_at?: string
+          id?: string
+          recipient_id?: string
+          recipient_name?: string | null
+          recipient_phone?: string | null
+          status?: string
+        }
+        Relationships: []
+      }
       care_note_audits: {
         Row: {
           changed_at: string
