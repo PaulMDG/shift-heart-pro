@@ -45,20 +45,16 @@ const AdminStatus = () => {
           </CardHeader>
           <CardContent className="p-4 pt-0 space-y-4">
             <div className="space-y-1">
-              <p className="text-xs font-medium text-muted-foreground">Asset ID</p>
-              <p className="text-xs font-mono text-foreground break-all">{logoAsset.asset_id}</p>
-            </div>
-            <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Local URL</p>
-              <p className="text-xs font-mono text-foreground break-all">{logoAsset.url}</p>
+              <p className="text-xs font-mono text-foreground break-all">{LOGO_PATH}</p>
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Production URL</p>
-              <p className="text-xs font-mono text-foreground break-all">{productionUrl}</p>
+              <p className="text-xs font-mono text-foreground break-all">{PRODUCTION_URL}</p>
             </div>
             <div className="space-y-1">
               <p className="text-xs font-medium text-muted-foreground">Preview URL</p>
-              <p className="text-xs font-mono text-foreground break-all">{previewUrl}</p>
+              <p className="text-xs font-mono text-foreground break-all">{PREVIEW_URL}</p>
             </div>
             <div className="flex items-center gap-2 pt-1">
               {logoLoaded === null ? (
