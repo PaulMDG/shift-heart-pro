@@ -20,7 +20,7 @@ export const LogoMark = ({ className }: { className?: string }) => (
     aria-label="Angels of Comfort"
     className={cn("inline-block bg-no-repeat bg-center", className)}
     style={{
-      backgroundImage: `url(${logoAsset.url})`,
+      backgroundImage: `url(/logo.png)`,
       // Source image ~1700x1144; icon mark occupies roughly top ~42% height,
       // centered horizontally over ~20% of the width. Scale the background so
       // the icon fills the square container and position to the top.
